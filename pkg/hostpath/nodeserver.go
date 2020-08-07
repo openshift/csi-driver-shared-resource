@@ -73,6 +73,18 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if ephemeralVolume {
 		volID := req.GetVolumeId()
 		volName := fmt.Sprintf("ephemeral-%s", volID)
+
+		// GGM add start
+		// eventually will be needed for SAR checks
+		podName, _ := req.GetVolumeContext()["csi.storage.k8s.io/pod.name"]
+		podNamespace, _ := req.GetVolumeContext()["csi.storage.k8s.io/pod.namespace"]
+		serviceAccount, _ := req.GetVolumeContext()["csi.storage.k8s.io/serviceAccount.name"]
+		glog.V(0).Infof("GGM NodePublishVolume pod %s ns %s sa %s",
+			podName,
+			podNamespace,
+			serviceAccount)
+
+		// GGM add end
 		vol, err := createHostpathVolume(req.GetVolumeId(), volName, maxStorageCapacity, mountAccess, ephemeralVolume)
 		if err != nil && !os.IsExist(err) {
 			glog.Error("ephemeral mode failed to create volume: ", err)

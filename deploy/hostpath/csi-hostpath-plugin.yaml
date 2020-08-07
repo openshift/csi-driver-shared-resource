@@ -64,6 +64,8 @@ spec:
 
         - name: hostpath
           image: docker.io/gmontero/origin-projected-resource-csi-driver:latest
+          # for development purposes; eventually switch to IfNotPresent
+          imagePullPolicy: Always
           command:
             - hostpathplugin
           args:

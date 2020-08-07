@@ -17,13 +17,15 @@ limitations under the License.
 package hostpath
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	objcache "github.com/openshift/projected-resource-csi-driver/pkg/cache"
 	"io"
 	//"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+	//"strings"
 
 	"github.com/golang/glog"
 	"google.golang.org/grpc/codes"
@@ -131,7 +133,7 @@ func NewHostPathDriver(driverName, nodeID, endpoint string, ephemeral bool, maxV
 	}, nil
 }
 
-func getSnapshotID(file string) (bool, string) {
+/*func getSnapshotID(file string) (bool, string) {
 	glog.V(4).Infof("file: %s", file)
 	// Files with .snap extension are volumesnapshot files.
 	// e.g. foo.snap, foo.bar.snap
@@ -141,7 +143,7 @@ func getSnapshotID(file string) (bool, string) {
 	return false, ""
 }
 
-/*func discoverExistingSnapshots() {
+func discoverExistingSnapshots() {
 	glog.V(4).Infof("discovering existing snapshots in %s", dataRoot)
 	files, err := ioutil.ReadDir(dataRoot)
 	if err != nil {
@@ -202,6 +204,30 @@ func getVolumePath(volID string) string {
 	return filepath.Join(dataRoot, volID)
 }
 
+func commonUpsertRanger(path string, key, value interface{}) bool {
+	buf, err := json.MarshalIndent(value, "", "    ")
+	if err != nil {
+		glog.Errorf("error marshalling: %s", err.Error())
+		return true
+	}
+	filePath := filepath.Join(path, fmt.Sprintf("%s", key))
+	glog.V(0).Infof("GGM create/update file %s", filePath)
+	// for now, since os.Create truncates existing files (i.e. it becomes a replace operation),
+	// we employ the same logic for create and update; but if we change the file
+	// system interaction mechanism such that create and update are treated differently, we'll
+	// need separate callbacks for each
+	file, err := os.Create(filePath)
+	defer file.Close()
+	file.Write(buf)
+	return true
+}
+
+func commonDeleteRanger(path string, key interface{}) bool {
+	filePath := filepath.Join(path, fmt.Sprintf("%s", key))
+	os.Remove(filePath)
+	return true
+}
+
 // createVolume create the directory for the hostpath volume.
 // It returns the volume path or err if one occurs.
 func createHostpathVolume(volID, name string, cap int64, volAccessType accessType, ephemeral bool) (*hostPathVolume, error) {
@@ -213,6 +239,35 @@ func createHostpathVolume(volID, name string, cap int64, volAccessType accessTyp
 		if err != nil {
 			return nil, err
 		}
+		configMapsPath := filepath.Join(path, "configmaps")
+		// for now, since os.MkdirAll does nothing and returns no error when the path already
+		// exists, we have a common path for both create and update; but if we change the file
+		// system interaction mechanism such that create and update are treated differently, we'll
+		// need separate callbacks for each
+		err = os.MkdirAll(configMapsPath, 0777)
+		if err == nil {
+			upsertRanger := func(key, value interface{}) bool {
+				return commonUpsertRanger(configMapsPath, key, value)
+			}
+			objcache.RegisterConfigMapUpsertCallback(volID, upsertRanger)
+			deleteRanger := func(key, value interface{}) bool {
+				return commonDeleteRanger(configMapsPath, key)
+			}
+			objcache.RegisterConfigMapDeleteCallback(volID, deleteRanger)
+		}
+		secretsPath := filepath.Join(path, "secrets")
+		err = os.MkdirAll(secretsPath, 0777)
+		if err == nil {
+			upsertRanger := func(key, value interface{}) bool {
+				return commonUpsertRanger(secretsPath, key, value)
+			}
+			objcache.RegisterSecretUpsertCallback(volID, upsertRanger)
+			deleteRanger := func(key, value interface{}) bool {
+				return commonDeleteRanger(secretsPath, key)
+			}
+			objcache.RegisterSecretDeleteCallback(volID, deleteRanger)
+		}
+
 	/*case blockAccess:
 	executor := utilexec.New()
 	size := fmt.Sprintf("%dM", cap/mib)
@@ -292,6 +347,10 @@ func deleteHostpathVolume(volID string) error {
 		return err
 	}
 	delete(hostPathVolumes, volID)
+	objcache.UnregisterSecretUpsertCallback(volID)
+	objcache.UnregisterSecretDeleteCallback(volID)
+	objcache.UnregisterConfigMapDeleteCallback(volID)
+	objcache.UnregisterConfigMapUpsertCallback(volID)
 	return nil
 }
 
