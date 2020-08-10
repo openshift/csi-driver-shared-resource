@@ -20,7 +20,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-hostpathplugin
-  namespace: projected-resource-csi-driver-ggm
+  namespace: projected-resource-csi-driver
   labels:
     app: csi-hostpathplugin
 spec:
