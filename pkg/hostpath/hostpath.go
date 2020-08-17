@@ -36,12 +36,10 @@ import (
 )
 
 const (
-	kib    int64 = 1024
-	mib    int64 = kib * 1024
-	gib    int64 = mib * 1024
-	gib100 int64 = gib * 100
-	tib    int64 = gib * 1024
-	tib100 int64 = tib * 100
+	kib int64 = 1024
+	mib       = kib * 1024
+	gib       = mib * 1024
+	tib       = gib * 1024
 )
 
 type hostPath struct {
@@ -54,7 +52,8 @@ type hostPath struct {
 
 	ids *identityServer
 	ns  *nodeServer
-	cs  *controllerServer
+
+	root string
 }
 
 type hostPathVolume struct {
@@ -63,44 +62,34 @@ type hostPathVolume struct {
 	VolSize       int64      `json:"volSize"`
 	VolPath       string     `json:"volPath"`
 	VolAccessType accessType `json:"volAccessType"`
-	ParentVolID   string     `json:"parentVolID,omitempty"`
-	ParentSnapID  string     `json:"parentSnapID,omitempty"`
-	Ephemeral     bool       `json:"ephemeral"`
+	TargetPath    string     `json:"targetPath"`
 }
-
-/*type hostPathSnapshot struct {
-	Name         string              `json:"name"`
-	Id           string              `json:"id"`
-	VolID        string              `json:"volID"`
-	Path         string              `json:"path"`
-	CreationTime *timestamp.Timestamp `json:"creationTime"`
-	SizeBytes    int64               `json:"sizeBytes"`
-	ReadyToUse   bool                `json:"readyToUse"`
-}*/
 
 var (
 	vendorVersion = "dev"
 
 	hostPathVolumes map[string]hostPathVolume
-	//hostPathVolumeSnapshots map[string]hostPathSnapshot
 )
 
 const (
 	// Directory where data for volumes and snapshots are persisted.
 	// This can be ephemeral within the container or persisted if
 	// backed by a Pod volume.
-	dataRoot = "/csi-data-dir"
-
-	// Extension with which snapshot files will be saved.
-	snapshotExt = ".snap"
+	DataRoot = "/csi-data-dir"
 )
 
 func init() {
 	hostPathVolumes = map[string]hostPathVolume{}
-	//hostPathVolumeSnapshots = map[string]hostPathSnapshot{}
 }
 
-func NewHostPathDriver(driverName, nodeID, endpoint string, ephemeral bool, maxVolumesPerNode int64, version string) (*hostPath, error) {
+type HostPathDriver interface {
+	createHostpathVolume(volID, podNamespace, podName, podUID, podSA, targetPath string, cap int64, volAccessType accessType) (*hostPathVolume, error)
+	deleteHostpathVolume(volID string) error
+	getVolumePath(volID, podNamespace, podName, podUID, podSA string) string
+	mapVolumeToPod(hpv *hostPathVolume) error
+}
+
+func NewHostPathDriver(root, driverName, nodeID, endpoint string, maxVolumesPerNode int64, version string) (*hostPath, error) {
 	if driverName == "" {
 		return nil, errors.New("no driver name provided")
 	}
@@ -116,8 +105,8 @@ func NewHostPathDriver(driverName, nodeID, endpoint string, ephemeral bool, maxV
 		vendorVersion = version
 	}
 
-	if err := os.MkdirAll(dataRoot, 0750); err != nil {
-		return nil, fmt.Errorf("failed to create dataRoot: %v", err)
+	if err := os.MkdirAll(root, 0750); err != nil {
+		return nil, fmt.Errorf("failed to create DataRoot: %v", err)
 	}
 
 	glog.Infof("Driver: %v ", driverName)
@@ -128,49 +117,18 @@ func NewHostPathDriver(driverName, nodeID, endpoint string, ephemeral bool, maxV
 		version:           vendorVersion,
 		nodeID:            nodeID,
 		endpoint:          endpoint,
-		ephemeral:         ephemeral,
 		maxVolumesPerNode: maxVolumesPerNode,
+		root:              root,
 	}, nil
 }
-
-/*func getSnapshotID(file string) (bool, string) {
-	glog.V(4).Infof("file: %s", file)
-	// Files with .snap extension are volumesnapshot files.
-	// e.g. foo.snap, foo.bar.snap
-	if filepath.Ext(file) == snapshotExt {
-		return true, strings.TrimSuffix(file, snapshotExt)
-	}
-	return false, ""
-}
-
-func discoverExistingSnapshots() {
-	glog.V(4).Infof("discovering existing snapshots in %s", dataRoot)
-	files, err := ioutil.ReadDir(dataRoot)
-	if err != nil {
-		glog.Errorf("failed to discover snapshots under %s: %v", dataRoot, err)
-	}
-	for _, file := range files {
-		isSnapshot, snapshotID := getSnapshotID(file.Name())
-		if isSnapshot {
-			glog.V(4).Infof("adding snapshot %s from file %s", snapshotID, getSnapshotPath(snapshotID))
-			hostPathVolumeSnapshots[snapshotID] = hostPathSnapshot{
-				Id:         snapshotID,
-				Path:       getSnapshotPath(snapshotID),
-				ReadyToUse: true,
-			}
-		}
-	}
-}*/
 
 func (hp *hostPath) Run() {
 	// Create GRPC servers
 	hp.ids = NewIdentityServer(hp.name, hp.version)
-	hp.ns = NewNodeServer(hp.nodeID, hp.ephemeral, hp.maxVolumesPerNode)
-	hp.cs = NewControllerServer(hp.ephemeral, hp.nodeID)
+	hp.ns = NewNodeServer(hp)
 
-	//discoverExistingSnapshots()
 	s := NewNonBlockingGRPCServer()
-	s.Start(hp.endpoint, hp.ids, hp.cs, hp.ns)
+	s.Start(hp.endpoint, hp.ids, hp.ns)
 	s.Wait()
 }
 
@@ -181,172 +139,173 @@ func getVolumeByID(volumeID string) (hostPathVolume, error) {
 	return hostPathVolume{}, fmt.Errorf("volume id %s does not exist in the volumes list", volumeID)
 }
 
-func getVolumeByName(volName string) (hostPathVolume, error) {
-	for _, hostPathVol := range hostPathVolumes {
-		if hostPathVol.VolName == volName {
-			return hostPathVol, nil
-		}
-	}
-	return hostPathVolume{}, fmt.Errorf("volume name %s does not exist in the volumes list", volName)
-}
-
-/*func getSnapshotByName(name string) (hostPathSnapshot, error) {
-	for _, snapshot := range hostPathVolumeSnapshots {
-		if snapshot.Name == name {
-			return snapshot, nil
-		}
-	}
-	return hostPathSnapshot{}, fmt.Errorf("snapshot name %s does not exist in the snapshots list", name)
-}*/
-
 // getVolumePath returns the canonical path for hostpath volume
-func getVolumePath(volID string) string {
-	return filepath.Join(dataRoot, volID)
+func (hp *hostPath) getVolumePath(volID, podNamespace, podName, podUID, podSA string) string {
+	return filepath.Join(hp.root, volID, podNamespace, podName, podUID, podSA)
 }
 
-func commonUpsertRanger(path string, key, value interface{}) bool {
+func createFile(path string, buf []byte) {
+	file, err := os.Create(path)
+	if err != nil {
+		glog.Errorf("error creating file %s: %s", path, err.Error())
+		return
+	}
+	defer file.Close()
+	file.Write(buf)
+}
+
+func commonUpsertRanger(volPath, podPath string, key, value interface{}) bool {
 	buf, err := json.MarshalIndent(value, "", "    ")
 	if err != nil {
 		glog.Errorf("error marshalling: %s", err.Error())
 		return true
 	}
-	filePath := filepath.Join(path, fmt.Sprintf("%s", key))
-	glog.V(0).Infof("GGM create/update file %s", filePath)
-	// for now, since os.Create truncates existing files (i.e. it becomes a replace operation),
+	volFilePath := filepath.Join(volPath, fmt.Sprintf("%s", key))
+	glog.V(4).Infof("create/update file %s", volFilePath)
+	// since os.Create truncates existing files (i.e. it becomes a replace operation),
 	// we employ the same logic for create and update; but if we change the file
 	// system interaction mechanism such that create and update are treated differently, we'll
 	// need separate callbacks for each
-	file, err := os.Create(filePath)
-	defer file.Close()
-	file.Write(buf)
+	createFile(volFilePath, buf)
+	// now update the pod mount
+	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
+	createFile(podFilePath, buf)
 	return true
 }
 
-func commonDeleteRanger(path string, key interface{}) bool {
-	filePath := filepath.Join(path, fmt.Sprintf("%s", key))
-	os.Remove(filePath)
+func commonDeleteRanger(volPath, podPath string, key interface{}) bool {
+	volFilePath := filepath.Join(volPath, fmt.Sprintf("%s", key))
+	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
+	os.Remove(volFilePath)
+	os.Remove(podFilePath)
 	return true
+}
+
+func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
+	podConfigMapsPath := filepath.Join(hpv.TargetPath, "configmaps")
+	// for now, since os.MkdirAll does nothing and returns no error when the path already
+	// exists, we have a common path for both create and update; but if we change the file
+	// system interaction mechanism such that create and update are treated differently, we'll
+	// need separate callbacks for each
+	err := os.MkdirAll(podConfigMapsPath, 0777)
+	if err != nil {
+		return err
+	}
+	volConfigMapsPath := filepath.Join(hpv.VolPath, "configmaps")
+	upsertRangerCM := func(key, value interface{}) bool {
+		return commonUpsertRanger(volConfigMapsPath, podConfigMapsPath, key, value)
+	}
+	objcache.RegisterConfigMapUpsertCallback(hpv.VolID, upsertRangerCM)
+	deleteRangerCM := func(key, value interface{}) bool {
+		return commonDeleteRanger(volConfigMapsPath, podConfigMapsPath, key)
+	}
+	objcache.RegisterConfigMapDeleteCallback(hpv.VolID, deleteRangerCM)
+
+	podSecretsPath := filepath.Join(hpv.TargetPath, "secrets")
+	err = os.MkdirAll(podSecretsPath, 0777)
+	if err != nil {
+		return err
+	}
+	volSecretsPath := filepath.Join(hpv.VolPath, "secrets")
+	upsertRangerSec := func(key, value interface{}) bool {
+		return commonUpsertRanger(volSecretsPath, podSecretsPath, key, value)
+	}
+	objcache.RegisterSecretUpsertCallback(hpv.VolID, upsertRangerSec)
+	deleteRangerSec := func(key, value interface{}) bool {
+		return commonDeleteRanger(volSecretsPath, podSecretsPath, key)
+	}
+	objcache.RegisterSecretDeleteCallback(hpv.VolID, deleteRangerSec)
+	return nil
 }
 
 // createVolume create the directory for the hostpath volume.
 // It returns the volume path or err if one occurs.
-func createHostpathVolume(volID, name string, cap int64, volAccessType accessType, ephemeral bool) (*hostPathVolume, error) {
-	path := getVolumePath(volID)
+func (hp *hostPath) createHostpathVolume(volID, podNamespace, podName, podUID, podSA, targetPath string, cap int64, volAccessType accessType) (*hostPathVolume, error) {
+	volPath := hp.getVolumePath(volID, podNamespace, podName, podUID, podSA)
 
 	switch volAccessType {
 	case mountAccess:
-		err := os.MkdirAll(path, 0777)
+		err := os.MkdirAll(volPath, 0777)
 		if err != nil {
 			return nil, err
 		}
-		configMapsPath := filepath.Join(path, "configmaps")
+		volConfigMapsPath := filepath.Join(volPath, "configmaps")
 		// for now, since os.MkdirAll does nothing and returns no error when the path already
 		// exists, we have a common path for both create and update; but if we change the file
 		// system interaction mechanism such that create and update are treated differently, we'll
 		// need separate callbacks for each
-		err = os.MkdirAll(configMapsPath, 0777)
-		if err == nil {
-			upsertRanger := func(key, value interface{}) bool {
-				return commonUpsertRanger(configMapsPath, key, value)
-			}
-			objcache.RegisterConfigMapUpsertCallback(volID, upsertRanger)
-			deleteRanger := func(key, value interface{}) bool {
-				return commonDeleteRanger(configMapsPath, key)
-			}
-			objcache.RegisterConfigMapDeleteCallback(volID, deleteRanger)
-		}
-		secretsPath := filepath.Join(path, "secrets")
-		err = os.MkdirAll(secretsPath, 0777)
-		if err == nil {
-			upsertRanger := func(key, value interface{}) bool {
-				return commonUpsertRanger(secretsPath, key, value)
-			}
-			objcache.RegisterSecretUpsertCallback(volID, upsertRanger)
-			deleteRanger := func(key, value interface{}) bool {
-				return commonDeleteRanger(secretsPath, key)
-			}
-			objcache.RegisterSecretDeleteCallback(volID, deleteRanger)
+		err = os.MkdirAll(volConfigMapsPath, 0777)
+		if err != nil {
+			return nil, err
 		}
 
-	/*case blockAccess:
-	executor := utilexec.New()
-	size := fmt.Sprintf("%dM", cap/mib)
-	// Create a block file.
-	out, err := executor.Command("fallocate", "-l", size, path).CombinedOutput()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create block device: %v, %v", err, string(out))
-	}
-
-	// Associate block file with the loop device.
-	volPathHandler := volumepathhandler.VolumePathHandler{}
-	_, err = volPathHandler.AttachFileDevice(path)
-	if err != nil {
-		// Remove the block file because it'll no longer be used again.
-		if err2 := os.Remove(path); err2 != nil {
-			glog.Errorf("failed to cleanup block file %s: %v", path, err2)
+		volSecretsPath := filepath.Join(volPath, "secrets")
+		err = os.MkdirAll(volSecretsPath, 0777)
+		if err != nil {
+			return nil, err
 		}
-		return nil, fmt.Errorf("failed to attach device %v: %v", path, err)
-	}*/
+
 	default:
 		return nil, fmt.Errorf("unsupported access type %v", volAccessType)
 	}
 
 	hostpathVol := hostPathVolume{
 		VolID:         volID,
-		VolName:       name,
 		VolSize:       cap,
-		VolPath:       path,
+		VolPath:       volPath,
 		VolAccessType: volAccessType,
-		Ephemeral:     ephemeral,
+		TargetPath:    targetPath,
 	}
 	hostPathVolumes[volID] = hostpathVol
 	return &hostpathVol, nil
 }
 
-// updateVolume updates the existing hostpath volume.
-func updateHostpathVolume(volID string, volume hostPathVolume) error {
-	glog.V(4).Infof("updating hostpath volume: %s", volID)
-
-	if _, err := getVolumeByID(volID); err != nil {
-		return err
+func isDirEmpty(name string) (bool, error) {
+	f, err := os.Open(name)
+	if err != nil {
+		glog.Warningf("error opening %s during empty check: %s", name, err.Error())
+		return false, err
 	}
+	defer f.Close()
 
-	hostPathVolumes[volID] = volume
-	return nil
+	_, err = f.Readdirnames(1) // Or f.Readdir(1)
+	if err == io.EOF {
+		return true, nil
+	}
+	return false, err // Either not empty or error, suits both cases
+}
+
+func deleteIfEmpty(name string) {
+	if empty, err := isDirEmpty(name); empty && err == nil {
+		err = os.RemoveAll(name)
+		if err != nil {
+			glog.Warningf("error deleting %s: %s", name, err.Error())
+		}
+	}
 }
 
 // deleteVolume deletes the directory for the hostpath volume.
-func deleteHostpathVolume(volID string) error {
+func (hp *hostPath) deleteHostpathVolume(volID string) error {
 	glog.V(4).Infof("deleting hostpath volume: %s", volID)
 
-	/*vol, err := getVolumeByID(volID)
-	if err != nil {
-		// Return OK if the volume is not found.
-		return nil
-	}
-
-	if vol.VolAccessType == blockAccess {
-		volPathHandler := volumepathhandler.VolumePathHandler{}
-		// Get the associated loop device.
-		device, err := volPathHandler.GetLoopDevice(getVolumePath(volID))
+	hpv, ok := hostPathVolumes[volID]
+	if ok {
+		// reminder, path is filepath.Join(DataRoot, volID, podNamespace, podName, podUID, podSA)
+		// delete SA dir
+		err := os.RemoveAll(hpv.VolPath)
 		if err != nil {
-			return fmt.Errorf("failed to get the loop device: %v", err)
+			glog.Warningf("error deleting %s: %s", hpv.VolPath, err.Error())
 		}
-
-		if device != "" {
-			// Remove any associated loop device.
-			glog.V(4).Infof("deleting loop device %s", device)
-			if err := volPathHandler.RemoveLoopDevice(device); err != nil {
-				return fmt.Errorf("failed to remove loop device %v: %v", device, err)
-			}
-		}
-	}*/
-
-	path := getVolumePath(volID)
-	if err := os.RemoveAll(path); err != nil && !os.IsNotExist(err) {
-		return err
+		uidPath := filepath.Dir(hpv.VolPath)
+		deleteIfEmpty(uidPath)
+		namePath := filepath.Dir(uidPath)
+		deleteIfEmpty(namePath)
+		namespacePath := filepath.Dir(namePath)
+		deleteIfEmpty(namespacePath)
+		volidPath := filepath.Dir(namespacePath)
+		deleteIfEmpty(volidPath)
+		delete(hostPathVolumes, volID)
 	}
-	delete(hostPathVolumes, volID)
 	objcache.UnregisterSecretUpsertCallback(volID)
 	objcache.UnregisterSecretDeleteCallback(volID)
 	objcache.UnregisterConfigMapDeleteCallback(volID)
@@ -370,37 +329,6 @@ func hostPathIsEmpty(p string) (bool, error) {
 	return false, err
 }
 
-// loadFromSnapshot populates the given destPath with data from the snapshotID
-/*func loadFromSnapshot(size int64, snapshotId, destPath string, mode accessType) error {
-	snapshot, ok := hostPathVolumeSnapshots[snapshotId]
-	if !ok {
-		return status.Errorf(codes.NotFound, "cannot find snapshot %v", snapshotId)
-	}
-	if snapshot.ReadyToUse != true {
-		return status.Errorf(codes.Internal, "snapshot %v is not yet ready to use.", snapshotId)
-	}
-	if snapshot.SizeBytes > size {
-		return status.Errorf(codes.InvalidArgument, "snapshot %v size %v is greater than requested volume size %v", snapshotId, snapshot.SizeBytes, size)
-	}
-	snapshotPath := snapshot.Path
-
-	var cmd []string
-	switch mode {
-	case mountAccess:
-		cmd = []string{"tar", "zxvf", snapshotPath, "-C", destPath}
-	case blockAccess:
-		cmd = []string{"dd", "if=" + snapshotPath, "of=" + destPath}
-	default:
-		return status.Errorf(codes.InvalidArgument, "unknown accessType: %d", mode)
-	}
-	executor := utilexec.New()
-	out, err := executor.Command(cmd[0], cmd[1:]...).CombinedOutput()
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed pre-populate data from snapshot %v: %v: %s", snapshotId, err, out)
-	}
-	return nil
-}*/
-
 // loadFromVolume populates the given destPath with data from the srcVolumeID
 func loadFromVolume(size int64, srcVolumeId, destPath string, mode accessType) error {
 	hostPathVolume, ok := hostPathVolumes[srcVolumeId]
@@ -417,8 +345,6 @@ func loadFromVolume(size int64, srcVolumeId, destPath string, mode accessType) e
 	switch mode {
 	case mountAccess:
 		return loadFromFilesystemVolume(hostPathVolume, destPath)
-	case blockAccess:
-		return loadFromBlockVolume(hostPathVolume, destPath)
 	default:
 		return status.Errorf(codes.InvalidArgument, "unknown accessType: %d", mode)
 	}
@@ -439,17 +365,6 @@ func loadFromFilesystemVolume(hostPathVolume hostPathVolume, destPath string) er
 		if err != nil {
 			return status.Errorf(codes.Internal, "failed pre-populate data from volume %v: %v: %s", hostPathVolume.VolID, err, out)
 		}
-	}
-	return nil
-}
-
-func loadFromBlockVolume(hostPathVolume hostPathVolume, destPath string) error {
-	srcPath := hostPathVolume.VolPath
-	args := []string{"if=" + srcPath, "of=" + destPath}
-	executor := utilexec.New()
-	out, err := executor.Command("dd", args...).CombinedOutput()
-	if err != nil {
-		return status.Errorf(codes.Internal, "failed pre-populate data from volume %v: %v: %s", hostPathVolume.VolID, err, out)
 	}
 	return nil
 }

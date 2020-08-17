@@ -61,15 +61,11 @@ func (ids *identityServer) GetPluginCapabilities(ctx context.Context, req *csi.G
 	glog.V(5).Infof("Using default capabilities")
 	return &csi.GetPluginCapabilitiesResponse{
 		Capabilities: []*csi.PluginCapability{
-			{
-				Type: &csi.PluginCapability_Service_{
-					Service: &csi.PluginCapability_Service{
-						Type: csi.PluginCapability_Service_CONTROLLER_SERVICE,
-					},
-				},
-			},
-			//TODO GGM true with original StatefulSet based hostpath, but with our switch to DaemonSet, etc.
-			// perhaps this should be removed
+			// Even with the use of a DaemonSet so that this plugin runs on every node, this plugin does not
+			// guarantee that the *same* volume is present on all nodes; now, equivalent data could be present
+			// on different nodes via different volumes, as a function of different pods residing on different
+			// nodes have access to the same subset of shared configmpas/secrets, but that does not satisfy
+			// the definition around csi.PluginCapability_Service_VOLUME_ACCESSIBILITY_CONSTRAINTS
 			{
 				Type: &csi.PluginCapability_Service_{
 					Service: &csi.PluginCapability_Service{

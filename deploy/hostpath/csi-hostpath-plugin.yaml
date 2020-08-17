@@ -73,7 +73,6 @@ spec:
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"
-            - "--ephemeral=true"
           env:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
@@ -119,11 +118,15 @@ spec:
             path: /var/lib/kubelet/plugins
             type: Directory
           name: plugins-dir
-        - hostPath:
+        #- hostPath:
             # 'path' is where PV data is persisted on host.
             # using /tmp is also possible while the PVs will not available after plugin container recreation or host reboot
-            path: /var/lib/csi-hostpath-data/
-            type: DirectoryOrCreate
+        #    path: /var/lib/csi-hostpath-data/
+        #    type: DirectoryOrCreate
+        #  name: csi-data-dir
+        - emptyDir:
+            # this tells Kubernetes to mount a tmpfs (RAM-backed filesystem)
+            medium: Memory
           name: csi-data-dir
         - hostPath:
             path: /dev

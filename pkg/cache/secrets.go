@@ -34,7 +34,7 @@ func UnregisterSecretUpsertCallback(volID string) {
 }
 
 func RegisterSecretDeleteCallback(volID string, f func(key, value interface{}) bool) {
-	secretUpsertCallbacks.Store(volID, f)
+	secretDeleteCallbacks.Store(volID, f)
 }
 
 func UnregisterSecretDeleteCallback(voldID string) {
