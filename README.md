@@ -198,4 +198,57 @@ Then, use the following command to locate the file. If everything works OK you s
 / # exit
 ```
 
+## Confirm openshift-config Secret/ConfigMap data present
 
+This current version of the driver as POC also watches the `ConfigMaps` and `Secrets` in the `openshift-config` 
+namespace and places that data in the provide `Volume` as well.
+
+To verify, go back into the `Pod` named `my-csi-app` and list the contents:
+
+  ```shell
+  $ kubectl exec -it my-csi-app /bin/sh
+  / # ls -lR /data
+  / # exit
+  ```
+
+You should see contents like:
+
+```shell
+ls -lR /data
+/data:
+total 8
+drwxr-xr-x    2 root     root          4096 Aug  7 16:07 configmaps
+drwxr-xr-x    2 root     root          4096 Aug  7 16:07 secrets
+
+/data/configmaps:
+total 36
+-rw-r--r--    1 root     root          2050 Aug  7 16:07 openshift-config:admin-kubeconfig-client-ca
+-rw-r--r--    1 root     root          1992 Aug  7 16:07 openshift-config:etcd-ca-bundle
+-rw-r--r--    1 root     root          2024 Aug  7 16:07 openshift-config:etcd-metric-serving-ca
+-rw-r--r--    1 root     root          1994 Aug  7 16:07 openshift-config:etcd-serving-ca
+-rw-r--r--    1 root     root           840 Aug  7 16:07 openshift-config:initial-etcd-ca
+-rw-r--r--    1 root     root          6848 Aug  7 16:07 openshift-config:initial-kube-apiserver-server-ca
+-rw-r--r--    1 root     root           970 Aug  7 16:07 openshift-config:openshift-install
+-rw-r--r--    1 root     root           990 Aug  7 16:07 openshift-config:openshift-install-manifests
+
+/data/secrets:
+total 236
+-rw-r--r--    1 root     root         12749 Aug  7 16:07 openshift-config:builder-dockercfg-lnx4c
+-rw-r--r--    1 root     root         24100 Aug  7 16:07 openshift-config:builder-token-r87zm
+-rw-r--r--    1 root     root         23657 Aug  7 16:07 openshift-config:builder-token-s2rcl
+-rw-r--r--    1 root     root         12749 Aug  7 16:07 openshift-config:default-dockercfg-pzxpf
+-rw-r--r--    1 root     root         23657 Aug  7 16:07 openshift-config:default-token-fk5mn
+-rw-r--r--    1 root     root         24100 Aug  7 16:07 openshift-config:default-token-pv2n2
+-rw-r--r--    1 root     root         12806 Aug  7 16:07 openshift-config:deployer-dockercfg-rk4mr
+-rw-r--r--    1 root     root         23668 Aug  7 16:07 openshift-config:deployer-token-ktqgk
+-rw-r--r--    1 root     root         24111 Aug  7 16:07 openshift-config:deployer-token-mnglk
+-rw-r--r--    1 root     root          4764 Aug  7 16:07 openshift-config:etcd-client
+-rw-r--r--    1 root     root          4822 Aug  7 16:07 openshift-config:etcd-metric-client
+-rw-r--r--    1 root     root          4730 Aug  7 16:07 openshift-config:etcd-metric-signer
+-rw-r--r--    1 root     root          4696 Aug  7 16:07 openshift-config:etcd-signer
+-rw-r--r--    1 root     root          3185 Aug  7 16:07 openshift-config:initial-service-account-private-key
+-rw-r--r--    1 root     root          4729 Aug  7 16:07 openshift-config:pull-secret
+```
+
+To facilitate validation of the contents, including post-creation updates, the data is currently 
+stored as formatted `json`. 

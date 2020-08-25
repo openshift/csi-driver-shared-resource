@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: projected-resource-secret-configmap-watch
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+      - configmaps
+    verbs:
+      - get
+      - list
+      - watch
