@@ -23,12 +23,13 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/golang/glog"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
+
+	"k8s.io/klog"
 )
 
 func NewNonBlockingGRPCServer() *nonBlockingGRPCServer {
@@ -66,19 +67,19 @@ func (s *nonBlockingGRPCServer) serve(endpoint string, ids csi.IdentityServer, n
 
 	proto, addr, err := parseEndpoint(endpoint)
 	if err != nil {
-		glog.Fatal(err.Error())
+		klog.Fatal(err.Error())
 	}
 
 	if proto == "unix" {
 		addr = "/" + addr
 		if err := os.Remove(addr); err != nil && !os.IsNotExist(err) { //nolint: vetshadow
-			glog.Fatalf("Failed to remove %s, error: %s", addr, err.Error())
+			klog.Fatalf("Failed to remove %s, error: %s", addr, err.Error())
 		}
 	}
 
 	listener, err := net.Listen(proto, addr)
 	if err != nil {
-		glog.Fatalf("Failed to listen: %v", err)
+		klog.Fatalf("Failed to listen: %v", err)
 	}
 
 	opts := []grpc.ServerOption{
@@ -94,7 +95,7 @@ func (s *nonBlockingGRPCServer) serve(endpoint string, ids csi.IdentityServer, n
 		csi.RegisterNodeServer(server, ns)
 	}
 
-	glog.Infof("Listening for connections on address: %#v", listener.Addr())
+	klog.Infof("Listening for connections on address: %#v", listener.Addr())
 
 	server.Serve(listener)
 
@@ -111,13 +112,13 @@ func parseEndpoint(ep string) (string, string, error) {
 }
 
 func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	glog.V(3).Infof("GRPC call: %s", info.FullMethod)
-	glog.V(5).Infof("GRPC request: %+v", protosanitizer.StripSecrets(req))
+	klog.V(3).Infof("GRPC call: %s", info.FullMethod)
+	klog.V(5).Infof("GRPC request: %+v", protosanitizer.StripSecrets(req))
 	resp, err := handler(ctx, req)
 	if err != nil {
-		glog.Errorf("GRPC error: %v", err)
+		klog.Errorf("GRPC error: %v", err)
 	} else {
-		glog.V(5).Infof("GRPC response: %+v", protosanitizer.StripSecrets(resp))
+		klog.V(5).Infof("GRPC response: %+v", protosanitizer.StripSecrets(resp))
 	}
 	return resp, err
 }

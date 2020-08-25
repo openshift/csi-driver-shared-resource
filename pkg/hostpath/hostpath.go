@@ -20,19 +20,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	objcache "github.com/openshift/projected-resource-csi-driver/pkg/cache"
 	"io"
-	//"io/ioutil"
 	"os"
 	"path/filepath"
-	//"strings"
 
-	"github.com/golang/glog"
+	objcache "github.com/openshift/projected-resource-csi-driver/pkg/cache"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	//"k8s.io/kubernetes/pkg/volume/util/volumepathhandler"
+
+	"k8s.io/klog"
 	utilexec "k8s.io/utils/exec"
-	//timestamp "github.com/golang/protobuf/ptypes/timestamp"
 )
 
 const (
@@ -109,8 +106,8 @@ func NewHostPathDriver(root, driverName, nodeID, endpoint string, maxVolumesPerN
 		return nil, fmt.Errorf("failed to create DataRoot: %v", err)
 	}
 
-	glog.Infof("Driver: %v ", driverName)
-	glog.Infof("Version: %s", vendorVersion)
+	klog.Infof("Driver: %v ", driverName)
+	klog.Infof("Version: %s", vendorVersion)
 
 	return &hostPath{
 		name:              driverName,
@@ -147,7 +144,7 @@ func (hp *hostPath) getVolumePath(volID, podNamespace, podName, podUID, podSA st
 func createFile(path string, buf []byte) {
 	file, err := os.Create(path)
 	if err != nil {
-		glog.Errorf("error creating file %s: %s", path, err.Error())
+		klog.Errorf("error creating file %s: %s", path, err.Error())
 		return
 	}
 	defer file.Close()
@@ -157,11 +154,11 @@ func createFile(path string, buf []byte) {
 func commonUpsertRanger(volPath, podPath string, key, value interface{}) bool {
 	buf, err := json.MarshalIndent(value, "", "    ")
 	if err != nil {
-		glog.Errorf("error marshalling: %s", err.Error())
+		klog.Errorf("error marshalling: %s", err.Error())
 		return true
 	}
 	volFilePath := filepath.Join(volPath, fmt.Sprintf("%s", key))
-	glog.V(4).Infof("create/update file %s", volFilePath)
+	klog.V(4).Infof("create/update file %s", volFilePath)
 	// since os.Create truncates existing files (i.e. it becomes a replace operation),
 	// we employ the same logic for create and update; but if we change the file
 	// system interaction mechanism such that create and update are treated differently, we'll
@@ -263,7 +260,7 @@ func (hp *hostPath) createHostpathVolume(volID, podNamespace, podName, podUID, p
 func isDirEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {
-		glog.Warningf("error opening %s during empty check: %s", name, err.Error())
+		klog.Warningf("error opening %s during empty check: %s", name, err.Error())
 		return false, err
 	}
 	defer f.Close()
@@ -279,14 +276,14 @@ func deleteIfEmpty(name string) {
 	if empty, err := isDirEmpty(name); empty && err == nil {
 		err = os.RemoveAll(name)
 		if err != nil {
-			glog.Warningf("error deleting %s: %s", name, err.Error())
+			klog.Warningf("error deleting %s: %s", name, err.Error())
 		}
 	}
 }
 
 // deleteVolume deletes the directory for the hostpath volume.
 func (hp *hostPath) deleteHostpathVolume(volID string) error {
-	glog.V(4).Infof("deleting hostpath volume: %s", volID)
+	klog.V(4).Infof("deleting hostpath volume: %s", volID)
 
 	hpv, ok := hostPathVolumes[volID]
 	if ok {
@@ -294,7 +291,7 @@ func (hp *hostPath) deleteHostpathVolume(volID string) error {
 		// delete SA dir
 		err := os.RemoveAll(hpv.VolPath)
 		if err != nil {
-			glog.Warningf("error deleting %s: %s", hpv.VolPath, err.Error())
+			klog.Warningf("error deleting %s: %s", hpv.VolPath, err.Error())
 		}
 		uidPath := filepath.Dir(hpv.VolPath)
 		deleteIfEmpty(uidPath)
