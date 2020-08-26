@@ -24,15 +24,12 @@ verify: ## Run verifications. Example: make verify
 
 build: ## Build the executable. Example: make build
 	go build -a -race -ldflags $(LDFLAGS) -o _output/hostpathplugin ./cmd/hostpathplugin
-	go build -a -race -ldflags $(LDFLAGS) -o _output/csi-node-driver-registrar ./cmd/csi-node-driver-registrar
 .PHONY: build
 
 build-images: ## Build the images and push them to the remote registry. Example: make build-images
 	rm -rf _output
 	docker build -f images/hostpathplugin/Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG) .
 	docker push $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG)
-	docker build -f images/csi-node-driver-registrar/Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-csi-node-driver-registrar:$(TAG) .
-	docker push $(REGISTRY)/$(REPOSITORY)/origin-csi-node-driver-registrar:$(TAG)
 .PHONY: build-image
 
 clean: ## Clean up the workspace. Example: make clean
