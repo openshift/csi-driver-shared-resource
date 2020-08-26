@@ -8,9 +8,6 @@ github.com/go-logr/logr
 # github.com/gogo/protobuf v1.3.1
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/sortkeys
-# github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-## explicit
-github.com/golang/glog
 # github.com/golang/protobuf v1.4.2
 github.com/golang/protobuf/descriptor
 github.com/golang/protobuf/proto
@@ -412,6 +409,9 @@ k8s.io/client-go/util/flowcontrol
 k8s.io/client-go/util/homedir
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
+# k8s.io/klog v1.0.0
+## explicit
+k8s.io/klog
 # k8s.io/klog/v2 v2.2.0
 k8s.io/klog/v2
 # k8s.io/utils v0.0.0-20200731180307-f00132d28269
