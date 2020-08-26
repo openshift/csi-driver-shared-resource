@@ -1,50 +1,49 @@
-# Copyright 2018 The Kubernetes Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Allows overriding of the registry to push the generated image to
+REGISTRY ?= quay.io
+# Allows overriding of the repository to push the image to
+REPOSITORY ?= openshift
+# Allows overriding of the tag to generate for the image
+TAG ?= latest
 
-
-GIT_COMMIT ?= $(shell git rev-parse HEAD)
-
-LDFLAGS?='-extldflags "-static"'
+LDFLAGS ?= '-extldflags "-static"'
 GO_FILES=$(shell go list ./...)
 
-# we'll change this once we are producing images out of CI/ART
-REPO=gmontero
+.DEFAULT_GOAL := help
 
-.PHONY: all build clean
+all: clean verify build test
+.PHONY: all
 
-all: clean build test
-
-test:
+test: ## Run unit tests. Example: make test
 	go test $(GO_FILES)
-verify:
+.PHONY: test
+
+verify: ## Run verifications. Example: make verify
 	go vet $(GO_FILES)
 	gofmt -w cmd/ pkg/
-build:
-	go build -a -ldflags $(LDFLAGS) -o _output/hostpathplugin ./cmd/hostpathplugin
-	go build -a -ldflags $(LDFLAGS) -o _output/csi-node-driver-registrar ./cmd/csi-node-driver-registrar
-build-images:
-	# save some time setting up the docker build context by deleting this first.
-	rm -rf _output
-	docker build -f images/hostpathplugin/Dockerfile -t docker.io/$(REPO)/origin-projected-resource-csi-driver:latest .
-	docker push docker.io/$(REPO)/origin-projected-resource-csi-driver:latest
-	docker build -f images/csi-node-driver-registrar/Dockerfile -t docker.io/$(REPO)/origin-csi-node-driver-registrar:latest .
-	docker push docker.io/$(REPO)/origin-csi-node-driver-registrar:latest
-clean:
-	rm -rf _output
+.PHONY: verify
 
-.PHONY: mod
-mod:
+build: ## Build the executable. Example: make build
+	go build -a -race -ldflags $(LDFLAGS) -o _output/hostpathplugin ./cmd/hostpathplugin
+	go build -a -race -ldflags $(LDFLAGS) -o _output/csi-node-driver-registrar ./cmd/csi-node-driver-registrar
+.PHONY: build
+
+build-images: ## Build the images and push them to the remote registry. Example: make build-images
+	rm -rf _output
+	docker build -f images/hostpathplugin/Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG) .
+	docker push $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG)
+	docker build -f images/csi-node-driver-registrar/Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-csi-node-driver-registrar:$(TAG) .
+	docker push $(REGISTRY)/$(REPOSITORY)/origin-csi-node-driver-registrar:$(TAG)
+.PHONY: build-image
+
+clean: ## Clean up the workspace. Example: make clean
+	rm -rf _output
+.PHONY: clean
+
+vendor: ## Vendor Go dependencies. Example: make vendor
 	go mod tidy
 	go mod vendor
+.PHONY: vendor
 
+help: ## Print this help. Example: make help
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+.PHONY: help
