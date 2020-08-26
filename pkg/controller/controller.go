@@ -11,8 +11,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 
-	"github.com/golang/glog"
 	objcache "github.com/openshift/projected-resource-csi-driver/pkg/cache"
 	"github.com/openshift/projected-resource-csi-driver/pkg/client"
 )
@@ -171,7 +171,7 @@ func (c *Controller) syncConfigMap(event client.Event) error {
 		fmt.Print(msg)
 		return fmt.Errorf(msg)
 	}
-	glog.V(0).Infof("verb %s obj namespace %s name %s", event.Verb, cm.Namespace, cm.Name)
+	klog.V(0).Infof("verb %s obj namespace %s name %s", event.Verb, cm.Namespace, cm.Name)
 	// since we don't mutate we do not copy
 	switch event.Verb {
 	case client.DeleteObjectAction:
@@ -268,7 +268,7 @@ func (c *Controller) syncSecret(event client.Event) error {
 		return fmt.Errorf("unexpected object vs. secret: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
 	// since we don't mutate we do not copy
-	glog.V(0).Infof("verb %s obj namespace %s name %s", event.Verb, secret.Namespace, secret.Name)
+	klog.V(0).Infof("verb %s obj namespace %s name %s", event.Verb, secret.Namespace, secret.Name)
 	switch event.Verb {
 	case client.DeleteObjectAction:
 		objcache.DelSecret(secret)

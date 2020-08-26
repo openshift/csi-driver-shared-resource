@@ -21,12 +21,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/golang/glog"
 	"golang.org/x/net/context"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"k8s.io/klog"
 	"k8s.io/utils/mount"
 )
 
@@ -82,7 +83,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	podNamespace, podName, podUID, podSA := getPodDetails(req.GetVolumeContext())
-	glog.V(4).Infof("NodePublishVolume pod %s ns %s sa %s uid %s",
+	klog.V(4).Infof("NodePublishVolume pod %s ns %s sa %s uid %s",
 		podName,
 		podNamespace,
 		podSA,
@@ -107,10 +108,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	targetPath = req.GetTargetPath()
 	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), podNamespace, podName, podUID, podSA, targetPath, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
-		glog.Error("ephemeral mode failed to create volume: ", err)
+		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	glog.V(4).Infof("NodePublishVolume created volume: %s", vol.VolPath)
+	klog.V(4).Infof("NodePublishVolume created volume: %s", vol.VolPath)
 
 	if vol.VolAccessType != mountAccess {
 		return nil, status.Error(codes.InvalidArgument, "cannot publish a non-mount volume as mount volume")
@@ -146,7 +147,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	attrib := req.GetVolumeContext()
 	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
 
-	glog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
+	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		targetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
 	options := []string{} //"bind"}
@@ -208,12 +209,12 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 
 	err := mount.CleanupMountPoint(targetPath, ns.mounter, true)
 	if err != nil {
-		glog.Errorf("error cleaning and unmounting target path %s, err: %v for vol: %s", targetPath, err, volumeID)
+		klog.Errorf("error cleaning and unmounting target path %s, err: %v for vol: %s", targetPath, err, volumeID)
 	}
 
-	glog.V(4).Infof("hostpath: volume %s has been unpublished.", targetPath)
+	klog.V(4).Infof("hostpath: volume %s has been unpublished.", targetPath)
 
-	glog.V(4).Infof("deleting volume %s", volumeID)
+	klog.V(4).Infof("deleting volume %s", volumeID)
 	if err := ns.hp.deleteHostpathVolume(volumeID); err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete volume: %s", err))
 	}
