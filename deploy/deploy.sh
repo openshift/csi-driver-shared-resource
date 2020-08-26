@@ -21,7 +21,7 @@ run () {
 
 # deploy hostpath plugin and registrar sidecar
 echo "deploying hostpath components"
-for i in $(ls ${BASE_DIR}/hostpath/*.yaml | sort); do
+for i in $(ls ${BASE_DIR}/*.yaml | sort); do
     echo "   $i"
     run kubectl apply -f $i
 done
