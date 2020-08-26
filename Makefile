@@ -26,9 +26,9 @@ build: ## Build the executable. Example: make build
 	go build -a -race -ldflags $(LDFLAGS) -o _output/hostpathplugin ./cmd/hostpathplugin
 .PHONY: build
 
-build-images: ## Build the images and push them to the remote registry. Example: make build-images
+build-image: ## Build the images and push them to the remote registry. Example: make build-images
 	rm -rf _output
-	docker build -f images/hostpathplugin/Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG) .
+	docker build -f Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG) .
 	docker push $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG)
 .PHONY: build-image
 
