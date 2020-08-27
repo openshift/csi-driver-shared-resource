@@ -23,8 +23,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/openshift/projected-resource-csi-driver/pkg/controller"
-	"github.com/openshift/projected-resource-csi-driver/pkg/hostpath"
+	"github.com/openshift/csi-driver-projected-resource/pkg/controller"
+	"github.com/openshift/csi-driver-projected-resource/pkg/hostpath"
 )
 
 func init() {
