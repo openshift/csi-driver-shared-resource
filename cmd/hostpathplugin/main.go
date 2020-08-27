@@ -25,22 +25,20 @@ import (
 
 	"github.com/openshift/csi-driver-projected-resource/pkg/controller"
 	"github.com/openshift/csi-driver-projected-resource/pkg/hostpath"
-)
 
-func init() {
-	flag.Set("logtostderr", "true")
-}
+	"k8s.io/klog/v2"
+)
 
 var (
 	endpoint          = flag.String("endpoint", "unix://tmp/csi.sock", "CSI endpoint")
 	driverName        = flag.String("drivername", "projected-resource-csi-driver.openshift.io", "name of the driver")
 	nodeID            = flag.String("nodeid", "", "node id")
 	maxVolumesPerNode = flag.Int64("maxvolumespernode", 0, "limit of volumes per node")
-	// Set by the build process
-	version = ""
+	version           = ""
 )
 
 func main() {
+	klog.InitFlags(nil)
 	flag.Parse()
 
 	handle()
