@@ -24,7 +24,7 @@ import (
 	"os"
 	"path/filepath"
 
-	objcache "github.com/openshift/projected-resource-csi-driver/pkg/cache"
+	objcache "github.com/openshift/csi-driver-projected-resource/pkg/cache"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 

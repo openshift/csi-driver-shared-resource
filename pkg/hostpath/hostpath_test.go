@@ -18,15 +18,15 @@ package hostpath
 
 import (
 	"io/ioutil"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/openshift/projected-resource-csi-driver/pkg/cache"
+	"github.com/openshift/csi-driver-projected-resource/pkg/cache"
 )
 
 func testHostPathDriver() (*hostPath, string, error) {

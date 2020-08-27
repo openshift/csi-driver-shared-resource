@@ -13,8 +13,8 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
 
-	objcache "github.com/openshift/projected-resource-csi-driver/pkg/cache"
-	"github.com/openshift/projected-resource-csi-driver/pkg/client"
+	objcache "github.com/openshift/csi-driver-projected-resource/pkg/cache"
+	"github.com/openshift/csi-driver-projected-resource/pkg/client"
 )
 
 const (
