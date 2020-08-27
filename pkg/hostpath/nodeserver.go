@@ -150,11 +150,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		targetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
-	options := []string{} //"bind"}
-	//if readOnly {
-	//	options = append(options, "ro")
-	//}
-	path := ns.hp.getVolumePath(volumeId, podNamespace, podName, podUID, podSA)
+	options := []string{}
+	path := vol.VolPath
 
 	// NOTE: so our intent here is to have a separate tmpfs per pod; through experimentation
 	// and corroboration with OpenShift storage SMEs, a separate tmpfs per pod
@@ -166,8 +163,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// The various bits that work in concert to achieve this
 	// - the use of emptyDir with a medium of Memory in this drivers Deployment is all that is needed to get tmpfs
 	// - do not use the "bind" option, that reuses existing dirs/filesystems vs. creating new tmpfs
-	// - without bind, we have to specify an fstype of tmpfs, or we get errors on the Mount about the fs not being
-	//   block access
+	// - without bind, we have to specify an fstype of tmpfs and path for the mount source, or we get errors on the
+	//   Mount about the fs not being  block access
 	// - that said,  testing confirmed using fstype of tmpfs on hostpath/xfs volumes still results in the target
 	//   being xfs and not tmpfs
 	// - with the lack of a bind option, and each pod getting its own tmpfs we have to copy the data from our emptydir
