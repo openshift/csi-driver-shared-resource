@@ -41,16 +41,16 @@ result of deploying the hostpath driver, external provisioner, external attacher
 deploying hostpath components
    deploy/hostpath/00-namespace.yaml
 kubectl apply -f deploy/hostpath/00-namespace.yaml
-namespace/projected-resource-csi-driver created
+namespace/csi-driver-projected-resource created
    deploy/hostpath/01-service-account.yaml
 kubectl apply -f deploy/hostpath/01-service-account.yaml
-serviceaccount/projected-resource-csi-driver-plugin created
+serviceaccount/csi-driver-projected-resource-plugin created
    deploy/hostpath/03-cluster-role-binding.yaml
 kubectl apply -f deploy/hostpath/03-cluster-role-binding.yaml
 clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
    deploy/hostpath/csi-hostpath-driverinfo.yaml
 kubectl apply -f deploy/hostpath/csi-hostpath-driverinfo.yaml
-csidriver.storage.k8s.io/projected-resource-csi-driver.openshift.io created
+csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
    deploy/hostpath/csi-hostpath-plugin.yaml
 kubectl apply -f deploy/hostpath/csi-hostpath-plugin.yaml
 service/csi-hostpathplugin created
@@ -63,7 +63,7 @@ First, let's validate the deployment.  Ensure all expected pods are running for 
 3 node OCP cluster will look something like:
 
 ```shell
-$ kubectl get pods -n projected-resource-csi-driver
+$ kubectl get pods -n csi-driver-projected-resource
 NAME                       READY   STATUS    RESTARTS   AGE
 csi-hostpathplugin-c7bbk   2/2     Running   0          23m
 csi-hostpathplugin-m4smv   2/2     Running   0          23m
@@ -84,7 +84,7 @@ Finally, if you want to validate the volume, inspect the application pod `my-csi
 ```shell
 $ kubectl describe pods/my-csi-app
 Name:         my-csi-app
-Namespace:    projected-resource-csi-driver
+Namespace:    csi-driver-projected-resource
 Priority:     0
 Node:         ip-10-0-163-121.us-west-2.compute.internal/10.0.163.121
 Start Time:   Wed, 05 Aug 2020 14:23:57 -0400
@@ -141,7 +141,7 @@ Conditions:
 Volumes:
   my-csi-volume:
     Type:              CSI (a Container Storage Interface (CSI) volume source)
-    Driver:            projected-resource-csi-driver.openshift.io
+    Driver:            csi-driver-projected-resource.openshift.io
     FSType:            
     ReadOnly:          false
     VolumeAttributes:  <none>
@@ -156,7 +156,7 @@ Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
 Events:
   Type    Reason          Age        From                                                 Message
   ----    ------          ----       ----                                                 -------
-  Normal  Scheduled       <unknown>                                                       Successfully assigned projected-resource-csi-driver/my-csi-app to ip-10-0-163-121.us-west-2.compute.internal
+  Normal  Scheduled       <unknown>                                                       Successfully assigned csi-driver-projected-resource/my-csi-app to ip-10-0-163-121.us-west-2.compute.internal
   Normal  AddedInterface  28m        multus                                               Add eth0 [10.129.2.16/23]
   Normal  Pulling         28m        kubelet, ip-10-0-163-121.us-west-2.compute.internal  Pulling image "busybox"
   Normal  Pulled          28m        kubelet, ip-10-0-163-121.us-west-2.compute.internal  Successfully pulled image "busybox" in 3.626604306s
