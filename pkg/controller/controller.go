@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	objcache "github.com/openshift/csi-driver-projected-resource/pkg/cache"
 	"github.com/openshift/csi-driver-projected-resource/pkg/client"

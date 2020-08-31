@@ -28,7 +28,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 	utilexec "k8s.io/utils/exec"
 )
 
@@ -151,29 +151,20 @@ func createFile(path string, buf []byte) {
 	file.Write(buf)
 }
 
-func commonUpsertRanger(volPath, podPath string, key, value interface{}) bool {
+func commonUpsertRanger(podPath string, key, value interface{}) bool {
 	buf, err := json.MarshalIndent(value, "", "    ")
 	if err != nil {
 		klog.Errorf("error marshalling: %s", err.Error())
 		return true
 	}
-	volFilePath := filepath.Join(volPath, fmt.Sprintf("%s", key))
-	klog.V(4).Infof("create/update file %s", volFilePath)
-	// since os.Create truncates existing files (i.e. it becomes a replace operation),
-	// we employ the same logic for create and update; but if we change the file
-	// system interaction mechanism such that create and update are treated differently, we'll
-	// need separate callbacks for each
-	createFile(volFilePath, buf)
-	// now update the pod mount
 	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
+	klog.V(4).Infof("create/update file %s", podFilePath)
 	createFile(podFilePath, buf)
 	return true
 }
 
-func commonDeleteRanger(volPath, podPath string, key interface{}) bool {
-	volFilePath := filepath.Join(volPath, fmt.Sprintf("%s", key))
+func commonDeleteRanger(podPath string, key interface{}) bool {
 	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
-	os.Remove(volFilePath)
 	os.Remove(podFilePath)
 	return true
 }
@@ -188,13 +179,12 @@ func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
 	if err != nil {
 		return err
 	}
-	volConfigMapsPath := filepath.Join(hpv.VolPath, "configmaps")
 	upsertRangerCM := func(key, value interface{}) bool {
-		return commonUpsertRanger(volConfigMapsPath, podConfigMapsPath, key, value)
+		return commonUpsertRanger(podConfigMapsPath, key, value)
 	}
 	objcache.RegisterConfigMapUpsertCallback(hpv.VolID, upsertRangerCM)
 	deleteRangerCM := func(key, value interface{}) bool {
-		return commonDeleteRanger(volConfigMapsPath, podConfigMapsPath, key)
+		return commonDeleteRanger(podConfigMapsPath, key)
 	}
 	objcache.RegisterConfigMapDeleteCallback(hpv.VolID, deleteRangerCM)
 
@@ -203,13 +193,12 @@ func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
 	if err != nil {
 		return err
 	}
-	volSecretsPath := filepath.Join(hpv.VolPath, "secrets")
 	upsertRangerSec := func(key, value interface{}) bool {
-		return commonUpsertRanger(volSecretsPath, podSecretsPath, key, value)
+		return commonUpsertRanger(podSecretsPath, key, value)
 	}
 	objcache.RegisterSecretUpsertCallback(hpv.VolID, upsertRangerSec)
 	deleteRangerSec := func(key, value interface{}) bool {
-		return commonDeleteRanger(volSecretsPath, podSecretsPath, key)
+		return commonDeleteRanger(podSecretsPath, key)
 	}
 	objcache.RegisterSecretDeleteCallback(hpv.VolID, deleteRangerSec)
 	return nil
@@ -223,21 +212,6 @@ func (hp *hostPath) createHostpathVolume(volID, podNamespace, podName, podUID, p
 	switch volAccessType {
 	case mountAccess:
 		err := os.MkdirAll(volPath, 0777)
-		if err != nil {
-			return nil, err
-		}
-		volConfigMapsPath := filepath.Join(volPath, "configmaps")
-		// for now, since os.MkdirAll does nothing and returns no error when the path already
-		// exists, we have a common path for both create and update; but if we change the file
-		// system interaction mechanism such that create and update are treated differently, we'll
-		// need separate callbacks for each
-		err = os.MkdirAll(volConfigMapsPath, 0777)
-		if err != nil {
-			return nil, err
-		}
-
-		volSecretsPath := filepath.Join(volPath, "secrets")
-		err = os.MkdirAll(volSecretsPath, 0777)
 		if err != nil {
 			return nil, err
 		}

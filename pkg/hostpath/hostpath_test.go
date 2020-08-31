@@ -67,15 +67,7 @@ func TestCreateHostPathVolume(t *testing.T) {
 	defer os.RemoveAll(targetPath)
 	secret, cm := primeVolume(hp, targetPath, t)
 
-	foundSecret, foundConfigMap := findSharedItems(dir, t)
-	if !foundSecret {
-		t.Fatalf("did not find secret in driver path")
-	}
-	if !foundConfigMap {
-		t.Fatalf("did not find configmap in driver path")
-	}
-
-	foundSecret, foundConfigMap = findSharedItems(targetPath, t)
+	foundSecret, foundConfigMap := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("did not find secret in mount path")
 	}
