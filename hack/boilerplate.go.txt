@@ -1,0 +1,5 @@
+/*
+Copyright The OpenShift authors.
+
+SPDX-License-Identifier: Apache-2.0
+*/
