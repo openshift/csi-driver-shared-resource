@@ -18,6 +18,9 @@ generate:
 	./hack/update-generated.sh
 .PHONY: generate
 
+generate-crd:
+	./hack/update-crd.sh
+
 test: ## Run unit tests. Example: make test
 	go test ./cmd/... ./pkg/...
 .PHONY: test
