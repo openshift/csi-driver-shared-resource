@@ -13,4 +13,4 @@ spec:
   volumes:
     - name: my-csi-volume
       csi:
-        driver: projected-resource-csi-driver.openshift.io
+        driver: csi-driver-projected-resource.openshift.io

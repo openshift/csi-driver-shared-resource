@@ -6,7 +6,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-hostpathplugin
-  namespace: projected-resource-csi-driver
+  namespace: csi-driver-projected-resource
   labels:
     app: csi-hostpathplugin
 spec:
@@ -20,7 +20,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-hostpathplugin
-  namespace: projected-resource-csi-driver
+  namespace: csi-driver-projected-resource
   labels:
     app: csi-hostpathplugin
 spec:
@@ -32,7 +32,7 @@ spec:
       labels:
         app: csi-hostpathplugin
     spec:
-      serviceAccountName: projected-resource-csi-driver-plugin
+      serviceAccountName: csi-driver-projected-resource-plugin
       containers:
         - name: node-driver-registrar
           image: quay.io/openshift/origin-csi-node-driver-registrar:latest
@@ -60,13 +60,13 @@ spec:
               name: csi-data-dir
 
         - name: hostpath
-          image: docker.io/gmontero/origin-projected-resource-csi-driver:latest
+          image: quay.io/openshift/origin-csi-driver-projected-resource:latest
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:
             - hostpathplugin
           args:
-            - "--drivername=projected-resource-csi-driver.openshift.io"
+            - "--drivername=csi-driver-projected-resource.openshift.io"
             - "--v=5"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"

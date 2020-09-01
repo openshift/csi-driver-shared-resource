@@ -3,4 +3,4 @@ kind: Namespace
 metadata:
   labels:
     openshift.io/cluster-monitoring: "true"
-  name: projected-resource-csi-driver
+  name: csi-driver-projected-resource

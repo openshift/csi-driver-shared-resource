@@ -8,8 +8,8 @@ roleRef:
   name: system:openshift:scc:privileged
 subjects:
   - kind: ServiceAccount
-    name: projected-resource-csi-driver-plugin
-    namespace: projected-resource-csi-driver
+    name: csi-driver-projected-resource-plugin
+    namespace: csi-driver-projected-resource
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -21,5 +21,5 @@ roleRef:
   name: projected-resource-secret-configmap-watch
 subjects:
   - kind: ServiceAccount
-    name: projected-resource-csi-driver-plugin
-    namespace: projected-resource-csi-driver
+    name: csi-driver-projected-resource-plugin
+    namespace: csi-driver-projected-resource

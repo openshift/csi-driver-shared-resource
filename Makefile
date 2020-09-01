@@ -1,3 +1,5 @@
+# Allows overriding of the container runtime
+CONTAINER_RUNTIME ?= docker
 # Allows overriding of the registry to push the generated image to
 REGISTRY ?= quay.io
 # Allows overriding of the repository to push the image to
@@ -28,8 +30,8 @@ build: ## Build the executable. Example: make build
 
 build-image: ## Build the images and push them to the remote registry. Example: make build-images
 	rm -rf _output
-	docker build -f Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG) .
-	docker push $(REGISTRY)/$(REPOSITORY)/origin-projected-resource-csi-driver:$(TAG)
+	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-projected-resource:$(TAG) .
+	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-projected-resource:$(TAG)
 .PHONY: build-image
 
 clean: ## Clean up the workspace. Example: make clean
