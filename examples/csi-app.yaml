@@ -2,7 +2,9 @@ kind: Pod
 apiVersion: v1
 metadata:
   name: my-csi-app
+  namespace: my-csi-app-namespace
 spec:
+  serviceAccountName: default
   containers:
     - name: my-frontend
       image: busybox
@@ -14,3 +16,5 @@ spec:
     - name: my-csi-volume
       csi:
         driver: csi-driver-projected-resource.openshift.io
+        volumeAttributes:
+          share: my-share

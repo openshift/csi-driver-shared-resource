@@ -3,12 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
+	"time"
 
 	"k8s.io/klog/v2"
 
@@ -17,12 +17,13 @@ import (
 )
 
 var (
-	cfgFile           string
-	endPoint          string
-	driverName        string
-	nodeID            string
-	maxVolumesPerNode int64
-	version           string
+	cfgFile             string
+	endPoint            string
+	driverName          string
+	nodeID              string
+	maxVolumesPerNode   int64
+	version             string
+	shareRelistInterval string
 
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
 	onlyOneSignalHandler = make(chan struct{})
@@ -34,7 +35,7 @@ var rootCmd = &cobra.Command{
 	Short:   "",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		driver, err := hostpath.NewHostPathDriver(hostpath.DataRoot, driverName, nodeID, endPoint, maxVolumesPerNode, version)
+		driver, err := hostpath.NewHostPathDriver(hostpath.DataRoot, hostpath.VolumeMapRoot, driverName, nodeID, endPoint, maxVolumesPerNode, version)
 		if err != nil {
 			fmt.Printf("Failed to initialize driver: %s", err.Error())
 			os.Exit(1)
@@ -63,10 +64,22 @@ func init() {
 	rootCmd.Flags().StringVar(&driverName, "drivername", "csi-driver-projected-resource.openshift.io", "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
+	rootCmd.Flags().StringVar(&shareRelistInterval, "share-relist-interval", "",
+		"the time between controller relist on the share resource expressed with golang time.Duration syntax(default=10m")
 }
 
 func runOperator() {
-	c, err := controller.NewController()
+	shareRelist := controller.DefaultResyncDuration
+	var err error
+	// flag defaulting above did not work well with time.Duration
+	if len(shareRelistInterval) > 0 {
+		shareRelist, err = time.ParseDuration(shareRelistInterval)
+		if err != nil {
+			fmt.Printf("Error parsing share-relist-in-min flag, using default")
+			shareRelist = controller.DefaultResyncDuration
+		}
+	}
+	c, err := controller.NewController(shareRelist)
 	if err != nil {
 		fmt.Printf("Failed to set up controller: %s", err.Error())
 		os.Exit(1)
