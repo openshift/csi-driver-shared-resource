@@ -4,6 +4,6 @@ COPY . .
 RUN make build
 
 FROM registry.svc.ci.openshift.org/origin/4.6:base
-COPY --from=builder /go/src/github.com/openshift/csi-driver-projected-resource/_output/hostpathplugin /usr/bin/
+COPY --from=builder /go/src/github.com/openshift/csi-driver-projected-resource/_output/csi-driver-projected-resource /usr/bin/
 ENTRYPOINT []
-CMD ["/usr/bin/hostpathplugin"]
+CMD ["/usr/bin/csi-driver-projected-resource"]

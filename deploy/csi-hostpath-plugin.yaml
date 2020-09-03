@@ -64,7 +64,7 @@ spec:
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:
-            - hostpathplugin
+            - csi-driver-projected-resource
           args:
             - "--drivername=csi-driver-projected-resource.openshift.io"
             - "--v=5"
