@@ -8,20 +8,26 @@ REPOSITORY ?= openshift
 TAG ?= latest
 
 LDFLAGS ?= '-extldflags "-static"'
-GO_FILES=$(shell go list ./...)
 
 .DEFAULT_GOAL := help
 
-all: clean verify build test
+all: clean generate verify build test
 .PHONY: all
 
+generate:
+	./hack/update-generated.sh
+.PHONY: generate
+
+generate-crd:
+	./hack/update-crd.sh
+
 test: ## Run unit tests. Example: make test
-	go test $(GO_FILES)
+	go test ./cmd/... ./pkg/...
 .PHONY: test
 
 verify: ## Run verifications. Example: make verify
-	go vet $(GO_FILES)
-	gofmt -w cmd/ pkg/
+	go vet ./cmd/... ./pkg/...
+	gofmt -w ./cmd/ ./pkg/
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
