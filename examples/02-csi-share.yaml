@@ -1,0 +1,10 @@
+apiVersion: projectedresource.storage.openshift.io/v1alpha1
+kind: Share
+metadata:
+  name: my-share
+spec:
+  backingResource:
+    kind: ConfigMap
+    apiVersion: v1
+    name: openshift-install
+    namespace: openshift-config

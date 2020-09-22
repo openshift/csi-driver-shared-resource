@@ -10,11 +10,13 @@ var (
 	secrets               = sync.Map{}
 	secretUpsertCallbacks = sync.Map{}
 	secretDeleteCallbacks = sync.Map{}
+	secretsWithShare      = sync.Map{}
 )
 
 func UpsertSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
 	secrets.Store(key, secret)
+	secretsWithShare.Store(key, secret)
 	secretUpsertCallbacks.Range(buildRanger(buildCallbackMap(key, secret)))
 }
 
@@ -22,11 +24,12 @@ func DelSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
 	secrets.Delete(key)
 	secretDeleteCallbacks.Range(buildRanger(buildCallbackMap(key, secret)))
+	secretsWithShare.Delete(key)
 }
 
 func RegisterSecretUpsertCallback(volID string, f func(key, value interface{}) bool) {
 	secretUpsertCallbacks.Store(volID, f)
-	secrets.Range(f)
+	secretsWithShare.Range(f)
 }
 
 func UnregisterSecretUpsertCallback(volID string) {
@@ -37,6 +40,6 @@ func RegisterSecretDeleteCallback(volID string, f func(key, value interface{}) b
 	secretDeleteCallbacks.Store(volID, f)
 }
 
-func UnregisterSecretDeleteCallback(voldID string) {
-	secretDeleteCallbacks.Delete(voldID)
+func UnregisterSecretDeleteCallback(volID string) {
+	secretDeleteCallbacks.Delete(volID)
 }

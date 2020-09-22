@@ -21,9 +21,10 @@ import (
 	"os"
 	"strings"
 
-	"golang.org/x/net/context"
-
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	"github.com/openshift/csi-driver-projected-resource/pkg/client"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -32,12 +33,17 @@ import (
 )
 
 const (
-	TopologyKeyNode = "topology.hostpath.csi/node"
-	CSIPodName      = "csi.storage.k8s.io/pod.name"
-	CSIPodNamespace = "csi.storage.k8s.io/pod.namespace"
-	CSIPodUID       = "csi.storage.k8s.io/pod.uid"
-	CSIPodSA        = "csi.storage.k8s.io/serviceAccount.name"
-	CSIEphemeral    = "csi.storage.k8s.io/ephemeral"
+	TopologyKeyNode           = "topology.hostpath.csi/node"
+	CSIPodName                = "csi.storage.k8s.io/pod.name"
+	CSIPodNamespace           = "csi.storage.k8s.io/pod.namespace"
+	CSIPodUID                 = "csi.storage.k8s.io/pod.uid"
+	CSIPodSA                  = "csi.storage.k8s.io/serviceAccount.name"
+	CSIEphemeral              = "csi.storage.k8s.io/ephemeral"
+	ProjectedResourceShareKey = "share"
+)
+
+var (
+	listers client.Listers
 )
 
 type nodeServer struct {
@@ -65,6 +71,73 @@ func getPodDetails(volumeContext map[string]string) (string, string, string, str
 
 }
 
+func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.Share, error) {
+	shareName, sok := req.GetVolumeContext()[ProjectedResourceShareKey]
+	if !sok || len(strings.TrimSpace(shareName)) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"the csi driver reference is missing the volumeAttribute 'share'")
+	}
+
+	share, err := client.GetListers().Shares.Get(shareName)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"the csi driver volumeAttribute 'share' reference had an error: %s", err.Error())
+	}
+
+	switch strings.TrimSpace(share.Spec.BackingResource.Kind) {
+	case "Secret":
+	case "ConfigMap":
+	default:
+		return nil, status.Errorf(codes.InvalidArgument,
+			"the share %s has an invalid backing resource kind %s", shareName, share.Spec.BackingResource.Kind)
+	}
+
+	if len(strings.TrimSpace(share.Spec.BackingResource.Namespace)) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"the share %s backing resource namespace needs to be set", shareName)
+	}
+	if len(strings.TrimSpace(share.Spec.BackingResource.Name)) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument,
+			"the share %s backing resource name needs to be set", shareName)
+	}
+
+	podNamespace, podName, _, podSA := getPodDetails(req.GetVolumeContext())
+
+	allowed, err := client.ExecuteSAR(shareName, podNamespace, podName, podSA)
+	if allowed {
+		return share, nil
+	}
+	return nil, err
+}
+
+// validateVolumeContext return values:
+func (ns *nodeServer) validateVolumeContext(req *csi.NodePublishVolumeRequest) error {
+
+	podNamespace, podName, podUID, podSA := getPodDetails(req.GetVolumeContext())
+	klog.V(4).Infof("NodePublishVolume pod %s ns %s sa %s uid %s",
+		podName,
+		podNamespace,
+		podSA,
+		podUID)
+
+	if len(podName) == 0 || len(podNamespace) == 0 || len(podUID) == 0 || len(podSA) == 0 {
+		return status.Error(codes.InvalidArgument,
+			fmt.Sprintf("Volume attributes missing required set for pod: namespace: %s name: %s uid: %s, sa: %s",
+				podNamespace, podName, podUID, podSA))
+	}
+	ephemeralVolume := req.GetVolumeContext()[CSIEphemeral] == "true" ||
+		req.GetVolumeContext()[CSIEphemeral] == "" // Kubernetes 1.15 doesn't have csi.storage.k8s.io/ephemeral.
+
+	if !ephemeralVolume {
+		return status.Error(codes.InvalidArgument, "Non-ephemeral request made")
+	}
+
+	if req.GetVolumeCapability().GetMount() == nil {
+		return status.Error(codes.InvalidArgument, "only support mount access type")
+	}
+	return nil
+}
+
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	var targetPath string
 
@@ -82,40 +155,23 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, status.Error(codes.InvalidArgument, "Volume attributes missing in request")
 	}
 
-	podNamespace, podName, podUID, podSA := getPodDetails(req.GetVolumeContext())
-	klog.V(4).Infof("NodePublishVolume pod %s ns %s sa %s uid %s",
-		podName,
-		podNamespace,
-		podSA,
-		podUID)
-
-	if len(podName) == 0 || len(podNamespace) == 0 || len(podUID) == 0 || len(podSA) == 0 {
-		return nil, status.Error(codes.InvalidArgument,
-			fmt.Sprintf("Volume attributes missing required set for pod: namespace: %s name: %s uid: %s, sa: %s",
-				podNamespace, podName, podUID, podSA))
-	}
-	ephemeralVolume := req.GetVolumeContext()[CSIEphemeral] == "true" ||
-		req.GetVolumeContext()[CSIEphemeral] == "" // Kubernetes 1.15 doesn't have csi.storage.k8s.io/ephemeral.
-
-	if !ephemeralVolume {
-		return nil, status.Error(codes.InvalidArgument, "Non-ephemeral request made")
+	err := ns.validateVolumeContext(req)
+	if err != nil {
+		return nil, err
 	}
 
-	if req.GetVolumeCapability().GetMount() == nil {
-		return nil, status.Error(codes.InvalidArgument, "only support mount access type")
+	share, err := ns.validateShare(req)
+	if err != nil {
+		return nil, err
 	}
 
 	targetPath = req.GetTargetPath()
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), podNamespace, podName, podUID, podSA, targetPath, maxStorageCapacity, mountAccess)
+	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), targetPath, req.GetVolumeContext(), share, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	klog.V(4).Infof("NodePublishVolume created volume: %s", vol.VolPath)
-
-	if vol.VolAccessType != mountAccess {
-		return nil, status.Error(codes.InvalidArgument, "cannot publish a non-mount volume as mount volume")
-	}
 
 	notMnt, err := mount.IsNotMountPoint(ns.mounter, targetPath)
 
@@ -142,7 +198,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		deviceId = req.GetPublishContext()[deviceID]
 	}
 
-	//readOnly := req.GetReadonly()
 	volumeId := req.GetVolumeId()
 	attrib := req.GetVolumeContext()
 	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
@@ -189,6 +244,10 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			err.Error()))
 	}
 
+	if err := storeVolMapToDisk(); err != nil {
+		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

@@ -12,7 +12,11 @@ func GetKey(o interface{}) string {
 	if !ok {
 		return fmt.Sprintf("%s", o)
 	}
-	return obj.GetNamespace() + ":" + obj.GetName()
+	return BuildKey(obj.GetNamespace(), obj.GetName())
+}
+
+func BuildKey(namespace, name string) string {
+	return namespace + ":" + name
 }
 
 func buildCallbackMap(key, value interface{}) *sync.Map {

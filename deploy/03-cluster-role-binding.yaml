@@ -14,11 +14,11 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: projected-resource-secret-configmap-watch
+  name: projected-resource-secret-configmap-share-watch-sar-create
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: projected-resource-secret-configmap-watch
+  name: projected-resource-secret-configmap-share-watch-sar-create
 subjects:
   - kind: ServiceAccount
     name: csi-driver-projected-resource-plugin
