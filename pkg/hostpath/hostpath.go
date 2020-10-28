@@ -18,20 +18,22 @@ package hostpath
 
 import (
 	"encoding/gob"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
+
 	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-projected-resource/pkg/cache"
 	"github.com/openshift/csi-driver-projected-resource/pkg/client"
-
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -166,29 +168,48 @@ func (hp *hostPath) getVolumePath(volID string, volCtx map[string]string) string
 	return filepath.Join(hp.root, volID, podNamespace, podName, podUID, podSA)
 }
 
-func createFile(path string, buf []byte) {
-	file, err := os.Create(path)
-	if err != nil {
-		klog.Errorf("error creating file %s: %s", path, err.Error())
-		return
-	}
-	defer file.Close()
-	file.Write(buf)
-}
-
-func commonUpsertRanger(podPath, filter string, key, value interface{}) bool {
+func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value interface{}) error {
 	if key != filter {
-		return true
+		return nil
 	}
-	buf, err := json.MarshalIndent(value, "", "    ")
-	if err != nil {
-		klog.Errorf("error marshalling: %s", err.Error())
-		return true
+	payload, _ := value.(Payload)
+	podFileDir := filepath.Join(podPath, fmt.Sprintf("%s", key))
+	// So, what to do with error handling.  Errors with filesystem operations
+	// will almost always not be intermittent, but most likely the result of the
+	// host filesystem either being full or compromised in some long running fashion, so tight-loop retry, like we
+	// *could* do here as a result will typically prove fruitless.
+	// Then, the controller relist will result in going through the secrets/configmaps we share, so
+	// again, on the off chance the filesystem error is intermittent, or if an administrator has taken corrective
+	// action, writing the content will be retried.  And note, the relist interval is configurable (default 10 minutes)
+	// if users want more rapid retry...but by default, no tight loop more CPU intensive retry
+	// Lastly, with the understanding that an error log in the pod stdout may be missed, we will also generate a k8s
+	// event to facilitate exposure
+	// TODO: prometheus metrics/alerts may be desired here, though some due diligence on what k8s level metrics/alerts
+	// around host filesystem issues might already exist would be warranted with such an exploration/effort
+	if err := os.MkdirAll(podFileDir, os.ModePerm); err != nil {
+		return err
 	}
-	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
-	klog.V(4).Infof("create/update file %s", podFilePath)
-	createFile(podFilePath, buf)
-	return true
+	if payload.ByteData != nil {
+		for dataKey, dataValue := range payload.ByteData {
+			podFilePath := filepath.Join(podFileDir, dataKey)
+			klog.V(4).Infof("create/update file %s", podFilePath)
+			if err := ioutil.WriteFile(podFilePath, dataValue, 0644); err != nil {
+				return err
+			}
+
+		}
+	}
+	if payload.StringData != nil {
+		for dataKey, dataValue := range payload.StringData {
+			podFilePath := filepath.Join(podFileDir, dataKey)
+			klog.V(4).Infof("create/update file %s", podFilePath)
+			content := []byte(dataValue)
+			if err := ioutil.WriteFile(podFilePath, content, 0644); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func commonDeleteRanger(podPath, filter string, key interface{}) bool {
@@ -339,7 +360,37 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 			return err
 		}
 		upsertRangerCM := func(key, value interface{}) bool {
-			return commonUpsertRanger(podConfigMapsPath, hpv.SharedDataKey, key, value)
+			cm, _ := value.(*corev1.ConfigMap)
+			payload := Payload{
+				StringData: cm.Data,
+				ByteData:   cm.BinaryData,
+			}
+			err := commonUpsertRanger(cm, podConfigMapsPath, hpv.SharedDataKey, key, payload)
+			if err != nil {
+				ProcessFileSystemError(cm, err)
+			}
+
+			// we always return true in the golang ranger to still attempt additional items
+			// on the off chance the filesystem error received was intermittent and other items
+			// will succeed ... remember, the ranger predominantly deals with pushing secret/configmap
+			// updates to disk
+			return true
+		}
+		// we call the upsert ranger inline in case there are filesystem problems initially, so
+		// we can return the error back to volume provisioning, where the kubelet will retry at
+		// a controlled frequency
+		cm := objcache.GetConfigMap(hpv.SharedDataKey)
+		if cm != nil {
+			payload := Payload{
+				StringData: cm.Data,
+				ByteData:   cm.BinaryData,
+			}
+
+			upsertError := commonUpsertRanger(cm, podConfigMapsPath, hpv.SharedDataKey, hpv.SharedDataKey, payload)
+			if upsertError != nil {
+				ProcessFileSystemError(cm, upsertError)
+				return upsertError
+			}
 		}
 		objcache.RegisterConfigMapUpsertCallback(hpv.VolID, upsertRangerCM)
 		deleteRangerCM := func(key, value interface{}) bool {
@@ -353,7 +404,34 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 			return err
 		}
 		upsertRangerSec := func(key, value interface{}) bool {
-			return commonUpsertRanger(podSecretsPath, hpv.SharedDataKey, key, value)
+			s, _ := value.(*corev1.Secret)
+			payload := Payload{
+				ByteData: s.Data,
+			}
+			err := commonUpsertRanger(s, podSecretsPath, hpv.SharedDataKey, key, payload)
+			if err != nil {
+				ProcessFileSystemError(s, err)
+			}
+			// we always return true in the golang ranger to still attempt additional items
+			// on the off chance the filesystem error received was intermittent and other items
+			// will succeed ... remember, the ranger predominantly deals with pushing secret/configmap
+			// updates to disk
+			return true
+		}
+		// we call the upsert ranger inline in case there are filesystem problems initially,  so
+		// we can return the error back to volume provisioning, where the kubelet will retry at
+		// a controlled frequency
+		s := objcache.GetSecret(hpv.SharedDataKey)
+		if s != nil {
+			payload := Payload{
+				ByteData: s.Data,
+			}
+
+			upsertError := commonUpsertRanger(s, podSecretsPath, hpv.SharedDataKey, hpv.SharedDataKey, payload)
+			if upsertError != nil {
+				ProcessFileSystemError(s, upsertError)
+				return upsertError
+			}
 		}
 		objcache.RegisterSecretUpsertCallback(hpv.VolID, upsertRangerSec)
 		deleteRangerSec := func(key, value interface{}) bool {

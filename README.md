@@ -236,20 +236,57 @@ To verify, go back into the `Pod` named `my-csi-app` and list the contents:
 You should see contents like:
 
 ```shell
-ls -lR /data
-ls -lR /data
+/ # ls -lR /data 
+ls -lR /data 
 /data:
 total 0
-drwxr-xr-x    2 root     root            60 Sep  2 19:38 configmaps
+drwxr-xr-x    3 root     root            60 Oct 28 14:52 configmaps
 
 /data/configmaps:
-total 4
--rw-r--r--    1 root     root           970 Sep  2 19:38 openshift-config:openshift-install
+total 0
+drwxr-xr-x    2 root     root            80 Oct 28 14:52 openshift-config:openshift-install
+
+/data/configmaps/openshift-config:openshift-install:
+total 8
+-rw-r--r--    1 root     root             4 Oct 28 14:52 invoker
+-rw-r--r--    1 root     root            70 Oct 28 14:52 version
 / # 
 ```
 
-To facilitate validation of the contents, including post-creation updates, the data is currently 
-stored as formatted `json`.
+And if you inspect the contents of that `ConfigMap`, you'll see keys in the `data` map that 
+correspond to the 2 files created:
+
+```shell
+$ oc get cm openshift-install -n openshift-config -o yaml
+apiVersion: v1
+data:
+  invoker: user
+  version: unreleased-master-3849-g9c8baf2f69c50a9d745d86f4784bdd6b426040af-dirty
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2020-10-28T13:30:47Z"
+  managedFields:
+  - apiVersion: v1
+    fieldsType: FieldsV1
+    fieldsV1:
+      f:data:
+        .: {}
+        f:invoker: {}
+        f:version: {}
+    manager: cluster-bootstrap
+    operation: Update
+    time: "2020-10-28T13:30:47Z"
+  name: openshift-install
+  namespace: openshift-config
+  resourceVersion: "1460"
+  selfLink: /api/v1/namespaces/openshift-config/configmaps/openshift-install
+  uid: 0382a47d-7c58-4198-b99e-eb3dc987da59
+```
+
+The storage of how `Secrets` and `ConfigMaps` are stored on disk mirror the corresponding volume types for 
+`Secrets` and `ConfigMaps` are stored per the code in  [https://github.com/kubernetes/kubernetes](https://github.com/kubernetes/kubernetes)
+where a file is created for each key in a `ConfigMap` `data` map or `binaryData` map and each key in a `Secret`
+`data` map.
 
 If you want to try other `ConfigMaps` or a `Secret`, first clear out the existing application:
 

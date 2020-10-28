@@ -13,6 +13,15 @@ var (
 	configmapsWithShares     = sync.Map{}
 )
 
+func GetConfigMap(key interface{}) *corev1.ConfigMap {
+	obj, loaded := configmapsWithShares.Load(key)
+	if loaded {
+		cm, _ := obj.(*corev1.ConfigMap)
+		return cm
+	}
+	return nil
+}
+
 func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	key := GetKey(configmap)
 	configmaps.Store(key, configmap)
