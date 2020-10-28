@@ -13,6 +13,15 @@ var (
 	secretsWithShare      = sync.Map{}
 )
 
+func GetSecret(key interface{}) *corev1.Secret {
+	obj, loaded := secretsWithShare.Load(key)
+	if loaded {
+		s, _ := obj.(*corev1.Secret)
+		return s
+	}
+	return nil
+}
+
 func UpsertSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
 	secrets.Store(key, secret)

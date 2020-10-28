@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	corev1 "k8s.io/api/core/v1"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -12,20 +11,29 @@ import (
 	"google.golang.org/grpc/status"
 
 	authorizationv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	ktypedclient "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/record"
 )
 
 var (
 	kubeClient kubernetes.Interface
+	recorder   record.EventRecorder
 )
 
 // SetClient sets the internal kubernetes client interface. Useful for testing.
 func SetClient(client kubernetes.Interface) {
 	kubeClient = client
+}
+
+func GetRecorder() record.EventRecorder {
+	return recorder
 }
 
 // GetConfig creates a *rest.Config for talking to a Kubernetes apiserver.
@@ -70,6 +78,9 @@ func initClient() error {
 		}
 
 	}
+	eventBroadcaster := record.NewBroadcaster()
+	eventBroadcaster.StartRecordingToSink(&ktypedclient.EventSinkImpl{Interface: kubeClient.CoreV1().Events("csi-driver-projected-resource")})
+	recorder = eventBroadcaster.NewRecorder(runtime.NewScheme(), corev1.EventSource{Component: "csi-driver-projected-resource"})
 	return nil
 }
 
