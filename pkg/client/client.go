@@ -22,6 +22,11 @@ import (
 	"k8s.io/client-go/tools/record"
 )
 
+const (
+	DefaultNamespace = "csi-driver-projected-resource"
+	DriverName       = "csi-driver-projected-resource.openshift.io"
+)
+
 var (
 	kubeClient kubernetes.Interface
 	recorder   record.EventRecorder
@@ -79,8 +84,8 @@ func initClient() error {
 
 	}
 	eventBroadcaster := record.NewBroadcaster()
-	eventBroadcaster.StartRecordingToSink(&ktypedclient.EventSinkImpl{Interface: kubeClient.CoreV1().Events("csi-driver-projected-resource")})
-	recorder = eventBroadcaster.NewRecorder(runtime.NewScheme(), corev1.EventSource{Component: "csi-driver-projected-resource"})
+	eventBroadcaster.StartRecordingToSink(&ktypedclient.EventSinkImpl{Interface: kubeClient.CoreV1().Events(DefaultNamespace)})
+	recorder = eventBroadcaster.NewRecorder(runtime.NewScheme(), corev1.EventSource{Component: DefaultNamespace})
 	return nil
 }
 
