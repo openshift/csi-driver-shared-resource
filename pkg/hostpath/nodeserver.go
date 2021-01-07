@@ -171,7 +171,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	klog.V(4).Infof("NodePublishVolume created volume: %s", vol.VolPath)
+	klog.V(4).Infof("NodePublishVolume created volume: %s", vol.GetVolPath())
 
 	notMnt, err := mount.IsNotMountPoint(ns.mounter, targetPath)
 
@@ -206,7 +206,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		targetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
 	options := []string{}
-	path := vol.VolPath
+	path := vol.GetVolPath()
 
 	// NOTE: so our intent here is to have a separate tmpfs per pod; through experimentation
 	// and corroboration with OpenShift storage SMEs, a separate tmpfs per pod
