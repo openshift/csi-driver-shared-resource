@@ -232,14 +232,14 @@ func (c *Controller) configMapEventProcessor() {
 }
 
 func (c *Controller) syncConfigMap(event client.Event) error {
-	cm, ok := event.Object.(*corev1.ConfigMap)
+	obj := event.Object.DeepCopyObject()
+	cm, ok := obj.(*corev1.ConfigMap)
 	if cm == nil || !ok {
 		msg := fmt.Sprintf("unexpected object vs. configmap: %v", event.Object.GetObjectKind().GroupVersionKind())
 		fmt.Print(msg)
 		return fmt.Errorf(msg)
 	}
 	klog.V(5).Infof("verb %s obj namespace %s configmap name %s", event.Verb, cm.Namespace, cm.Name)
-	// since we don't mutate we do not copy
 	switch event.Verb {
 	case client.DeleteObjectAction:
 		objcache.DelConfigMap(cm)
@@ -330,7 +330,8 @@ func (c *Controller) secretEventProcessor() {
 }
 
 func (c *Controller) syncSecret(event client.Event) error {
-	secret, ok := event.Object.(*corev1.Secret)
+	obj := event.Object.DeepCopyObject()
+	secret, ok := obj.(*corev1.Secret)
 	if secret == nil || !ok {
 		return fmt.Errorf("unexpected object vs. secret: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
@@ -424,7 +425,6 @@ func (c *Controller) shareEventProcessor() {
 }
 
 func (c *Controller) syncShare(event client.Event) error {
-	// copy in case we start updating conditions
 	obj := event.Object.DeepCopyObject()
 	share, ok := obj.(*sharev1alpha1.Share)
 	if share == nil || !ok {
