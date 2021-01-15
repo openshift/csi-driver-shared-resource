@@ -25,9 +25,24 @@ test: ## Run unit tests. Example: make test
 	go test ./cmd/... ./pkg/...
 .PHONY: test
 
+test-e2e:
+	./deploy/deploy.sh
+	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags normal -timeout 30m -v ./test/e2e/...
+.PHONY: test-e2e
+
+test-e2e-slow:
+	./deploy/deploy.sh
+	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags slow -timeout 30m -v ./test/e2e/...
+.PHONY: test-e2e
+
+test-e2e-disruptive:
+	./deploy/deploy.sh
+	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags disruptive -timeout 30m -v ./test/e2e/...
+.PHONY: test-e2e
+
 verify: ## Run verifications. Example: make verify
-	go vet ./cmd/... ./pkg/...
-	gofmt -w ./cmd/ ./pkg/
+	go vet ./cmd/... ./pkg/... ./test/...
+	gofmt -w ./cmd/ ./pkg/ ./test/
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
