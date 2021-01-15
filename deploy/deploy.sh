@@ -5,7 +5,7 @@
 # authoritative and all updates for this process should be
 # done here and referenced elsewhere.
 
-# The script assumes that kubectl is available on the OS path
+# The script assumes that oc is available on the OS path
 # where it is executed.
 
 set -e
@@ -23,16 +23,16 @@ run () {
 echo "deploying hostpath components"
 for i in $(ls ${BASE_DIR}/*.yaml | sort); do
     echo "   $i"
-    run kubectl apply -f $i
+    run oc apply -f $i
 done
 
 # Wait until all pods are running.
 expected_running_pods=3
 cnt=0
-while [ $(kubectl get pods -n csi-driver-projected-resource 2>/dev/null | grep '^csi-hostpath.* Running ' | wc -l) -lt ${expected_running_pods} ]; do
+while [ $(oc get pods -n csi-driver-projected-resource 2>/dev/null | grep '^csi-hostpath.* Running ' | wc -l) -lt ${expected_running_pods} ]; do
     if [ $cnt -gt 30 ]; then
-        echo "$(kubectl get pods 2>/dev/null | grep '^csi-hostpath.* Running ' | wc -l) running pods:"
-        kubectl describe pods
+        echo "$(oc get pods 2>/dev/null | grep '^csi-hostpath.* Running ' | wc -l) running pods:"
+        oc describe pods
 
         echo >&2 "ERROR: hostpath deployment not ready after over 5min"
         exit 1
