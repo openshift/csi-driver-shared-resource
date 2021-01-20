@@ -30,12 +30,12 @@ func TestBasicThenNoShareThenShare(t *testing.T) {
 	defer framework.CleanupTestNamespace(testNS, t)
 	basicShareSetupAndVerification(testNS, t)
 
-	t.Logf("deleting share for %s", testNS)
+	t.Logf("%s: deleting share for %s", time.Now().String(), testNS)
 
 	framework.DeleteShare(testNS, t)
 	framework.ExecPod(testNS, "openshift-config:openshift-install", true, 30*time.Second, t)
 
-	t.Logf("adding share back for %s", testNS)
+	t.Logf("%s: adding share back for %s", time.Now().String(), testNS)
 
 	framework.CreateShare(testNS, t)
 	framework.ExecPod(testNS, "openshift-config:openshift-install", false, 30*time.Second, t)

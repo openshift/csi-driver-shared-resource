@@ -66,7 +66,7 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
 	volCtx := seedVolumeContext()
-	_, err = hp.createHostpathVolume("volID", "", volCtx, &sharev1alpha1.Share{}, 0, mountAccess+1)
+	_, err = hp.createHostpathVolume("TestCreateHostPathVolumeBadAccessType", "", volCtx, &sharev1alpha1.Share{}, 0, mountAccess+1)
 	if err == nil {
 		t.Fatalf("err nil unexpectedly")
 	}
@@ -87,7 +87,7 @@ func TestCreateConfigMapHostPathVolume(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	cm := primeConfigMapVolume(hp, targetPath, nil, t)
+	cm := primeConfigMapVolume(hp, targetPath, "TestCreateConfigMapHostPathVolume", nil, t)
 	_, foundConfigMap := findSharedItems(targetPath, t)
 	if !foundConfigMap {
 		t.Fatalf("did not find configmap in mount path")
@@ -111,7 +111,7 @@ func TestCreateSecretHostPathVolume(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	secret := primeSecretVolume(hp, targetPath, nil, t)
+	secret := primeSecretVolume(hp, targetPath, "TestCreateSecretHostPathVolume", nil, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("did not find secret in mount path")
@@ -135,8 +135,8 @@ func TestDeleteSecretVolume(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	primeSecretVolume(hp, targetPath, nil, t)
-	err = hp.deleteHostpathVolume("volID")
+	primeSecretVolume(hp, targetPath, "TestDeleteSecretVolume", nil, t)
+	err = hp.deleteHostpathVolume("TestDeleteSecretVolume")
 	if err != nil {
 		t.Fatalf("unexpeted error on delete volume: %s", err.Error())
 	}
@@ -163,8 +163,8 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	primeConfigMapVolume(hp, targetPath, nil, t)
-	err = hp.deleteHostpathVolume("volID")
+	primeConfigMapVolume(hp, targetPath, "TestDeleteConfigMapVolume", nil, t)
+	err = hp.deleteHostpathVolume("TestDeleteConfigMapVolume")
 	if err != nil {
 		t.Fatalf("unexpeted error on delete volume: %s", err.Error())
 	}
@@ -176,7 +176,6 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 	if empty, err := isDirEmpty(dir1); !empty || err != nil {
 		t.Fatalf("volume directory not cleaned out empty %v err %s", empty, err.Error())
 	}
-
 }
 
 func TestDeleteShare(t *testing.T) {
@@ -201,7 +200,7 @@ func TestDeleteShare(t *testing.T) {
 
 	share := &sharev1alpha1.Share{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "share1",
+			Name: "TestDeleteShare",
 		},
 		Spec: sharev1alpha1.ShareSpec{
 			BackingResource: sharev1alpha1.BackingResource{
@@ -219,7 +218,7 @@ func TestDeleteShare(t *testing.T) {
 	}
 	client.SetSharesLister(shareLister)
 
-	primeSecretVolume(hp, targetPath, share, t)
+	primeSecretVolume(hp, targetPath, "TestDeleteShare", share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -255,7 +254,7 @@ func TestDeleteReAddShare(t *testing.T) {
 
 	share := &sharev1alpha1.Share{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "share1",
+			Name: "TestDeleteReAddShare",
 		},
 		Spec: sharev1alpha1.ShareSpec{
 			BackingResource: sharev1alpha1.BackingResource{
@@ -273,7 +272,7 @@ func TestDeleteReAddShare(t *testing.T) {
 	}
 	client.SetSharesLister(shareLister)
 
-	primeSecretVolume(hp, targetPath, share, t)
+	primeSecretVolume(hp, targetPath, "TestDeleteReAddShare", share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -314,7 +313,7 @@ func TestUpdateShare(t *testing.T) {
 
 	share := &sharev1alpha1.Share{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "share1",
+			Name: "TestUpdateShare",
 		},
 		Spec: sharev1alpha1.ShareSpec{
 			BackingResource: sharev1alpha1.BackingResource{
@@ -333,7 +332,7 @@ func TestUpdateShare(t *testing.T) {
 	client.SetSharesLister(shareLister)
 	cache.AddShare(share)
 
-	primeSecretVolume(hp, targetPath, share, t)
+	primeSecretVolume(hp, targetPath, "TestUpdateShare", share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -381,7 +380,7 @@ func TestPermChanges(t *testing.T) {
 
 	share := &sharev1alpha1.Share{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "share1",
+			Name: "TestPermChanges",
 		},
 		Spec: sharev1alpha1.ShareSpec{
 			BackingResource: sharev1alpha1.BackingResource{
@@ -400,7 +399,7 @@ func TestPermChanges(t *testing.T) {
 	client.SetSharesLister(shareLister)
 	cache.AddShare(share)
 
-	primeSecretVolume(hp, targetPath, share, t)
+	primeSecretVolume(hp, targetPath, "TestPermChanges", share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -432,12 +431,12 @@ func TestPermChanges(t *testing.T) {
 	}
 }
 
-func primeSecretVolume(hp *hostPath, targetPath string, share *sharev1alpha1.Share, t *testing.T) *corev1.Secret {
+func primeSecretVolume(hp *hostPath, targetPath, testName string, share *sharev1alpha1.Share, t *testing.T) *corev1.Secret {
 	volCtx := seedVolumeContext()
 	if share == nil {
 		share = &sharev1alpha1.Share{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "share1",
+				Name: testName,
 			},
 			Spec: sharev1alpha1.ShareSpec{
 				BackingResource: sharev1alpha1.BackingResource{
@@ -456,7 +455,7 @@ func primeSecretVolume(hp *hostPath, targetPath string, share *sharev1alpha1.Sha
 		client.SetSharesLister(shareLister)
 		cache.AddShare(share)
 	}
-	hpv, err := hp.createHostpathVolume("volID", targetPath, volCtx, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(testName, targetPath, volCtx, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -477,12 +476,12 @@ func primeSecretVolume(hp *hostPath, targetPath string, share *sharev1alpha1.Sha
 	return secret
 }
 
-func primeConfigMapVolume(hp *hostPath, targetPath string, share *sharev1alpha1.Share, t *testing.T) *corev1.ConfigMap {
+func primeConfigMapVolume(hp *hostPath, targetPath, testName string, share *sharev1alpha1.Share, t *testing.T) *corev1.ConfigMap {
 	volCtx := seedVolumeContext()
 	if share == nil {
 		share = &sharev1alpha1.Share{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: "share1",
+				Name: testName,
 			},
 			Spec: sharev1alpha1.ShareSpec{
 				BackingResource: sharev1alpha1.BackingResource{
@@ -501,7 +500,7 @@ func primeConfigMapVolume(hp *hostPath, targetPath string, share *sharev1alpha1.
 		client.SetSharesLister(shareLister)
 		cache.AddShare(share)
 	}
-	hpv, err := hp.createHostpathVolume("volID", targetPath, volCtx, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(testName, targetPath, volCtx, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}

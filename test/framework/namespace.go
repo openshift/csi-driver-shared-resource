@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -27,7 +28,7 @@ func generateName(base string) string {
 
 func CreateTestNamespace(t *testing.T) string {
 	testNamespace := generateName("e2e-test-csi-driver-projected-resource-")
-	t.Logf("Creating test namespace %s\n", testNamespace)
+	t.Logf("%s: Creating test namespace %s", time.Now().String(), testNamespace)
 	ns := &corev1.Namespace{}
 	ns.Name = testNamespace
 	ns.Labels = map[string]string{"openshift.io/cluster-monitoring": "true"}
@@ -35,10 +36,12 @@ func CreateTestNamespace(t *testing.T) string {
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.Fatalf("error creating test namespace: %s", err.Error())
 	}
+	t.Logf("%s: Test namespace %s created", time.Now().String(), testNamespace)
 	return testNamespace
 }
 
 func CleanupTestNamespace(name string, t *testing.T) {
+	t.Logf("%s: start cleanup of test namespace %s", time.Now().String(), name)
 	err := clusterRoleBindingClient.Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.Fatalf("error deleting cluster role %s: %s", name, err.Error())
@@ -55,4 +58,5 @@ func CleanupTestNamespace(name string, t *testing.T) {
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.Fatalf("error deleting test namespace %s: %s", name, err.Error())
 	}
+	t.Logf("%s: cleanup of test namespace %s completed", time.Now().String(), name)
 }

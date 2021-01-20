@@ -26,17 +26,17 @@ test: ## Run unit tests. Example: make test
 .PHONY: test
 
 test-e2e:
-	./deploy/deploy.sh
+	./deploy/deploy-in-CI.sh
 	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags normal -timeout 30m -v ./test/e2e/...
 .PHONY: test-e2e
 
 test-e2e-slow:
-	./deploy/deploy.sh
+	./deploy/deploy-in-CI.sh
 	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags slow -timeout 30m -v ./test/e2e/...
 .PHONY: test-e2e
 
 test-e2e-disruptive:
-	./deploy/deploy.sh
+	./deploy/deploy-in-CI.sh
 	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags disruptive -timeout 30m -v ./test/e2e/...
 .PHONY: test-e2e
 

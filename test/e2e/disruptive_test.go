@@ -14,12 +14,12 @@ func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
 	defer framework.CleanupTestNamespace(testNS, t)
 	basicShareSetupAndVerification(testNS, t)
 
-	t.Logf("initiating csi driver restart")
+	t.Logf("%s: initiating csi driver restart", time.Now().String())
 	framework.RestartDaemonSet(t)
-	t.Logf("csi driver restart complete, check test pod")
+	t.Logf("%s: csi driver restart complete, check test pod", time.Now().String())
 	framework.ExecPod(testNS, "openshift-config:openshift-install", false, 30*time.Second, t)
 
-	t.Logf("now changing share")
+	t.Logf("%s: now changing share", time.Now().String())
 	framework.ChangeShare(testNS, t)
 	framework.ExecPod(testNS, "openshift-config:pull-secret", false, 30*time.Second, t)
 }

@@ -16,10 +16,10 @@ func TestBasicThenNoRBACThenRBAC(t *testing.T) {
 	basicShareSetupAndVerification(testNS, t)
 
 	framework.DeleteShareRelatedRBAC(testNS, t)
-	t.Logf("wait up to 10 minutes for examining pod %s since the controller does not currently watch all clusterroles and clusterrolebindings and reverse engineer which ones satisfied the SAR calls, so we wait for relist on shares", testNS)
+	t.Logf("%s: wait up to 10 minutes for examining pod %s since the controller does not currently watch all clusterroles and clusterrolebindings and reverse engineer which ones satisfied the SAR calls, so we wait for relist on shares", time.Now().String(), testNS)
 	framework.ExecPod(testNS, "openshift-config:openshift-install", true, 10*time.Minute, t)
 
 	framework.CreateShareRelatedRBAC(testNS, t)
-	t.Logf("wait up to 10 minutes for examining pod %s since the controller does not currently watch all clusterroles and clusterrolebindings and reverse engineer which ones satisfied the SAR calls, so we wait for relist on shares", testNS)
+	t.Logf("%s: wait up to 10 minutes for examining pod %s since the controller does not currently watch all clusterroles and clusterrolebindings and reverse engineer which ones satisfied the SAR calls, so we wait for relist on shares", time.Now().String(), testNS)
 	framework.ExecPod(testNS, "openshift-config:openshift-install", false, 10*time.Minute, t)
 }

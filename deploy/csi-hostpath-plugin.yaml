@@ -37,7 +37,7 @@ spec:
         - name: node-driver-registrar
           image: quay.io/openshift/origin-csi-node-driver-registrar:latest
           args:
-            - --v=4
+            - --v=5
             - --csi-address=/csi/csi.sock
             - --kubelet-registration-path=/var/lib/kubelet/plugins/csi-hostpath/csi.sock
           securityContext:
@@ -67,7 +67,7 @@ spec:
             - csi-driver-projected-resource
           args:
             - "--drivername=csi-driver-projected-resource.openshift.io"
-            - "--v=5"
+            - "--v=4"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"
           env:
