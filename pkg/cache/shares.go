@@ -1,8 +1,10 @@
 package cache
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	"k8s.io/klog/v2"
 	"sync"
+
+	corev1 "k8s.io/api/core/v1"
 
 	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
 )
@@ -16,6 +18,7 @@ var (
 func AddShare(share *sharev1alpha1.Share) {
 	br := share.Spec.BackingResource
 	key := BuildKey(br.Namespace, br.Name)
+	klog.V(4).Infof("AddShare key %s kind %s", key, br.Kind)
 	switch br.Kind {
 	case "ConfigMap":
 		obj, ok := configmaps.Load(key)
@@ -23,8 +26,10 @@ func AddShare(share *sharev1alpha1.Share) {
 			cm := obj.(*corev1.ConfigMap)
 			configmapsWithShares.Store(key, cm)
 			shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+			//NOTE we do not store share in shares unless the backing resource is available
+			shares.Store(share.Name, share)
 		} else {
-			configmapsWithShares.Store(key, key)
+			sharesWaitingOnConfigmaps.Store(share.Name, share)
 		}
 	case "Secret":
 		obj, ok := secrets.Load(key)
@@ -32,13 +37,16 @@ func AddShare(share *sharev1alpha1.Share) {
 			s := obj.(*corev1.Secret)
 			secretsWithShare.Store(key, s)
 			shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+			//NOTE we do not store share in shares unless the backing resource is available
+			shares.Store(share.Name, share)
 		} else {
-			secretsWithShare.Store(key, key)
+			sharesWaitingOnSecrets.Store(share.Name, share)
 		}
 	}
 }
 
 func UpdateShare(share *sharev1alpha1.Share) {
+	klog.V(4).Infof("UpdateShare key %s kind %s", share.Name, share.Spec.BackingResource.Kind)
 	old, ok := shares.Load(share.Name)
 	if !ok || old == nil {
 		AddShare(share)
@@ -56,6 +64,7 @@ func UpdateShare(share *sharev1alpha1.Share) {
 	case oldBr.Name != newBr.Name:
 		diffInstance = true
 	}
+	klog.V(4).Infof("UpdateShare key %s kind %s diff %v", share.Name, share.Spec.BackingResource.Kind, diffInstance)
 	if !diffInstance {
 		shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 		return
@@ -72,6 +81,7 @@ func UpdateShare(share *sharev1alpha1.Share) {
 func DelShare(share *sharev1alpha1.Share) {
 	br := share.Spec.BackingResource
 	key := BuildKey(br.Namespace, br.Name)
+	klog.V(4).Infof("DelShare key %s kind %s", key, br.Kind)
 	configmapsWithShares.Delete(key)
 	secretsWithShare.Delete(key)
 	shares.Delete(share.Name)

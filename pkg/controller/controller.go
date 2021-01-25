@@ -430,7 +430,7 @@ func (c *Controller) syncShare(event client.Event) error {
 	if share == nil || !ok {
 		return fmt.Errorf("unexpected object vs. share: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
-	klog.V(5).Infof("verb %s share name %s", event.Verb, share.Name)
+	klog.V(4).Infof("verb %s share name %s", event.Verb, share.Name)
 	switch event.Verb {
 	case client.DeleteObjectAction:
 		objcache.DelShare(share)

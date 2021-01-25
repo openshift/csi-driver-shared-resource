@@ -270,9 +270,9 @@ func shareUpdateRanger(key, value interface{}) bool {
 	var hpv *hostPathVolume
 	ranger := func(key, value interface{}) bool {
 		hpv, _ = value.(*hostPathVolume)
-		klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger prelock", shareId, share.Name, share.Spec.BackingResource.Kind)
+		klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger", shareId, share.Name, share.Spec.BackingResource.Kind)
 		if hpv.GetSharedDataId() == shareId {
-			klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger postlock found volume %s", shareId, share.Name, share.Spec.BackingResource.Kind, hpv.GetVolID())
+			klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger found volume %s", shareId, share.Name, share.Spec.BackingResource.Kind, hpv.GetVolID())
 			a, err := client.ExecuteSAR(shareId, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetPodSA())
 			allowed := a && err == nil
 
