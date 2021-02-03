@@ -1,21 +1,37 @@
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
+
+- [OpenShift Projected Resource "CSI DRIVER"](#openshift-projected-resource-csi-driver)
+  - [Current status with respect to the enhancement propsal](#current-status-with-respect-to-the-enhancement-propsal)
+    - [Vetted scenarios](#vetted-scenarios)
+    - [Excluded OCP namespaces](#excluded-ocp-namespaces)
+  - [Deployment](#deployment)
+  - [Run example application and validate](#run-example-application-and-validate)
+  - [Confirm openshift-config ConfigMap data is present](#confirm-openshift-config-configmap-data-is-present)
+  - [Reference to our blog on using this component to leverage RHEL Entitlements](#reference-to-our-blog-on-using-this-component-to-leverage-rhel-entitlements)
+  - [Some more detail and examples around those vetted scenarios](#some-more-detail-and-examples-around-those-vetted-scenarios)
+    - [What happens exactly if the Share is not there when you create a Pod that references it](#what-happens-exactly-if-the-share-is-not-there-when-you-create-a-pod-that-references-it)
+    - [What happens if you have a long running Pod, and after starting it with the Share present, you remove the Share](#what-happens-if-you-have-a-long-running-pod-and-after-starting-it-with-the-share-present-you-remove-the-share)
+    - [What happens if the ClusterRole or ClusterRoleBinding are not present when your newly created Pod tries to access an existing Share](#what-happens-if-the-clusterrole-or-clusterrolebinding-are-not-present-when-your-newly-created-pod-tries-to-access-an-existing-share)
+    - [What happens if you have a long running Pod, and after starting it with the Share present and the necessary permissions present, you remove those permissions](#what-happens-if-you-have-a-long-running-pod-and-after-starting-it-with-the-share-present-and-the-necessary-permissions-present-you-remove-those-permissions)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
+
 # OpenShift Projected Resource "CSI DRIVER"
 
 The Work In Progress implementation for [this OpenShift Enhancement Proposal](https://github.com/openshift/enhancements/blob/master/enhancements/cluster-scope-secret-volumes/csi-driver-host-injections.md),
-this repository borrows from this reference implementation:
+this repository borrows from thes reference implementations:
 
 - [CSI Hostpath Driver](https://github.com/kubernetes-csi/csi-driver-host-path)
-- [Node Driver Registrar Sidecar Container](https://github.com/kubernetes-csi/node-driver-registrar)
+- [Kubernetes-Secrets-Store-CSI-Driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver)
 
 As part of forking these into this repository, function not required for the projected resources scenarios have 
 been removed, and the images containing these commands are built off of RHEL based images instead of the non-Red Hat
 images used upstream.
 
-And will in the near future cherry pick overlapping CSI API implementation logic from:
-
-- [Kubernetes-Secrets-Store-CSI-Driver](https://github.com/kubernetes-sigs/secrets-store-csi-driver)
-
 As the enhancement proposal reveals, this is not a fully compliant CSI Driver implementation.  This repository
-solely provides the minimum amounts of the Kubernetes / CSI contract to achive the goals stipulated in the 
+solely provides the minimum amounts of the Kubernetes / CSI contract needed to achieve the goals stipulated in the 
 Enhancement proposal.
 
 ## Current status with respect to the enhancement propsal
@@ -31,6 +47,18 @@ order for the referenced `ConfigMap` and `Secret` to be mounted in the `Pod`.
 
 A controller exists for watching this new CRD, as well as `ConfigMaps` and `Secrets` in all Namespaces except for
 a list of OpenShift "system" namespaces which have `ConfigMaps` that get updated every few seconds.
+
+Some high level remaining work:
+
+- Revisit monitoring for permission changes as they happen in addition to checking on the re-list
+- Monitoring of the prometheus metrics and pprof type ilk
+- Configuration around which namespaces are and are not monitored
+- Install via OLM and the OLM Operator Hub
+- TBD features for providing some flexibility on the precise file structure for the `Secret` / `ConfigMap` contents off 
+of the `Pod`'s `volumeMount` -> `mountPath`
+  
+
+### Vetted scenarios
  
 The controller and CSI driver in their current form facilitate the following scenarios:
 
@@ -45,6 +73,8 @@ data getting stored in the user pod's CSI volume
 reappearing in the user pod's CSI volume
 - support recycling of the csi driver so that previously provisioned CSI volumes are still managed; in other words,
 the driver's interan state is persisted 
+
+### Excluded OCP namespaces
 
 The current list of namespaces excluded from the controller's watches:
 
@@ -74,11 +104,15 @@ The current list of namespaces excluded from the controller's watches:
 - openshift-sdn
 - openshift-service-ca-operator
 
+The list is not yet configurable, but as noted above, most likely will become so as the project's lifecycle progresses.
+
 ## Deployment
-The easiest way to test the Hostpath driver is to run the `deploy.sh`.
+
+Untile the OLM based install is available, the means to use the Projected Resource driver is to run the `deploy.sh` in the
+`deploy` subdirectory of this repository.
 
 ```
-# deploy csi projectedresource driver
+# deploys csi projectedresource driver, RBAC related resources, namespace, Share CRD
 $ deploy/deploy.sh
 ```
 
@@ -222,15 +256,11 @@ Events:
 
 ## Confirm openshift-config ConfigMap data is present
 
-This current version of the driver as POC also watches the `ConfigMaps` and `Secrets` in the `openshift-config` 
-namespace and places that data in the provide `Volume` as well.
-
 To verify, go back into the `Pod` named `my-csi-app` and list the contents:
 
   ```shell
   $ kubectl exec  -n my-csi-app-namespace -it my-csi-app /bin/sh
   / # ls -lR /data
-  / # exit
   ```
 
 You should see contents like:
@@ -253,7 +283,12 @@ total 8
 / # 
 ```
 
-And if you inspect the contents of that `ConfigMap`, you'll see keys in the `data` map that 
+**NOTE**: You'll notice that the driver has created subdirectories off of the `volumeMount` specified in our example `Pod`.
+One subdirectory for the type (`configsmaps` or `secrets`), and one whose name is a concatenation of the `namespace` and
+`name` of the `ConfigMap` or `Secret` being mounted.  As noted in the high level feature list above, new features that allow 
+some control on how the files are laid out should be coming.
+
+Now, if you inspect the contents of that `ConfigMap`, you'll see keys in the `data` map that 
 correspond to the 2 files created:
 
 ```shell
@@ -283,8 +318,8 @@ metadata:
   uid: 0382a47d-7c58-4198-b99e-eb3dc987da59
 ```
 
-The storage of how `Secrets` and `ConfigMaps` are stored on disk mirror the corresponding volume types for 
-`Secrets` and `ConfigMaps` are stored per the code in  [https://github.com/kubernetes/kubernetes](https://github.com/kubernetes/kubernetes)
+How `Secrets` and `ConfigMaps` are stored on disk mirror the storage for 
+`Secrets` and `ConfigMaps` as done in the code in  [https://github.com/kubernetes/kubernetes](https://github.com/kubernetes/kubernetes)
 where a file is created for each key in a `ConfigMap` `data` map or `binaryData` map and each key in a `Secret`
 `data` map.
 
@@ -296,3 +331,124 @@ $ oc delete -f ./examples
 
 And the edit `./examples/02-csi-share.yaml` and change the `backingResource` stanza to point to the item 
 you want to share, and then re-run `oc apply -f ./examples`.
+
+## Reference to our blog on using this component to leverage RHEL Entitlements
+
+The blog post is under internal development.  A link to it will be added here when it is available.
+
+## Some more detail and examples around those vetted scenarios
+
+### What happens exactly if the Share is not there when you create a Pod that references it
+
+You'll see an event like:
+
+```bash
+$ oc get events
+0s          Warning   FailedMount      pod/my-csi-app                                       MountVolume.SetUp failed for volume "my-csi-volume" : rpc error: code = InvalidArgument desc = the csi driver volumeAttribute 'share' reference had an error: share.projectedresource.storage.openshift.io "my-share" not found
+$
+```
+
+And your Pod will never reach the Running state.
+
+However, if the kubelet is still in a retry cycle trying to launch a Pod with a `Share` reference, if `Share` non-existence is the only thing preventing a mount, the mount should then succeed if the `Share` comes into existence.
+
+### What happens if you have a long running Pod, and after starting it with the Share present, you remove the Share
+
+The data will be removed from the location specified by `volumeMount` in the `Pod`.  Instead of 
+
+```bash
+$ oc rsh my-csi-app
+sh-4.4# ls -lR /data
+ls -lR /data
+/data:
+total 0
+drwxr-xr-x. 3 root root 60 Jan 29 17:59 secrets
+
+/data/secrets:
+total 0
+drwxr-xr-x. 2 root root 80 Jan 29 17:59 shared-secrets-configmaps:etc-pki-entitlement
+
+'/data/secrets/shared-secrets-configmaps:etc-pki-entitlement':
+total 312
+-rw-r--r--. 1 root root   3243 Jan 29 17:59 4653723971430838710-key.pem
+-rw-r--r--. 1 root root 311312 Jan 29 17:59 4653723971430838710.pem
+
+```
+
+You'll get 
+
+```bash
+oc rsh my-csi-app
+sh-4.4# ls -lR /data
+ls -lR /data
+/data:
+total 0
+sh-4.4#
+
+```
+
+### What happens if the ClusterRole or ClusterRoleBinding are not present when your newly created Pod tries to access an existing Share
+
+```bash
+$ oc get events
+LAST SEEN   TYPE      REASON        OBJECT           MESSAGE
+6s          Normal    Scheduled     pod/my-csi-app   Successfully assigned my-csi-app-namespace/my-csi-app to ip-10-0-136-162.us-west-2.compute.internal
+2s          Warning   FailedMount   pod/my-csi-app   MountVolume.SetUp failed for volume "my-csi-volume" : rpc error: code = PermissionDenied desc = subjectaccessreviews share my-share podNamespace my-csi-app-namespace podName my-csi-app podSA default returned forbidden
+$
+
+```
+And your Pod will never get to the Running state.
+
+### What happens if you have a long running Pod, and after starting it with the Share present and the necessary permissions present, you remove those permissions
+
+The data will be removed from the `Pod’s` volumeMount location.
+
+Instead of 
+
+```bash
+$ oc rsh my-csi-app
+sh-4.4# ls -lR /data
+ls -lR /data
+/data:
+total 0
+drwxr-xr-x. 3 root root 60 Jan 29 17:59 secrets
+
+/data/secrets:
+total 0
+drwxr-xr-x. 2 root root 80 Jan 29 17:59 shared-secrets-configmaps:etc-pki-entitlement
+
+'/data/secrets/shared-secrets-configmaps:etc-pki-entitlement':
+total 312
+-rw-r--r--. 1 root root   3243 Jan 29 17:59 4653723971430838710-key.pem
+-rw-r--r--. 1 root root 311312 Jan 29 17:59 4653723971430838710.pem
+sh-4.4#
+
+```
+
+You'll get 
+
+```bash
+oc rsh my-csi-app
+sh-4.4# ls -lR /data
+ls -lR /data
+/data:
+total 0
+sh-4.4#
+```
+
+Do note that if your Pod copied the data to other locations, the Projected Resource driver cannot do anything about those copies.  A big motivator for allowing
+some customization of the directory and file structure off of the `volumeMount` of the `Pod` is to help reduce the *need* to copy
+files.  Hopefully you can mount that data directly at its final, needed, destination.
+
+Also note that the Projected Resource does not try to reverse engineer which RoleBinding or ClusterRoleBinding allows your Pod to access the Share. 
+The Kubernetes and OpenShift libraries for this are not currently structured to be openly consumed by other components.  Nor did we entertain taking 
+snapshots of that code to serve such a purpose.  So instead of listening to RoleBinding or Role changes, on the Projected Resource controller’s re-list interval 
+(which is configurable via start up argument on the command invoked from out DaemonSet, and whose default is 10 minutes), the controller will re-execute 
+Subject Access Review requests for each Pod’s reference to each `Share` on the `Share` re-list and remove content if permission was removed.  But as noted
+in the potential feature list up top, we'll continue to periodically revisit if there is a maintainable way of monitoring permission changes
+in real time.
+
+Conversely, if the kubelet is still in a retry cycle trying to launch a Pod with a `Share` reference, if now resolved permission issues were the only thing preventing 
+a mount, the mount should then succeed.  Of course, as kubelet retry vs. controller re-list is the polling mechanism, and it is more frequent, the change in results would be more immediate in this case.
+
+
