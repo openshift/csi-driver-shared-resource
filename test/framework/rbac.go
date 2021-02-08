@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"testing"
+	"time"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -54,6 +55,7 @@ func createShareClusterRoleBinding(name string, t *testing.T) {
 }
 
 func DeleteShareRelatedRBAC(name string, t *testing.T) {
+	t.Logf("%s: start delete share related rbac %s", time.Now().String(), name)
 	err := clusterRoleBindingClient.Delete(context.TODO(), name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.Fatalf("error deleting cluster role %s: %s", name, err.Error())
@@ -62,9 +64,12 @@ func DeleteShareRelatedRBAC(name string, t *testing.T) {
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.Fatalf("error deleting cluster role binding %s: %s", name, err.Error())
 	}
+	t.Logf("%s: completed share related rbac deletion %s", time.Now().String(), name)
 }
 
 func CreateShareRelatedRBAC(name string, t *testing.T) {
+	t.Logf("%s: start create share related rbac %s", time.Now().String(), name)
 	createShareClusterRole(name, t)
 	createShareClusterRoleBinding(name, t)
+	t.Logf("%s: completed share related rbac creation %s", time.Now().String(), name)
 }

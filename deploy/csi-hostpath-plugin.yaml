@@ -67,7 +67,7 @@ spec:
             - csi-driver-projected-resource
           args:
             - "--drivername=csi-driver-projected-resource.openshift.io"
-            - "--v=5"
+            - "--v=4"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"
           env:

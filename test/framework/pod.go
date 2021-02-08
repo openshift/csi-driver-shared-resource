@@ -68,10 +68,10 @@ func CreateTestPod(name string, expectSucess bool, t *testing.T) {
 		err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
 			pod, err = podClient.Get(context.TODO(), name, metav1.GetOptions{})
 			if err != nil {
-				t.Logf("error getting pod %s: %s", name, err.Error())
+				t.Logf("%s: error getting pod %s: %s", time.Now().String(), name, err.Error())
 			}
 			if pod.Status.Phase != corev1.PodRunning {
-				t.Logf("pod %s only in phase %s\n", pod.Name, pod.Status.Phase)
+				t.Logf("%s: pod %s only in phase %s\n", time.Now().String(), pod.Name, pod.Status.Phase)
 				return false, nil
 			}
 			return true, nil
@@ -95,11 +95,11 @@ func mountFailed(name string, t *testing.T) {
 	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
 		eventList, err = eventClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
-			t.Logf("unable to list events in test namespace %s: %s", name, err.Error())
+			t.Logf("%s: unable to list events in test namespace %s: %s", time.Now().String(), name, err.Error())
 			return false, nil
 		}
 		for _, event := range eventList.Items {
-			t.Logf("found event %s in namespace %s", event.Reason, name)
+			t.Logf("%s: found event %s in namespace %s", time.Now().String(), event.Reason, name)
 			// the constant for FailedMount is in k8s/k8s; refraining for vendoring that in this repo
 			if event.Reason == "FailedMount" && event.InvolvedObject.Kind == "Pod" && event.InvolvedObject.Name == name {
 				return true, nil
@@ -112,7 +112,7 @@ func mountFailed(name string, t *testing.T) {
 		for _, event := range eventList.Items {
 			eventJsonBytes, e := json.MarshalIndent(event, "", "    ")
 			if e != nil {
-				t.Logf("could not json marshall %#v", event)
+				t.Logf("%s: could not json marshall %#v", time.Now().String(), event)
 			} else {
 				eventJsonString = fmt.Sprintf("%s\n%s\n", eventJsonString, string(eventJsonBytes))
 			}
@@ -137,18 +137,18 @@ func ExecPod(name, searchString string, missing bool, totalDuration time.Duratio
 		err := remoteExecutor.Execute("POST", req.URL(), kubeConfig, nil, out, errOut, false, nil)
 
 		if err != nil {
-			t.Logf("error with remote exec: %s", err.Error())
+			t.Logf("%s: error with remote exec: %s", time.Now().String(), err.Error())
 			return false, nil
 		}
 		if !missing && !strings.Contains(out.String(), searchString) {
-			t.Logf("directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", missing, out.String(), errOut.String())
+			t.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), missing, out.String(), errOut.String())
 			return false, nil
 		}
 		if missing && strings.Contains(out.String(), searchString) {
-			t.Logf("directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", missing, out.String(), errOut.String())
+			t.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), missing, out.String(), errOut.String())
 			return false, nil
 		}
-		t.Logf("final directory listing:\n%s", out.String())
+		t.Logf("%s: final directory listing:\n%s", time.Now().String(), out.String())
 		return true, nil
 	})
 
@@ -163,11 +163,13 @@ func dumpPod(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error list pods %v", err)
 	}
-	t.Logf("dumpPods have %d items in list", len(podList.Items))
+	t.Logf("%s: dumpPods have %d items in list", time.Now().String(), len(podList.Items))
 	for _, pod := range podList.Items {
-		t.Logf("dumpPods looking at pod %s in phase %s", pod.Name, pod.Status.Phase)
+		t.Logf("%s: dumpPods looking at pod %s in phase %s", time.Now().String(), pod.Name, pod.Status.Phase)
 		if strings.HasPrefix(pod.Name, "csi-hostpath") &&
 			pod.Status.Phase == corev1.PodRunning {
+			podJsonBytes, _ := json.MarshalIndent(pod, "", "    ")
+			t.Logf("%s: pod json:\n:%s", time.Now().String(), string(podJsonBytes))
 			for _, container := range pod.Spec.Containers {
 				req := podClient.GetLogs(pod.Name, &corev1.PodLogOptions{Container: container.Name})
 				readCloser, err := req.Stream(context.TODO())
@@ -179,8 +181,7 @@ func dumpPod(t *testing.T) {
 					t.Fatalf("error reading pod stream %s", err.Error())
 				}
 				podLog := string(b)
-				t.Logf("pod logs for container %s:  %s", container.Name, podLog)
-
+				t.Logf("%s: pod logs for container %s:  %s", time.Now().String(), container.Name, podLog)
 			}
 		}
 	}

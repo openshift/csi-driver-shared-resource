@@ -10,7 +10,8 @@ import (
 
 func prep(t *testing.T) {
 	framework.SetupClients(t)
-	err := framework.WaitForDaemonSet(true)
+	framework.LaunchDriver(t)
+	err := framework.WaitForDaemonSet(true, t)
 	if err != nil {
 		framework.LogAndDebugTestError(fmt.Sprintf("csi driver daemon not up: %s", err.Error()), t)
 	}
