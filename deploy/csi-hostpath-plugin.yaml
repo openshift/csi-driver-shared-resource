@@ -35,7 +35,7 @@ spec:
       serviceAccountName: csi-driver-projected-resource-plugin
       containers:
         - name: node-driver-registrar
-          image: quay.io/openshift/origin-csi-node-driver-registrar:latest
+          image: quay.io/openshift/origin-csi-node-driver-registrar:4.7.0
           args:
             - --v=5
             - --csi-address=/csi/csi.sock
@@ -60,7 +60,8 @@ spec:
               name: csi-data-dir
 
         - name: hostpath
-          image: quay.io/openshift/origin-csi-driver-projected-resource:latest
+          # precise version of the 4.8.0 tag used for the blog post branch/tag
+          image: quay.io/openshift/origin-csi-driver-projected-resource@sha256:2007468d111cdb9bd313087c8cf267d584c4bd7489f558f4a29eb3466325b85c
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:
