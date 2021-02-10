@@ -35,16 +35,23 @@ import (
 	"github.com/openshift/csi-driver-projected-resource/pkg/client"
 )
 
-func testHostPathDriver() (*hostPath, string, string, error) {
-	tmpDir1, err := ioutil.TempDir(os.TempDir(), "ut")
+const (
+	secretkey1      = "secretkey1"
+	secretvalue1    = "secretvalue1"
+	configmapkey1   = "configmapkey1"
+	configmapvalue1 = "configmapvalue1"
+)
+
+func testHostPathDriver(testName string) (*hostPath, string, string, error) {
+	tmpDir1, err := ioutil.TempDir(os.TempDir(), testName)
 	if err != nil {
 		return nil, "", "", err
 	}
-	tmpDir2, err := ioutil.TempDir(os.TempDir(), "ut")
+	tmpDir2, err := ioutil.TempDir(os.TempDir(), testName)
 	if err != nil {
 		return nil, "", "", err
 	}
-	hp, err := NewHostPathDriver(tmpDir1, tmpDir2, "ut-driver", "nodeID1", "endpoint1", 0, "version1")
+	hp, err := NewHostPathDriver(tmpDir1, tmpDir2, testName, "nodeID1", "endpoint1", 0, "version1")
 	return hp, tmpDir1, tmpDir2, err
 }
 
@@ -59,14 +66,14 @@ func seedVolumeContext() map[string]string {
 }
 
 func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
 	volCtx := seedVolumeContext()
-	_, err = hp.createHostpathVolume("TestCreateHostPathVolumeBadAccessType", "", volCtx, &sharev1alpha1.Share{}, 0, mountAccess+1)
+	_, err = hp.createHostpathVolume(t.Name(), "", volCtx, &sharev1alpha1.Share{}, 0, mountAccess+1)
 	if err == nil {
 		t.Fatalf("err nil unexpectedly")
 	}
@@ -75,19 +82,19 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 	}
 }
 
-func TestCreateConfigMapHostPathVolume(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+func TestCreateDeleteConfigMap(t *testing.T) {
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	cm := primeConfigMapVolume(hp, targetPath, "TestCreateConfigMapHostPathVolume", nil, t)
+	cm := primeConfigMapVolume(hp, targetPath, t.Name(), nil, t)
 	_, foundConfigMap := findSharedItems(targetPath, t)
 	if !foundConfigMap {
 		t.Fatalf("did not find configmap in mount path")
@@ -99,19 +106,19 @@ func TestCreateConfigMapHostPathVolume(t *testing.T) {
 	}
 }
 
-func TestCreateSecretHostPathVolume(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+func TestCreateDeleteSecret(t *testing.T) {
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	secret := primeSecretVolume(hp, targetPath, "TestCreateSecretHostPathVolume", nil, t)
+	secret := primeSecretVolume(hp, targetPath, t.Name(), nil, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("did not find secret in mount path")
@@ -124,19 +131,19 @@ func TestCreateSecretHostPathVolume(t *testing.T) {
 }
 
 func TestDeleteSecretVolume(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	primeSecretVolume(hp, targetPath, "TestDeleteSecretVolume", nil, t)
-	err = hp.deleteHostpathVolume("TestDeleteSecretVolume")
+	primeSecretVolume(hp, targetPath, t.Name(), nil, t)
+	err = hp.deleteHostpathVolume(t.Name())
 	if err != nil {
 		t.Fatalf("unexpeted error on delete volume: %s", err.Error())
 	}
@@ -152,19 +159,19 @@ func TestDeleteSecretVolume(t *testing.T) {
 }
 
 func TestDeleteConfigMapVolume(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	primeConfigMapVolume(hp, targetPath, "TestDeleteConfigMapVolume", nil, t)
-	err = hp.deleteHostpathVolume("TestDeleteConfigMapVolume")
+	primeConfigMapVolume(hp, targetPath, t.Name(), nil, t)
+	err = hp.deleteHostpathVolume(t.Name())
 	if err != nil {
 		t.Fatalf("unexpeted error on delete volume: %s", err.Error())
 	}
@@ -179,13 +186,13 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 }
 
 func TestDeleteShare(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -218,7 +225,7 @@ func TestDeleteShare(t *testing.T) {
 	}
 	client.SetSharesLister(shareLister)
 
-	primeSecretVolume(hp, targetPath, "TestDeleteShare", share, t)
+	primeSecretVolume(hp, targetPath, t.Name(), share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -233,13 +240,13 @@ func TestDeleteShare(t *testing.T) {
 }
 
 func TestDeleteReAddShare(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -272,7 +279,7 @@ func TestDeleteReAddShare(t *testing.T) {
 	}
 	client.SetSharesLister(shareLister)
 
-	primeSecretVolume(hp, targetPath, "TestDeleteReAddShare", share, t)
+	primeSecretVolume(hp, targetPath, t.Name(), share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -293,13 +300,13 @@ func TestDeleteReAddShare(t *testing.T) {
 }
 
 func TestUpdateShare(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -332,7 +339,7 @@ func TestUpdateShare(t *testing.T) {
 	client.SetSharesLister(shareLister)
 	cache.AddShare(share)
 
-	primeSecretVolume(hp, targetPath, "TestUpdateShare", share, t)
+	primeSecretVolume(hp, targetPath, t.Name(), share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -343,6 +350,7 @@ func TestUpdateShare(t *testing.T) {
 			Name:      "configmap1",
 			Namespace: "namespace",
 		},
+		Data: map[string]string{configmapkey1: configmapvalue1},
 	}
 	cache.UpsertConfigMap(cm)
 
@@ -360,13 +368,13 @@ func TestUpdateShare(t *testing.T) {
 }
 
 func TestPermChanges(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver()
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), "ut")
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -399,7 +407,7 @@ func TestPermChanges(t *testing.T) {
 	client.SetSharesLister(shareLister)
 	cache.AddShare(share)
 
-	primeSecretVolume(hp, targetPath, "TestPermChanges", share, t)
+	primeSecretVolume(hp, targetPath, t.Name(), share, t)
 	foundSecret, _ := findSharedItems(targetPath, t)
 	if !foundSecret {
 		t.Fatalf("secret not found")
@@ -464,6 +472,7 @@ func primeSecretVolume(hp *hostPath, targetPath, testName string, share *sharev1
 			Name:      "secret1",
 			Namespace: "namespace",
 		},
+		Data: map[string][]byte{secretkey1: []byte(secretvalue1)},
 	}
 
 	cache.UpdateShare(share)
@@ -509,6 +518,7 @@ func primeConfigMapVolume(hp *hostPath, targetPath, testName string, share *shar
 			Name:      "configmap1",
 			Namespace: "namespace",
 		},
+		Data: map[string]string{configmapkey1: configmapvalue1},
 	}
 
 	cache.UpdateShare(share)
@@ -526,10 +536,10 @@ func findSharedItems(dir string, t *testing.T) (bool, bool) {
 	foundConfigMap := false
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		t.Logf("found file %s dir flag %v", info.Name(), info.IsDir())
-		if err == nil && strings.Contains(info.Name(), "secret1") {
+		if err == nil && strings.Contains(info.Name(), secretkey1) {
 			foundSecret = true
 		}
-		if err == nil && strings.Contains(info.Name(), "configmap1") {
+		if err == nil && strings.Contains(info.Name(), configmapkey1) {
 			foundConfigMap = true
 		}
 		return nil

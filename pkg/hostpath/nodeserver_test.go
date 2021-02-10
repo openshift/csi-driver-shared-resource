@@ -40,8 +40,11 @@ func (f *fakeShareLister) Get(name string) (*sharev1alpha1.Share, error) {
 	return f.share, nil
 }
 
-func testNodeServer() (*nodeServer, string, string, error) {
-	hp, tmpDir, volPathTmpDir, err := testHostPathDriver()
+func testNodeServer(testName string) (*nodeServer, string, string, error) {
+	if strings.Contains(testName, "/") {
+		testName = strings.Split(testName, "/")[0]
+	}
+	hp, tmpDir, volPathTmpDir, err := testHostPathDriver(testName)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -359,7 +362,7 @@ func TestNodePublishVolume(t *testing.T) {
 			if test.nodePublishVolReq.TargetPath != "" {
 				defer os.RemoveAll(test.nodePublishVolReq.TargetPath)
 			}
-			ns, tmpDir, volPath, err := testNodeServer()
+			ns, tmpDir, volPath, err := testNodeServer(t.Name())
 			if err != nil {
 				t.Fatalf("unexpected err %s", err.Error())
 			}
