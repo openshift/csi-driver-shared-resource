@@ -185,6 +185,14 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 	// event to facilitate exposure
 	// TODO: prometheus metrics/alerts may be desired here, though some due diligence on what k8s level metrics/alerts
 	// around host filesystem issues might already exist would be warranted with such an exploration/effort
+
+	// Next, given the current approach of isolating content in a type/namespace:name subdir off of the mountPath,
+	// on an update we first nuke any existing directory and then recreate it to simplify handling the case where
+	// the keys in the secret/configmap have changed such that some keys have been removed, which would translate
+	// in files having to be removed
+	if err := os.RemoveAll(podFileDir); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(podFileDir, os.ModePerm); err != nil {
 		return err
 	}

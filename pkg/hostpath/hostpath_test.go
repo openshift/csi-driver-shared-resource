@@ -158,6 +158,44 @@ func TestDeleteSecretVolume(t *testing.T) {
 
 }
 
+func TestChangeKeys(t *testing.T) {
+	hp, dir1, dir2, err := testHostPathDriver(t.Name())
+	if err != nil {
+		t.Fatalf("%s", err.Error())
+	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	secret := primeSecretVolume(hp, targetPath, t.Name(), nil, t)
+	foundSecret, _ := findSharedItems(targetPath, t)
+	if !foundSecret {
+		t.Fatalf("did not find secret in mount path")
+	}
+
+	delete(secret.Data, secretkey1)
+	secretkey2 := "secretkey2"
+	secretvalue2 := "secretvalue2"
+	secret.Data[secretkey2] = []byte(secretvalue2)
+	cache.UpsertSecret(secret)
+	foundSecret, _ = findSharedItems(targetPath, t)
+	if foundSecret {
+		t.Fatalf("found old key secretkey1")
+	}
+	filepath.Walk(targetPath, func(path string, info os.FileInfo, err error) error {
+		if err == nil && strings.Contains(info.Name(), secretkey2) {
+			foundSecret = true
+		}
+		return nil
+	})
+	if !foundSecret {
+		t.Fatalf("did not find key secretkey2")
+	}
+}
+
 func TestDeleteConfigMapVolume(t *testing.T) {
 	hp, dir1, dir2, err := testHostPathDriver(t.Name())
 	if err != nil {
