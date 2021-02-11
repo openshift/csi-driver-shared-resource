@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sync"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -28,6 +29,7 @@ const (
 )
 
 var (
+	initLock = sync.Mutex{}
 	kubeClient kubernetes.Interface
 	recorder   record.EventRecorder
 )
@@ -72,6 +74,8 @@ func GetConfig() (*rest.Config, error) {
 }
 
 func initClient() error {
+	initLock.Lock()
+	defer initLock.Unlock()
 	if kubeClient == nil {
 		kubeRestConfig, err := GetConfig()
 		if err != nil {
