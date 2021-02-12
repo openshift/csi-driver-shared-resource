@@ -22,22 +22,28 @@ generate-crd:
 	./hack/update-crd.sh
 
 test: ## Run unit tests. Example: make test
-	go test ./cmd/... ./pkg/...
+	go test -race -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
 test-e2e:
+	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
+	# the test code will adjust the image supplied to the daemonset hostpath container
 	./deploy/deploy-in-CI.sh
-	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags normal -timeout 30m -v ./test/e2e/...
+	KUBERNETES_CONFIG=${KUBECONFIG} go test -race -count 1 -tags normal -timeout 30m -v ./test/e2e/...
 .PHONY: test-e2e
 
 test-e2e-slow:
+	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
+	# the test code will adjust the image supplied to the daemonset hostpath container
 	./deploy/deploy-in-CI.sh
-	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags slow -timeout 30m -v ./test/e2e/...
+	KUBERNETES_CONFIG=${KUBECONFIG} go test -race -count 1 -tags slow -timeout 30m -v ./test/e2e/...
 .PHONY: test-e2e
 
 test-e2e-disruptive:
+	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
+	# the test code will adjust the image supplied to the daemonset hostpath container
 	./deploy/deploy-in-CI.sh
-	KUBERNETES_CONFIG=${KUBECONFIG} go test -count 1 -tags disruptive -timeout 30m -v ./test/e2e/...
+	KUBERNETES_CONFIG=${KUBECONFIG} go test -race -count 1 -tags disruptive -timeout 30m -v ./test/e2e/...
 .PHONY: test-e2e
 
 verify: ## Run verifications. Example: make verify
@@ -49,7 +55,7 @@ build: ## Build the executable. Example: make build
 	go build -a -mod=vendor -race -ldflags $(LDFLAGS) -o _output/csi-driver-projected-resource ./cmd
 .PHONY: build
 
-build-image: ## Build the images and push them to the remote registry. Example: make build-images
+build-image: ## Build the images and push them to the remote registry. Example: make build-image
 	rm -rf _output
 	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-projected-resource:$(TAG) .
 	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-projected-resource:$(TAG)
