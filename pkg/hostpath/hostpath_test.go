@@ -94,13 +94,13 @@ func TestCreateDeleteConfigMap(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	cm := primeConfigMapVolume(hp, targetPath, t.Name(), nil, t)
-	_, foundConfigMap := findSharedItems(targetPath, t)
+	cm := primeConfigMapVolume(t, hp, targetPath, nil)
+	_, foundConfigMap := findSharedItems(t, targetPath)
 	if !foundConfigMap {
 		t.Fatalf("did not find configmap in mount path")
 	}
 	cache.DelConfigMap(cm)
-	_, foundConfigMap = findSharedItems(targetPath, t)
+	_, foundConfigMap = findSharedItems(t, targetPath)
 	if foundConfigMap {
 		t.Fatalf("configmap not deleted")
 	}
@@ -118,13 +118,13 @@ func TestCreateDeleteSecret(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	secret := primeSecretVolume(hp, targetPath, t.Name(), nil, t)
-	foundSecret, _ := findSharedItems(targetPath, t)
+	secret := primeSecretVolume(t, hp, targetPath, nil)
+	foundSecret, _ := findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("did not find secret in mount path")
 	}
 	cache.DelSecret(secret)
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 	if foundSecret {
 		t.Fatalf("secret not deleted")
 	}
@@ -142,12 +142,12 @@ func TestDeleteSecretVolume(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	primeSecretVolume(hp, targetPath, t.Name(), nil, t)
+	primeSecretVolume(t, hp, targetPath, nil)
 	err = hp.deleteHostpathVolume(t.Name())
 	if err != nil {
 		t.Fatalf("unexpeted error on delete volume: %s", err.Error())
 	}
-	foundSecret, _ := findSharedItems(dir1, t)
+	foundSecret, _ := findSharedItems(t, dir1)
 
 	if foundSecret {
 		t.Fatalf("secret not deleted")
@@ -170,8 +170,8 @@ func TestChangeKeys(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	secret := primeSecretVolume(hp, targetPath, t.Name(), nil, t)
-	foundSecret, _ := findSharedItems(targetPath, t)
+	secret := primeSecretVolume(t, hp, targetPath, nil)
+	foundSecret, _ := findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("did not find secret in mount path")
 	}
@@ -181,7 +181,7 @@ func TestChangeKeys(t *testing.T) {
 	secretvalue2 := "secretvalue2"
 	secret.Data[secretkey2] = []byte(secretvalue2)
 	cache.UpsertSecret(secret)
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 	if foundSecret {
 		t.Fatalf("found old key secretkey1")
 	}
@@ -208,12 +208,12 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
 	defer os.RemoveAll(targetPath)
-	primeConfigMapVolume(hp, targetPath, t.Name(), nil, t)
+	primeConfigMapVolume(t, hp, targetPath, nil)
 	err = hp.deleteHostpathVolume(t.Name())
 	if err != nil {
 		t.Fatalf("unexpeted error on delete volume: %s", err.Error())
 	}
-	_, foundConfigMap := findSharedItems(dir1, t)
+	_, foundConfigMap := findSharedItems(t, dir1)
 
 	if foundConfigMap {
 		t.Fatalf("configmap not deleted")
@@ -263,14 +263,14 @@ func TestDeleteShare(t *testing.T) {
 	}
 	client.SetSharesLister(shareLister)
 
-	primeSecretVolume(hp, targetPath, t.Name(), share, t)
-	foundSecret, _ := findSharedItems(targetPath, t)
+	primeSecretVolume(t, hp, targetPath, share)
+	foundSecret, _ := findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("secret not found")
 	}
 
 	cache.DelShare(share)
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 
 	if foundSecret {
 		t.Fatalf("secret not deleted")
@@ -317,21 +317,21 @@ func TestDeleteReAddShare(t *testing.T) {
 	}
 	client.SetSharesLister(shareLister)
 
-	primeSecretVolume(hp, targetPath, t.Name(), share, t)
-	foundSecret, _ := findSharedItems(targetPath, t)
+	primeSecretVolume(t, hp, targetPath, share)
+	foundSecret, _ := findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("secret not found")
 	}
 
 	cache.DelShare(share)
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 
 	if foundSecret {
 		t.Fatalf("secret not deleted")
 	}
 
 	cache.AddShare(share)
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("secret not found after readd")
 	}
@@ -377,8 +377,8 @@ func TestUpdateShare(t *testing.T) {
 	client.SetSharesLister(shareLister)
 	cache.AddShare(share)
 
-	primeSecretVolume(hp, targetPath, t.Name(), share, t)
-	foundSecret, _ := findSharedItems(targetPath, t)
+	primeSecretVolume(t, hp, targetPath, share)
+	foundSecret, _ := findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("secret not found")
 	}
@@ -396,7 +396,7 @@ func TestUpdateShare(t *testing.T) {
 	share.Spec.BackingResource.Name = "configmap1"
 
 	cache.UpdateShare(share)
-	foundSecret, foundConfigMap := findSharedItems(targetPath, t)
+	foundSecret, foundConfigMap := findSharedItems(t, targetPath)
 	if foundSecret {
 		t.Fatalf("secret should have been removed")
 	}
@@ -445,8 +445,8 @@ func TestPermChanges(t *testing.T) {
 	client.SetSharesLister(shareLister)
 	cache.AddShare(share)
 
-	primeSecretVolume(hp, targetPath, t.Name(), share, t)
-	foundSecret, _ := findSharedItems(targetPath, t)
+	primeSecretVolume(t, hp, targetPath, share)
+	foundSecret, _ := findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("secret not found")
 	}
@@ -460,7 +460,7 @@ func TestPermChanges(t *testing.T) {
 
 	shareUpdateRanger(share.Name, share)
 
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 	if foundSecret {
 		t.Fatalf("secret should have been removed")
 	}
@@ -471,18 +471,18 @@ func TestPermChanges(t *testing.T) {
 
 	shareUpdateRanger(share.Name, share)
 
-	foundSecret, _ = findSharedItems(targetPath, t)
+	foundSecret, _ = findSharedItems(t, targetPath)
 	if !foundSecret {
 		t.Fatalf("secret should have been found")
 	}
 }
 
-func primeSecretVolume(hp *hostPath, targetPath, testName string, share *sharev1alpha1.Share, t *testing.T) *corev1.Secret {
+func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, share *sharev1alpha1.Share) *corev1.Secret {
 	volCtx := seedVolumeContext()
 	if share == nil {
 		share = &sharev1alpha1.Share{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
+				Name: t.Name(),
 			},
 			Spec: sharev1alpha1.ShareSpec{
 				BackingResource: sharev1alpha1.BackingResource{
@@ -501,7 +501,7 @@ func primeSecretVolume(hp *hostPath, targetPath, testName string, share *sharev1
 		client.SetSharesLister(shareLister)
 		cache.AddShare(share)
 	}
-	hpv, err := hp.createHostpathVolume(testName, targetPath, volCtx, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, volCtx, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -523,12 +523,12 @@ func primeSecretVolume(hp *hostPath, targetPath, testName string, share *sharev1
 	return secret
 }
 
-func primeConfigMapVolume(hp *hostPath, targetPath, testName string, share *sharev1alpha1.Share, t *testing.T) *corev1.ConfigMap {
+func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, share *sharev1alpha1.Share) *corev1.ConfigMap {
 	volCtx := seedVolumeContext()
 	if share == nil {
 		share = &sharev1alpha1.Share{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: testName,
+				Name: t.Name(),
 			},
 			Spec: sharev1alpha1.ShareSpec{
 				BackingResource: sharev1alpha1.BackingResource{
@@ -547,7 +547,7 @@ func primeConfigMapVolume(hp *hostPath, targetPath, testName string, share *shar
 		client.SetSharesLister(shareLister)
 		cache.AddShare(share)
 	}
-	hpv, err := hp.createHostpathVolume(testName, targetPath, volCtx, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, volCtx, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -569,7 +569,7 @@ func primeConfigMapVolume(hp *hostPath, targetPath, testName string, share *shar
 	return cm
 }
 
-func findSharedItems(dir string, t *testing.T) (bool, bool) {
+func findSharedItems(t *testing.T, dir string) (bool, bool) {
 	foundSecret := false
 	foundConfigMap := false
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
