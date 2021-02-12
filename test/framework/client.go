@@ -2,8 +2,6 @@ package framework
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"testing"
-
 	kubeset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
@@ -25,24 +23,24 @@ var (
 	shareClient              shareset.Interface
 )
 
-func SetupClients(t *testing.T) {
+func SetupClients(t *TestArgs) {
 	var err error
 	if kubeConfig == nil {
 		kubeConfig, err = client.GetConfig()
 		if err != nil {
-			t.Fatalf("%#v", err)
+			t.T.Fatalf("%#v", err)
 		}
 	}
 	if kubeClient == nil {
 		kubeClient, err = kubeset.NewForConfig(kubeConfig)
 		if err != nil {
-			t.Fatalf("%#v", err)
+			t.T.Fatalf("%#v", err)
 		}
 	}
 	if restClient == nil {
 		restClient, err = rest.RESTClientFor(setRESTConfigDefaults(*kubeConfig))
 		if err != nil {
-			t.Fatalf("%#v", err)
+			t.T.Fatalf("%#v", err)
 		}
 	}
 	if namespaceClient == nil {
@@ -59,7 +57,7 @@ func SetupClients(t *testing.T) {
 	}
 	shareClient, err = shareset.NewForConfig(kubeConfig)
 	if err != nil {
-		t.Fatalf("%#v", err)
+		t.T.Fatalf("%#v", err)
 	}
 }
 
