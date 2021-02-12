@@ -216,7 +216,7 @@ func commonDeleteRanger(podPath, filter string, key interface{}) bool {
 		return true
 	}
 	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
-	os.Remove(podFilePath)
+	os.RemoveAll(podFilePath)
 	return true
 }
 
