@@ -3,6 +3,8 @@
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [OpenShift Projected Resource "CSI DRIVER"](#openshift-projected-resource-csi-driver)
+  - [Current status with respect to the Kubernetes CSIVolumeSource API](#current-status-with-respect-to-the-kubernetes-csivolumesource-api)
+  - [Current status with respect to the Kubernetes VolumeMount API](#current-status-with-respect-to-the-kubernetes-volumemount-api)
   - [Current status with respect to the enhancement propsal](#current-status-with-respect-to-the-enhancement-propsal)
     - [Vetted scenarios](#vetted-scenarios)
     - [Excluded OCP namespaces](#excluded-ocp-namespaces)
@@ -33,6 +35,34 @@ images used upstream.
 As the enhancement proposal reveals, this is not a fully compliant CSI Driver implementation.  This repository
 solely provides the minimum amounts of the Kubernetes / CSI contract needed to achieve the goals stipulated in the 
 Enhancement proposal.
+
+## Current status with respect to the Kubernetes CSIVolumeSource API
+
+So let's take each part of the [CSIVolumeSource](https://github.com/kubernetes/api/blob/71efbb18d63cd30604981514ac623a6be1d413bb/core/v1/types.go#L1743-L1771):
+
+- for the `Driver` string field, it needs to be ["csi-driver-projected-resource.openshift.io"](https://github.com/openshift/csi-driver-projected-resource/blob/1fcc354faa31f624086265ea2228661a0fc2e7b1/pkg/client/client.go#L28).
+- for the `VolumeAttributes` map, this driver currently adds the "share" key (which maps the the `Share` instance your `Pod` wants to use) in addition to the 
+elements of the `Pod` the kubelet stores when contacting the driver to provision the `Volume`.  See [this list](https://github.com/openshift/csi-driver-projected-resource/blob/c3f1c454f92203f4b406dabe8dd460782cac1d03/pkg/hostpath/nodeserver.go#L37-L42).
+- the `ReadOnly` field is ignored, as the this driver's controller actively updates the `Volume` as the underlying `Secret` or `ConfigMap` change, or as 
+the `Share` or the RBAC related to the `Share` change.
+- the `FSType` field is ignored.  This driver by design only supports `tmpfs`, with a different mount performed for each `Volume`, in order to defer all SELinux concerns to the kubelet.
+- the `NodePublishSecretRef` field is ignored.  The CSI `NodePublishVolume` and `NodeUnpublishVolume` flows gate the permission evaluation required for the `Volume`
+by performing `SubjectAccessReviews` against the reference `Share` instance, using the `serviceAccount` of the `Pod` as the subject.
+  
+## Current status with respect to the Kubernetes VolumeMount API
+
+So let's take each part of the [VolumeMount](https://github.com/openshift/csi-driver-projected-resource/blob/c3f1c454f92203f4b406dabe8dd460782cac1d03/pkg/hostpath/nodeserver.go#L37-L42),
+where each `Container` in a `Pod` is allowed an array of such mounts:
+
+- the validations that Kubernetes applies to `Name` and `MountPath` fields apply.
+- if the `MountPath` of one `VolumeMount` is a subdirectory of another `MountPath` in the `Container`, Kubernetes will allow it, and this driver 
+currently does support that scenario.
+- if the `MountPath` corresponds to an existing directory with content in the image, or a directory that is populated as part of `Pod` setup outside this driver, the results can vary.  Until the behavior can be fully vetted, do this at your own risk.
+- the `ReadOnly` field is currently ignored, per our explanation above with [CSIVolumeSource](#current-status-with-respect-to-the-kubernetes-csivolumesource-api).
+- the `SubPath` field is currently ignored.
+- the `MountPropagation` field is currently ignored, and is non-applicable to this driver, given that the data written to the `tmpfs` filesystem of the `Pod` comes
+from the Kubernetes Controller cache, and not the host.
+- the `SubPathExpr` field is currently ignored.
 
 ## Current status with respect to the enhancement propsal
 
