@@ -2,6 +2,7 @@ package cache
 
 import (
 	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	"k8s.io/klog/v2"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -57,6 +58,7 @@ func GetConfigMap(key interface{}) *corev1.ConfigMap {
 
 func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	key := GetKey(configmap)
+	klog.V(0).Infof("UpsertConfigMap key %s", key)
 	configmaps.Store(key, configmap)
 	// in case share arrived before configmap
 	processSharesWithoutConfigmaps := []string{}
@@ -82,6 +84,7 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 
 func DelConfigMap(configmap *corev1.ConfigMap) {
 	key := GetKey(configmap)
+	klog.V(4).Infof("DelConfigMap key %s", key)
 	configmaps.Delete(key)
 	configmapDeleteCallbacks.Range(buildRanger(buildCallbackMap(key, configmap)))
 	configmapsWithShares.Delete(key)
