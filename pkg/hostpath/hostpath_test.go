@@ -153,7 +153,11 @@ func TestDeleteSecretVolume(t *testing.T) {
 		t.Fatalf("secret not deleted")
 	}
 	if empty, err := isDirEmpty(dir1); !empty || err != nil {
-		t.Fatalf("volume directory not cleaned out empty %v err %s", empty, err.Error())
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+		t.Fatalf("volume directory not cleaned out empty %v err %s", empty, errStr)
 	}
 
 }
@@ -219,7 +223,11 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 		t.Fatalf("configmap not deleted")
 	}
 	if empty, err := isDirEmpty(dir1); !empty || err != nil {
-		t.Fatalf("volume directory not cleaned out empty %v err %s", empty, err.Error())
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+		t.Fatalf("volume directory not cleaned out empty %v err %s", empty, errStr)
 	}
 }
 
@@ -573,6 +581,9 @@ func findSharedItems(t *testing.T, dir string) (bool, bool) {
 	foundSecret := false
 	foundConfigMap := false
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if info == nil {
+			return nil
+		}
 		t.Logf("found file %s dir flag %v", info.Name(), info.IsDir())
 		if err == nil && strings.Contains(info.Name(), secretkey1) {
 			foundSecret = true

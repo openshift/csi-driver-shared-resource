@@ -44,8 +44,6 @@ func TestBasicThenNoShareThenShare(t *testing.T) {
 	framework.DeleteShare(testArgs)
 	testArgs.TestDuration = 30 * time.Second
 	testArgs.SearchStringMissing = true
-	testArgs.SearchString = "openshift-config:openshift-install"
-	framework.ExecPod(testArgs)
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 
@@ -53,8 +51,6 @@ func TestBasicThenNoShareThenShare(t *testing.T) {
 
 	framework.CreateShare(testArgs)
 	testArgs.SearchStringMissing = false
-	testArgs.SearchString = "openshift-config:openshift-install"
-	framework.ExecPod(testArgs)
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 }
@@ -92,15 +88,11 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveSubPath(t *testing.T) {
 
 	testArgs.ShareToDelete = testArgs.SecondName
 	framework.DeleteShare(testArgs)
-	testArgs.SearchString = "openshift-config:openshift-install"
 	testArgs.TestDuration = 30 * time.Second
-	framework.ExecPod(testArgs)
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 
 	testArgs.SearchStringMissing = true
-	testArgs.SearchString = "openshift-config:pull-secret"
-	framework.ExecPod(testArgs)
 	testArgs.SearchString = ".dockerconfigjson"
 	framework.ExecPod(testArgs)
 }
@@ -117,14 +109,10 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveTopPath(t *testing.T) {
 
 	framework.DeleteShare(testArgs)
 	testArgs.TestDuration = 30 * time.Second
-	testArgs.SearchString = "openshift-config:pull-secret"
-	framework.ExecPod(testArgs)
 	testArgs.SearchString = ".dockerconfigjson"
 	framework.ExecPod(testArgs)
 
 	testArgs.SearchStringMissing = true
-	testArgs.SearchString = "openshift-config:openshift-install"
-	framework.ExecPod(testArgs)
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 }

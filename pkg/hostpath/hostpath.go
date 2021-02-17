@@ -173,7 +173,6 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 	}
 	payload, _ := value.(Payload)
 	klog.V(4).Infof("common upsert ranger key %s", key)
-	podFileDir := filepath.Join(podPath, fmt.Sprintf("%s", key))
 	// So, what to do with error handling.  Errors with filesystem operations
 	// will almost always not be intermittent, but most likely the result of the
 	// host filesystem either being full or compromised in some long running fashion, so tight-loop retry, like we
@@ -187,19 +186,21 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 	// TODO: prometheus metrics/alerts may be desired here, though some due diligence on what k8s level metrics/alerts
 	// around host filesystem issues might already exist would be warranted with such an exploration/effort
 
-	// Next, given the current approach of isolating content in a type/namespace:name subdir off of the mountPath,
-	// on an update we first nuke any existing directory and then recreate it to simplify handling the case where
+	// Next, on an update we first nuke any existing directory and then recreate it to simplify handling the case where
 	// the keys in the secret/configmap have changed such that some keys have been removed, which would translate
-	// in files having to be removed
-	if err := os.RemoveAll(podFileDir); err != nil {
+	// in files having to be removed. commonOSRemove will handle shares mounted off of shares.  And a reminder,
+	// currently this driver does not support overlaying over directories with files.  Either the directory in the
+	// container image must be empty, or the directory does not exist, and is created for the Pod's container as
+	// part of provisioning the container.
+	if err := commonOSRemove(podPath); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(podFileDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(podPath, os.ModePerm); err != nil {
 		return err
 	}
 	if payload.ByteData != nil {
 		for dataKey, dataValue := range payload.ByteData {
-			podFilePath := filepath.Join(podFileDir, dataKey)
+			podFilePath := filepath.Join(podPath, dataKey)
 			klog.V(4).Infof("create/update file %s", podFilePath)
 			if err := ioutil.WriteFile(podFilePath, dataValue, 0644); err != nil {
 				return err
@@ -209,7 +210,7 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 	}
 	if payload.StringData != nil {
 		for dataKey, dataValue := range payload.StringData {
-			podFilePath := filepath.Join(podFileDir, dataKey)
+			podFilePath := filepath.Join(podPath, dataKey)
 			klog.V(4).Infof("create/update file %s", podFilePath)
 			content := []byte(dataValue)
 			if err := ioutil.WriteFile(podFilePath, content, 0644); err != nil {
@@ -221,13 +222,28 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 	return nil
 }
 
+func commonOSRemove(dir string) error {
+	// we cannot do a os.RemoveAll on the mount point, so we remove all on each file system entity
+	// off of the potential mount point
+	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if info == nil {
+			return nil
+		}
+		// since we do not support mounting on existing content, a dir can only mean a share
+		// has been mounted as a separate dir in our share, so skip
+		if info.IsDir() {
+			return nil
+		}
+		return os.RemoveAll(filepath.Join(dir, info.Name()))
+	})
+}
+
 func commonDeleteRanger(podPath, filter string, key interface{}) bool {
 	if key != filter {
 		return true
 	}
 	klog.V(4).Infof("common delete ranger key %s", key)
-	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
-	os.RemoveAll(podFilePath)
+	commonOSRemove(podPath)
 	klog.V(4).Infof("common delete ranger returning key %s", key)
 	return true
 }
@@ -241,12 +257,7 @@ func shareDeleteRanger(hp *hostPath, key interface{}) bool {
 		hpv, _ := value.(*hostPathVolume)
 		if hpv.GetSharedDataId() == shareId {
 			klog.V(4).Infof("shareDeleteRanger shareid %s", shareId)
-			switch hpv.GetSharedDataKind() {
-			case "ConfigMap":
-				targetPath = filepath.Join(hpv.GetTargetPath(), "configmaps")
-			case "Secret":
-				targetPath = filepath.Join(hpv.GetTargetPath(), "secrets")
-			}
+			targetPath = hpv.GetTargetPath()
 			volID = hpv.GetVolID()
 			// deleting the share effectively deletes permission to the
 			// data so we set the allowed bit to false; this will have bearing
@@ -259,7 +270,7 @@ func shareDeleteRanger(hp *hostPath, key interface{}) bool {
 	}
 	hostPathVolumes.Range(ranger)
 	if len(volID) > 0 && len(targetPath) > 0 {
-		err := os.RemoveAll(targetPath)
+		err := commonOSRemove(targetPath)
 		if err != nil {
 			klog.Warningf("share %s vol %s target path %s delete error %s",
 				shareId, volID, targetPath, err.Error())
@@ -312,12 +323,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 			if !change && !lostPermissions && !gainedPermissions {
 				return false
 			}
-			switch hpv.GetSharedDataKind() {
-			case "ConfigMap":
-				oldTargetPath = filepath.Join(hpv.GetTargetPath(), "configmaps")
-			case "Secret":
-				oldTargetPath = filepath.Join(hpv.GetTargetPath(), "secrets")
-			}
+			oldTargetPath = hpv.GetTargetPath()
 			volID = hpv.GetVolID()
 			return false
 		}
@@ -329,7 +335,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 		shareId, share.Name, share.Spec.BackingResource.Kind, lostPermissions, change, gainedPermissions)
 
 	if lostPermissions {
-		err := os.RemoveAll(oldTargetPath)
+		err := commonOSRemove(oldTargetPath)
 		if err != nil {
 			klog.Warningf("share %s vol %s target path %s delete error %s",
 				shareId, volID, oldTargetPath, err.Error())
@@ -343,7 +349,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 	}
 
 	if change {
-		err := os.RemoveAll(oldTargetPath)
+		err := commonOSRemove(oldTargetPath)
 		if err != nil {
 			klog.Warningf("share %s vol %s target path %s delete error %s",
 				shareId, volID, oldTargetPath, err.Error())
@@ -378,14 +384,14 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 	// exists, we have a common path for both create and update; but if we change the file
 	// system interaction mechanism such that create and update are treated differently, we'll
 	// need separate callbacks for each
+	err := os.MkdirAll(hpv.GetTargetPath(), 0777)
+	if err != nil {
+		return err
+	}
 	switch strings.TrimSpace(hpv.GetSharedDataKind()) {
 	case "ConfigMap":
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s configmap", hpv.GetVolID())
-		podConfigMapsPath := filepath.Join(hpv.GetTargetPath(), "configmaps")
-		err := os.MkdirAll(podConfigMapsPath, 0777)
-		if err != nil {
-			return err
-		}
+		podConfigMapsPath := hpv.GetTargetPath()
 		upsertRangerCM := func(key, value interface{}) bool {
 			cm, _ := value.(*corev1.ConfigMap)
 			payload := Payload{
@@ -426,11 +432,7 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 		objcache.RegisterConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerCM)
 	case "Secret":
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s secret", hpv.GetVolID())
-		podSecretsPath := filepath.Join(hpv.GetTargetPath(), "secrets")
-		err := os.MkdirAll(podSecretsPath, 0777)
-		if err != nil {
-			return err
-		}
+		podSecretsPath := hpv.GetTargetPath()
 		upsertRangerSec := func(key, value interface{}) bool {
 			s, _ := value.(*corev1.Secret)
 			payload := Payload{

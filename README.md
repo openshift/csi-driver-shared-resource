@@ -201,19 +201,19 @@ Ensure the `my-csi-app` comes up in `Running` state.
 Finally, if you want to validate the volume, inspect the application pod `my-csi-app`:
 
 ```shell
-$ kubectl describe pods/my-csi-app
+$ kubectl describe pods/my-csi-app -n my-csi-app-namespace 
 Name:         my-csi-app
-Namespace:    csi-driver-projected-resource
+Namespace:    my-csi-app-namespace
 Priority:     0
-Node:         ip-10-0-163-121.us-west-2.compute.internal/10.0.163.121
-Start Time:   Wed, 05 Aug 2020 14:23:57 -0400
+Node:         ip-10-0-158-10.us-west-2.compute.internal/10.0.158.10
+Start Time:   Fri, 19 Feb 2021 12:01:03 -0500
 Labels:       <none>
 Annotations:  k8s.v1.cni.cncf.io/network-status:
                 [{
                     "name": "",
                     "interface": "eth0",
                     "ips": [
-                        "10.129.2.16"
+                        "10.129.2.31"
                     ],
                     "default": true,
                     "dns": {}
@@ -223,34 +223,34 @@ Annotations:  k8s.v1.cni.cncf.io/network-status:
                     "name": "",
                     "interface": "eth0",
                     "ips": [
-                        "10.129.2.16"
+                        "10.129.2.31"
                     ],
                     "default": true,
                     "dns": {}
                 }]
               openshift.io/scc: node-exporter
 Status:       Running
-IP:           10.129.2.16
+IP:           10.129.2.31
 IPs:
-  IP:  10.129.2.16
+  IP:  10.129.2.31
 Containers:
   my-frontend:
-    Container ID:  cri-o://cf4cd4f202d406153e3a067f6f6926ae93dd9748923a5116b2e2ee27e00d33e6
-    Image:         busybox
-    Image ID:      docker.io/library/busybox@sha256:400ee2ed939df769d4681023810d2e4fb9479b8401d97003c710d0e20f7c49c6
+    Container ID:  cri-o://929553d4c8966ffb1f0234a91cbbbbab66be2fc189871249a3cf7082046dfee1
+    Image:         quay.io/quay/busybox
+    Image ID:      quay.io/quay/busybox@sha256:ffd944135bc9fe6573e82d4578c28beb6e3fec1aea988c38d382587c7454f819
     Port:          <none>
     Host Port:     <none>
     Command:
       sleep
       1000000
     State:          Running
-      Started:      Wed, 05 Aug 2020 14:24:03 -0400
+      Started:      Fri, 19 Feb 2021 12:01:08 -0500
     Ready:          True
     Restart Count:  0
     Environment:    <none>
     Mounts:
       /data from my-csi-volume (rw)
-      /var/run/secrets/kubernetes.io/serviceaccount from default-token-xbsjd (ro)
+      /var/run/secrets/kubernetes.io/serviceaccount from default-token-5fjcb (ro)
 Conditions:
   Type              Status
   Initialized       True 
@@ -263,24 +263,24 @@ Volumes:
     Driver:            csi-driver-projected-resource.openshift.io
     FSType:            
     ReadOnly:          false
-    VolumeAttributes:  <none>
-  default-token-xbsjd:
+    VolumeAttributes:      share=my-share
+  default-token-5fjcb:
     Type:        Secret (a volume populated by a Secret)
-    SecretName:  default-token-xbsjd
+    SecretName:  default-token-5fjcb
     Optional:    false
 QoS Class:       BestEffort
 Node-Selectors:  <none>
-Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
-                 node.kubernetes.io/unreachable:NoExecute for 300s
+Tolerations:     node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                 node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
 Events:
-  Type    Reason          Age        From                                                 Message
-  ----    ------          ----       ----                                                 -------
-  Normal  Scheduled       <unknown>                                                       Successfully assigned csi-driver-projected-resource/my-csi-app to ip-10-0-163-121.us-west-2.compute.internal
-  Normal  AddedInterface  28m        multus                                               Add eth0 [10.129.2.16/23]
-  Normal  Pulling         28m        kubelet, ip-10-0-163-121.us-west-2.compute.internal  Pulling image "busybox"
-  Normal  Pulled          28m        kubelet, ip-10-0-163-121.us-west-2.compute.internal  Successfully pulled image "busybox" in 3.626604306s
-  Normal  Created         28m        kubelet, ip-10-0-163-121.us-west-2.compute.internal  Created container my-frontend
-  Normal  Started         28m        kubelet, ip-10-0-163-121.us-west-2.compute.internal  Started container my-frontend
+  Type    Reason          Age   From               Message
+  ----    ------          ----  ----               -------
+  Normal  Scheduled       65s   default-scheduler  Successfully assigned my-csi-app-namespace/my-csi-app to ip-10-0-158-10.us-west-2.compute.internal
+  Normal  AddedInterface  64s   multus             Add eth0 [10.129.2.31/23]
+  Normal  Pulling         63s   kubelet            Pulling image "quay.io/quay/busybox"
+  Normal  Pulled          60s   kubelet            Successfully pulled image "quay.io/quay/busybox" in 2.920300054s
+  Normal  Created         60s   kubelet            Created container my-frontend
+  Normal  Started         60s   kubelet            Started container my-frontend
 ```
 
 
@@ -299,14 +299,6 @@ You should see contents like:
 / # ls -lR /data 
 ls -lR /data 
 /data:
-total 0
-drwxr-xr-x    3 root     root            60 Oct 28 14:52 configmaps
-
-/data/configmaps:
-total 0
-drwxr-xr-x    2 root     root            80 Oct 28 14:52 openshift-config:openshift-install
-
-/data/configmaps/openshift-config:openshift-install:
 total 8
 -rw-r--r--    1 root     root             4 Oct 28 14:52 invoker
 -rw-r--r--    1 root     root            70 Oct 28 14:52 version
@@ -390,15 +382,6 @@ The data will be removed from the location specified by `volumeMount` in the `Po
 $ oc rsh my-csi-app
 sh-4.4# ls -lR /data
 ls -lR /data
-/data:
-total 0
-drwxr-xr-x. 3 root root 60 Jan 29 17:59 secrets
-
-/data/secrets:
-total 0
-drwxr-xr-x. 2 root root 80 Jan 29 17:59 shared-secrets-configmaps:etc-pki-entitlement
-
-'/data/secrets/shared-secrets-configmaps:etc-pki-entitlement':
 total 312
 -rw-r--r--. 1 root root   3243 Jan 29 17:59 4653723971430838710-key.pem
 -rw-r--r--. 1 root root 311312 Jan 29 17:59 4653723971430838710.pem
@@ -440,14 +423,6 @@ $ oc rsh my-csi-app
 sh-4.4# ls -lR /data
 ls -lR /data
 /data:
-total 0
-drwxr-xr-x. 3 root root 60 Jan 29 17:59 secrets
-
-/data/secrets:
-total 0
-drwxr-xr-x. 2 root root 80 Jan 29 17:59 shared-secrets-configmaps:etc-pki-entitlement
-
-'/data/secrets/shared-secrets-configmaps:etc-pki-entitlement':
 total 312
 -rw-r--r--. 1 root root   3243 Jan 29 17:59 4653723971430838710-key.pem
 -rw-r--r--. 1 root root 311312 Jan 29 17:59 4653723971430838710.pem
