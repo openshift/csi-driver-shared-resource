@@ -7,7 +7,7 @@ spec:
   serviceAccountName: default
   containers:
     - name: my-frontend
-      image: busybox
+      image: quay.io/quay/busybox
       volumeMounts:
         - mountPath: "/data"
           name: my-csi-volume
