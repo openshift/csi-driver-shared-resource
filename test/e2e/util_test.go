@@ -2,25 +2,41 @@ package e2e
 
 import (
 	"fmt"
-	"testing"
 	"time"
 
 	"github.com/openshift/csi-driver-projected-resource/test/framework"
 )
 
-func prep(t *testing.T) {
+func prep(t *framework.TestArgs) {
 	framework.SetupClients(t)
 	framework.LaunchDriver(t)
-	err := framework.WaitForDaemonSet(true, t)
+	t.DaemonSetUp = true
+	err := framework.WaitForDaemonSet(t)
 	if err != nil {
-		framework.LogAndDebugTestError(fmt.Sprintf("csi driver daemon not up: %s", err.Error()), t)
+		t.MessageString = fmt.Sprintf("csi driver daemon not up: %s", err.Error())
+		framework.LogAndDebugTestError(t)
 	}
 }
 
-func basicShareSetupAndVerification(name string, t *testing.T) {
-	framework.CreateShareRelatedRBAC(name, t)
-	framework.CreateShare(name, t)
-	framework.CreateTestPod(name, true, t)
-	framework.ExecPod(name, "openshift-config:openshift-install", false, 30*time.Second, t)
+func basicShareSetupAndVerification(t *framework.TestArgs) {
+	framework.CreateShareRelatedRBAC(t)
+	framework.CreateShare(t)
+	t.TestPodUp = true
+	framework.CreateTestPod(t)
+	t.SearchString = "openshift-config:openshift-install"
+	t.TestDuration = 30 * time.Second
+	framework.ExecPod(t)
+	t.SearchString = "invoker"
+	framework.ExecPod(t)
+
+}
+
+func doubleShareSetupAndVerification(t *framework.TestArgs) {
+	t.SecondShare = true
+	basicShareSetupAndVerification(t)
+	t.SearchString = "openshift-config:pull-secret"
+	framework.ExecPod(t)
+	t.SearchString = ".dockerconfigjson"
+	framework.ExecPod(t)
 
 }

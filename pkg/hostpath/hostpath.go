@@ -172,6 +172,7 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 		return nil
 	}
 	payload, _ := value.(Payload)
+	klog.V(4).Infof("common upsert ranger key %s", key)
 	podFileDir := filepath.Join(podPath, fmt.Sprintf("%s", key))
 	// So, what to do with error handling.  Errors with filesystem operations
 	// will almost always not be intermittent, but most likely the result of the
@@ -216,6 +217,7 @@ func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value i
 			}
 		}
 	}
+	klog.V(4).Infof("common upsert ranger returning key %s", key)
 	return nil
 }
 
@@ -223,8 +225,10 @@ func commonDeleteRanger(podPath, filter string, key interface{}) bool {
 	if key != filter {
 		return true
 	}
+	klog.V(4).Infof("common delete ranger key %s", key)
 	podFilePath := filepath.Join(podPath, fmt.Sprintf("%s", key))
 	os.RemoveAll(podFilePath)
+	klog.V(4).Infof("common delete ranger returning key %s", key)
 	return true
 }
 
@@ -232,6 +236,7 @@ func shareDeleteRanger(hp *hostPath, key interface{}) bool {
 	shareId := key.(string)
 	targetPath := ""
 	volID := ""
+	klog.V(4).Infof("share delete ranger share id %s", shareId)
 	ranger := func(key, value interface{}) bool {
 		hpv, _ := value.(*hostPathVolume)
 		if hpv.GetSharedDataId() == shareId {
@@ -263,6 +268,7 @@ func shareDeleteRanger(hp *hostPath, key interface{}) bool {
 		// we don't delete the volume in case the share is added back
 		storeVolMapToDisk()
 	}
+	klog.V(4).Infof("share delete ranger returning share id %s", shareId)
 	return true
 }
 

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"k8s.io/klog/v2"
 	"sync"
 
 	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
@@ -58,6 +59,7 @@ func GetSecret(key interface{}) *corev1.Secret {
 
 func UpsertSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
+	klog.V(4).Infof("UpsertSecret key %s", key)
 	secrets.Store(key, secret)
 	// in case share arrived before secret
 	processedSharesWithoutSecrets := []string{}
@@ -83,6 +85,7 @@ func UpsertSecret(secret *corev1.Secret) {
 
 func DelSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
+	klog.V(4).Infof("DelSecret key %s", key)
 	secrets.Delete(key)
 	secretDeleteCallbacks.Range(buildRanger(buildCallbackMap(key, secret)))
 	secretsWithShare.Delete(key)

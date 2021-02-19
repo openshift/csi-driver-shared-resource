@@ -29,7 +29,7 @@ const (
 )
 
 var (
-	initLock = sync.Mutex{}
+	initLock   = sync.Mutex{}
 	kubeClient kubernetes.Interface
 	recorder   record.EventRecorder
 )

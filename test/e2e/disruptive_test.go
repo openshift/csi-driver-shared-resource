@@ -9,17 +9,27 @@ import (
 )
 
 func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
-	prep(t)
-	testNS := framework.CreateTestNamespace(t)
-	defer framework.CleanupTestNamespace(testNS, t)
-	basicShareSetupAndVerification(testNS, t)
+	testArgs := &framework.TestArgs{
+		T: t,
+	}
+	prep(testArgs)
+	framework.CreateTestNamespace(testArgs)
+	defer framework.CleanupTestNamespace(testArgs)
+	basicShareSetupAndVerification(testArgs)
 
 	t.Logf("%s: initiating csi driver restart", time.Now().String())
-	framework.RestartDaemonSet(t)
+	framework.RestartDaemonSet(testArgs)
 	t.Logf("%s: csi driver restart complete, check test pod", time.Now().String())
-	framework.ExecPod(testNS, "openshift-config:openshift-install", false, 30*time.Second, t)
+	testArgs.TestDuration = 30 * time.Second
+	testArgs.SearchString = "openshift-config:openshift-install"
+	framework.ExecPod(testArgs)
+	testArgs.SearchString = "invoker"
+	framework.ExecPod(testArgs)
 
 	t.Logf("%s: now changing share", time.Now().String())
-	framework.ChangeShare(testNS, t)
-	framework.ExecPod(testNS, "openshift-config:pull-secret", false, 30*time.Second, t)
+	framework.ChangeShare(testArgs)
+	testArgs.SearchString = "openshift-config:pull-secret"
+	framework.ExecPod(testArgs)
+	testArgs.SearchString = ".dockerconfigjson"
+	framework.ExecPod(testArgs)
 }
