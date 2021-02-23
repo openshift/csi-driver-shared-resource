@@ -23,9 +23,7 @@ func basicShareSetupAndVerification(t *framework.TestArgs) {
 	framework.CreateShare(t)
 	t.TestPodUp = true
 	framework.CreateTestPod(t)
-	t.SearchString = "openshift-config:openshift-install"
 	t.TestDuration = 30 * time.Second
-	framework.ExecPod(t)
 	t.SearchString = "invoker"
 	framework.ExecPod(t)
 
@@ -34,8 +32,6 @@ func basicShareSetupAndVerification(t *framework.TestArgs) {
 func doubleShareSetupAndVerification(t *framework.TestArgs) {
 	t.SecondShare = true
 	basicShareSetupAndVerification(t)
-	t.SearchString = "openshift-config:pull-secret"
-	framework.ExecPod(t)
 	t.SearchString = ".dockerconfigjson"
 	framework.ExecPod(t)
 
