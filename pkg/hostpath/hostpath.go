@@ -286,10 +286,11 @@ func shareDeleteRanger(hp *hostPath, key interface{}) bool {
 func shareUpdateRanger(key, value interface{}) bool {
 	shareId := key.(string)
 	share := value.(*sharev1alpha1.Share)
-	klog.V(4).Infof("share update ranger id %s share name %s type %s", shareId, share.Name, share.Spec.BackingResource.Kind)
+	klog.V(4).Infof("share update ranger id %s share name %s type %s version %s", shareId, share.Name, share.Spec.BackingResource.Kind, share.ResourceVersion)
 	oldTargetPath := ""
 	volID := ""
 	change := false
+	newVersion := false
 	lostPermissions := false
 	gainedPermissions := false
 	var hpv *hostPathVolume
@@ -302,16 +303,22 @@ func shareUpdateRanger(key, value interface{}) bool {
 			allowed := a && err == nil
 
 			if allowed && !hpv.IsAllowed() {
-				klog.V(0).Infof("pod %s regained permissions for share %s",
-					hpv.GetPodName(), shareId)
+				klog.V(0).Infof("pod %s:%s regained permissions for share %s",
+					hpv.GetPodNamespace(), hpv.GetPodName(), shareId)
 				gainedPermissions = true
 				hpv.SetAllowed(true)
 			}
 			if !allowed && hpv.IsAllowed() {
-				klog.V(0).Infof("pod %s no longer has permission for share %s",
-					hpv.GetPodName(), shareId)
+				klog.V(0).Infof("pod %s:%s no longer has permission for share %s",
+					hpv.GetPodNamespace(), hpv.GetPodName(), shareId)
 				lostPermissions = true
 				hpv.SetAllowed(false)
+			}
+
+			newVersion = hpv.CheckBeforeSetSharedDataVersion(share.ResourceVersion)
+			if !newVersion {
+				klog.V(0).Infof("share %s at version %s for pod %s:%s will be ignored because version %s has been received",
+					shareId, share.ResourceVersion, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetSharedDataVersion())
 			}
 
 			switch {
@@ -348,7 +355,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 		return true
 	}
 
-	if change {
+	if change && newVersion {
 		err := commonOSRemove(oldTargetPath)
 		if err != nil {
 			klog.Warningf("share %s vol %s target path %s delete error %s",
@@ -370,11 +377,11 @@ func shareUpdateRanger(key, value interface{}) bool {
 		mapBackingResourceToPod(hpv)
 	}
 
-	if change || gainedPermissions {
+	if (change && newVersion) || gainedPermissions {
 		storeVolMapToDisk()
 	}
 
-	klog.V(4).Infof("share update ranger id %s share name %s type %s returning", shareId, share.Name, share.Spec.BackingResource.Kind)
+	klog.V(4).Infof("share update ranger id %s share name %s type %s version %s returning", shareId, share.Name, share.Spec.BackingResource.Kind, share.ResourceVersion)
 	return true
 }
 
@@ -527,6 +534,7 @@ func (hp *hostPath) createHostpathVolume(volID, targetPath string, volCtx map[st
 	hostpathVol.SetSharedDataKind(share.Spec.BackingResource.Kind)
 	hostpathVol.SetSharedDataKey(objcache.BuildKey(share.Spec.BackingResource.Namespace, share.Spec.BackingResource.Name))
 	hostpathVol.SetSharedDataId(share.Name)
+	hostpathVol.SetSharedDataVersion(share.ResourceVersion)
 	hostpathVol.SetAllowed(true)
 
 	return hostpathVol, nil

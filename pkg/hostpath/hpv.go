@@ -1,22 +1,26 @@
 package hostpath
 
-import "sync"
+import (
+	"strconv"
+	"sync"
+)
 
 type hostPathVolume struct {
-	VolID          string     `json:"volID"`
-	VolName        string     `json:"volName"`
-	VolSize        int64      `json:"volSize"`
-	VolPath        string     `json:"volPath"`
-	VolAccessType  accessType `json:"volAccessType"`
-	TargetPath     string     `json:"targetPath"`
-	SharedDataKey  string     `json:"sharedDataKey"`
-	SharedDataKind string     `json:"sharedDataKind"`
-	SharedDataId   string     `json:"sharedDataId"`
-	PodNamespace   string     `json:"podNamespace"`
-	PodName        string     `json:"podName"`
-	PodUID         string     `json:"podUID"`
-	PodSA          string     `json:"podSA"`
-	Allowed        bool       `json:"allowed"`
+	VolID            string     `json:"volID"`
+	VolName          string     `json:"volName"`
+	VolSize          int64      `json:"volSize"`
+	VolPath          string     `json:"volPath"`
+	VolAccessType    accessType `json:"volAccessType"`
+	TargetPath       string     `json:"targetPath"`
+	SharedDataKey    string     `json:"sharedDataKey"`
+	SharedDataKind   string     `json:"sharedDataKind"`
+	SharedDataId     string     `json:"sharedDataId"`
+	ShareDataVersion string     `json:"sharedDataVersion"`
+	PodNamespace     string     `json:"podNamespace"`
+	PodName          string     `json:"podName"`
+	PodUID           string     `json:"podUID"`
+	PodSA            string     `json:"podSA"`
+	Allowed          bool       `json:"allowed"`
 	// hpv's can be accessed/modified by both the share events and the configmap/secret events; to prevent data races
 	// we serialize access to a given hpv with a per hpv mutex stored in this map; access to hpv fields should not
 	// be done directly, but only by each field's getter and setter.  Getters and setters then leverage the per hpv
@@ -76,6 +80,11 @@ func (hpv *hostPathVolume) GetSharedDataId() string {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	return hpv.SharedDataId
+}
+func (hpv *hostPathVolume) GetSharedDataVersion() string {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	return hpv.ShareDataVersion
 }
 func (hpv *hostPathVolume) GetPodNamespace() string {
 	hpv.Lock.Lock()
@@ -143,6 +152,29 @@ func (hpv *hostPathVolume) SetSharedDataId(id string) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	hpv.SharedDataId = id
+}
+func (hpv *hostPathVolume) SetSharedDataVersion(version string) {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	hpv.ShareDataVersion = version
+}
+func (hpv *hostPathVolume) CheckBeforeSetSharedDataVersion(version string) bool {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	newVersionInt, err := strconv.Atoi(version)
+	if err != nil {
+		return false
+	}
+	if len(hpv.ShareDataVersion) == 0 {
+		hpv.ShareDataVersion = version
+		return true
+	}
+	oldVersionInt, _ := strconv.Atoi(hpv.ShareDataVersion)
+	if oldVersionInt >= newVersionInt {
+		return false
+	}
+	hpv.ShareDataVersion = version
+	return true
 }
 func (hpv *hostPathVolume) SetPodNamespace(namespace string) {
 	hpv.Lock.Lock()

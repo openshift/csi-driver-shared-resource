@@ -307,7 +307,8 @@ func TestDeleteReAddShare(t *testing.T) {
 
 	share := &sharev1alpha1.Share{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "TestDeleteReAddShare",
+			Name:            "TestDeleteReAddShare",
+			ResourceVersion: "1",
 		},
 		Spec: sharev1alpha1.ShareSpec{
 			BackingResource: sharev1alpha1.BackingResource{
@@ -338,6 +339,7 @@ func TestDeleteReAddShare(t *testing.T) {
 		t.Fatalf("secret not deleted")
 	}
 
+	share.ResourceVersion = "2"
 	cache.AddShare(share)
 	foundSecret, _ = findSharedItems(t, targetPath)
 	if !foundSecret {
@@ -366,7 +368,8 @@ func TestUpdateShare(t *testing.T) {
 
 	share := &sharev1alpha1.Share{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "TestUpdateShare",
+			Name:            "TestUpdateShare",
+			ResourceVersion: "1",
 		},
 		Spec: sharev1alpha1.ShareSpec{
 			BackingResource: sharev1alpha1.BackingResource{
@@ -403,6 +406,7 @@ func TestUpdateShare(t *testing.T) {
 	share.Spec.BackingResource.Kind = "ConfigMap"
 	share.Spec.BackingResource.Name = "configmap1"
 
+	share.ResourceVersion = "2"
 	cache.UpdateShare(share)
 	foundSecret, foundConfigMap := findSharedItems(t, targetPath)
 	if foundSecret {
