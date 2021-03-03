@@ -57,16 +57,23 @@ where each `Container` in a `Pod` is allowed an array of such mounts:
 - the validations that Kubernetes applies to `Name` and `MountPath` fields apply.
 - if the `MountPath` of one `VolumeMount` is a subdirectory of another `MountPath` in the `Container`, Kubernetes will allow it, and this driver 
 currently does support that scenario.
-- if the `MountPath` corresponds to an existing directory with content in the image, or a directory that is populated as part of `Pod` setup outside this driver, the results can vary.  Until the behavior can be fully vetted, do this at your own risk.
+- if the `MountPath` corresponds to an existing directory with content from the image, or a directory that is populated as
+  part of `Pod` setup outside this driver, the results cannot be guaranteed, and thus is unsupported.  Existing directories 
+  from the image must be empty. 
 - the `ReadOnly` field is currently ignored, per our explanation above with [CSIVolumeSource](#current-status-with-respect-to-the-kubernetes-csivolumesource-api).
 - the `SubPath` field is currently ignored.
 - the `MountPropagation` field is currently ignored, and is non-applicable to this driver, given that the data written to the `tmpfs` filesystem of the `Pod` comes
-from the Kubernetes Controller cache, and not the host.
+from the Kubernetes Controller cache, and not the host.  The empty directory constraints noted above for `MountPath` are related.
 - the `SubPathExpr` field is currently ignored.
 
 ## Current status with respect to the enhancement propsal
 
-**NOT FULLY IMPLEMENTED**
+**Developer Preview level of support pending.  Waiting on install via OLM from the OperatorHub (a feature currently under
+development) to officially declare that the function provided in this repository has reached 
+Developer Preview status.  To clarify how Developer Preview works with the various operators at the OpenShift OperatorHub,
+Developer Preview releases are not intended to be run in production environments nor will the product be supported via the 
+Red Hat Customer Portal case management system. If you need assistance, open issues on this GitHub repository and those issues 
+will be addressed on a best effort basis.**
 
 The latest commit of the master branch solely introduces both the `Share` CRD and the `projectedresoure.storage.openshift.io`
 API group and version `v1alpha1`.  
@@ -84,25 +91,24 @@ Some high level remaining work:
 - Monitoring of the prometheus metrics and pprof type ilk
 - Configuration around which namespaces are and are not monitored
 - Install via OLM and the OLM Operator Hub
-- TBD features for providing some flexibility on the precise file structure for the `Secret` / `ConfigMap` contents off 
-of the `Pod`'s `volumeMount` -> `mountPath`
   
 
 ### Vetted scenarios
  
 The controller and CSI driver in their current form facilitate the following scenarios:
 
-- initial pod requests for share csi volumes are denied without both a valid share refrence and 
-permissions to access that share
-- changes to the share's backing resource (kind, namespace, name) get reflected in data stored in the user pod's CSI volume
-- subsequent removal of permissions for a share results in removal of the associated data stored in the user pod's CSI volume
-- re-granting of permission for a share (after having the permissions initially, then removed) results in the associated 
+- initial pod requests for `Share` csi volumes are denied without both a valid `Share` refrence and 
+permissions to access that `Share`
+- changes to the `Share`'s backing resource (kind, namespace, name) get reflected in data stored in the user pod's CSI volume
+- subsequent removal of permissions for a `Share` results in removal of the associated data stored in the user pod's CSI volume
+- re-granting of permission for a `Share` (after having the permissions initially, then removed) results in the associated 
 data getting stored in the user pod's CSI volume
-- removal of the share used to provision share csi volume for a pod result in the associated data getting removed
-- re-creation of a removed share for a previously provisioned share CSI volume results in the associated data 
+- removal of the `Share` used to provision `Share` csi volume for a pod result in the associated data getting removed
+- re-creation of a removed `Share` for a previously provisioned `Share` CSI volume results in the associated data 
 reappearing in the user pod's CSI volume
 - support recycling of the csi driver so that previously provisioned CSI volumes are still managed; in other words,
 the driver's interan state is persisted 
+- when multiple `Share`s are mounted in a `Pod`, one `Share` can be mounted as a subdirectory of another `Share`
 
 ### Excluded OCP namespaces
 
