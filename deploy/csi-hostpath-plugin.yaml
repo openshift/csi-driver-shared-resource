@@ -60,8 +60,7 @@ spec:
               name: csi-data-dir
 
         - name: hostpath
-          # precise version of the 4.8.0 tag after commit 0478e08051006ade5254e179a5673ed95302b2ef (employing this level of precision for blog post)
-          image: quay.io/openshift/origin-csi-driver-projected-resource@sha256:52eeacd4480a4cea2a0e5a7230d9ce77deead91db823910971743a0482d5f24f
+          image: quay.io/openshift/origin-csi-driver-projected-resource:4.8.0
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:
