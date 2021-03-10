@@ -60,7 +60,7 @@ spec:
               name: csi-data-dir
 
         - name: hostpath
-          image: quay.io/openshift/origin-csi-driver-projected-resource:4.8.0
+          image: quay.io/redhat-developer/origin-csi-driver-projected-resource:blog.post
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:
