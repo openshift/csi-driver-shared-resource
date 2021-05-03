@@ -35,7 +35,7 @@ spec:
       serviceAccountName: csi-driver-projected-resource-plugin
       containers:
         - name: node-driver-registrar
-          image: quay.io/openshift/origin-csi-node-driver-registrar:4.7.0
+          image: quay.io/openshift/origin-csi-node-driver-registrar:4.8.0
           args:
             - --v=5
             - --csi-address=/csi/csi.sock
