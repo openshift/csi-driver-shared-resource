@@ -70,6 +70,11 @@ vendor: ## Vendor Go dependencies. Example: make vendor
 	go mod vendor
 .PHONY: vendor
 
+generate-release-yaml: ## Create single file with the relevant yaml from the deploy directory to facilitate deployment from the repository's release page
+	./hack/generate-release-yaml.sh
+
+.PHONY: generate-release-yaml
+
 help: ## Print this help. Example: make help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 .PHONY: help
