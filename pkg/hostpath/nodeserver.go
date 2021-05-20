@@ -32,16 +32,6 @@ import (
 	"k8s.io/utils/mount"
 )
 
-const (
-	TopologyKeyNode           = "topology.hostpath.csi/node"
-	CSIPodName                = "csi.storage.k8s.io/pod.name"
-	CSIPodNamespace           = "csi.storage.k8s.io/pod.namespace"
-	CSIPodUID                 = "csi.storage.k8s.io/pod.uid"
-	CSIPodSA                  = "csi.storage.k8s.io/serviceAccount.name"
-	CSIEphemeral              = "csi.storage.k8s.io/ephemeral"
-	ProjectedResourceShareKey = "share"
-)
-
 var (
 	listers client.Listers
 )
@@ -50,6 +40,8 @@ type nodeServer struct {
 	nodeID            string
 	maxVolumesPerNode int64
 	hp                HostPathDriver
+	readOnlyMounter   FileSystemMounter
+	readWriteMounter  FileSystemMounter
 	mounter           mount.Interface
 }
 
@@ -59,6 +51,8 @@ func NewNodeServer(hp *hostPath) *nodeServer {
 		maxVolumesPerNode: hp.maxVolumesPerNode,
 		hp:                hp,
 		mounter:           mount.New(""),
+		readOnlyMounter:   &WriteOnceReadMany{},
+		readWriteMounter:  &ReadWriteMany{},
 	}
 }
 
@@ -139,7 +133,7 @@ func (ns *nodeServer) validateVolumeContext(req *csi.NodePublishVolumeRequest) e
 }
 
 func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-	var targetPath string
+	var kubeletTargetPath string
 
 	// Check arguments
 	if req.GetVolumeCapability() == nil {
@@ -165,19 +159,21 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, err
 	}
 
-	targetPath = req.GetTargetPath()
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), targetPath, req.GetVolumeContext(), share, maxStorageCapacity, mountAccess)
+	kubeletTargetPath = req.GetTargetPath()
+	readOnly := req.GetReadonly()
+
+	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, req.GetVolumeContext(), share, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	klog.V(4).Infof("NodePublishVolume created volume: %s", vol.GetVolPath())
+	klog.V(4).Infof("NodePublishVolume created volume: %s", kubeletTargetPath)
 
-	notMnt, err := mount.IsNotMountPoint(ns.mounter, targetPath)
+	notMnt, err := mount.IsNotMountPoint(ns.mounter, kubeletTargetPath)
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err = os.MkdirAll(targetPath, 0750); err != nil {
+			if err = os.MkdirAll(kubeletTargetPath, 0750); err != nil {
 				return nil, status.Error(codes.Internal, err.Error())
 			}
 			notMnt = true
@@ -203,44 +199,26 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
 
 	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
-		targetPath, fsType, deviceId, volumeId, attrib, mountFlags)
+		kubeletTargetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
-	options := []string{}
-	path := vol.GetVolPath()
-
-	// NOTE: so our intent here is to have a separate tmpfs per pod; through experimentation
-	// and corroboration with OpenShift storage SMEs, a separate tmpfs per pod
-	// - ensures the kubelet will handle SELinux for us. It will relabel the volume in "the right way" just for the pod
-	// - otherwise, if pods share the same host dir, all sorts of warnings from the SMEs
-	// - and the obvious isolation between pods that implies
-	// We cannot do read-only on the mount since we have to copy the data after the mount, otherwise we get errors
-	// that the filesystem is readonly
-	// The various bits that work in concert to achieve this
-	// - the use of emptyDir with a medium of Memory in this drivers Deployment is all that is needed to get tmpfs
-	// - do not use the "bind" option, that reuses existing dirs/filesystems vs. creating new tmpfs
-	// - without bind, we have to specify an fstype of tmpfs and path for the mount source, or we get errors on the
-	//   Mount about the fs not being  block access
-	// - that said,  testing confirmed using fstype of tmpfs on hostpath/xfs volumes still results in the target
-	//   being xfs and not tmpfs
-	// - with the lack of a bind option, and each pod getting its own tmpfs we have to copy the data from our emptydir
-	//   based location to the targetPath here ... that is handled in hostpath.go
-	if err := ns.mounter.Mount(path, targetPath, "tmpfs", options); err != nil {
-		var errList strings.Builder
-		errList.WriteString(err.Error())
-		if rmErr := os.RemoveAll(path); rmErr != nil && !os.IsNotExist(rmErr) {
-			errList.WriteString(fmt.Sprintf(" :%s", rmErr.Error()))
+	anchorDir, bindDir := ns.hp.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
+	switch {
+	case readOnly:
+		if err := ns.readOnlyMounter.makeFSMounts(anchorDir, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+			return nil, err
+		}
+	default:
+		if err := ns.readWriteMounter.makeFSMounts(anchorDir, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+			return nil, err
 		}
 
-		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			path,
-			targetPath,
-			errList.String()))
 	}
+
 	// here is what initiates that necessary copy now with *NOT* using bind on the mount so each pod gets its own tmpfs
 	if err := ns.hp.mapVolumeToPod(vol); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to populate mount device: %s at %s: %s",
-			path,
-			targetPath,
+			bindDir,
+			kubeletTargetPath,
 			err.Error()))
 	}
 
@@ -263,14 +241,24 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	err := mount.CleanupMountPoint(targetPath, ns.mounter, true)
+	hpv := ns.hp.getHostpathVolume(volumeID)
+	if hpv == nil {
+		return nil, status.Error(codes.Internal, fmt.Sprintf("unpublish volume %s already gone", volumeID))
+	}
+	var err error
+	switch {
+	case hpv.IsReadOnly():
+		err = ns.readOnlyMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
+	default:
+		err = ns.readWriteMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
+	}
 	if err != nil {
-		klog.Errorf("error cleaning and unmounting target path %s, err: %v for vol: %s", targetPath, err, volumeID)
+		return nil, status.Error(codes.Internal, fmt.Sprintf("error removing %s: %s", targetPath, err.Error()))
+
 	}
 
-	klog.V(4).Infof("hostpath: volume %s has been unpublished.", targetPath)
+	klog.V(4).Infof("volume %s at path %s has been unpublished.", volumeID, targetPath)
 
-	klog.V(4).Infof("deleting volume %s", volumeID)
 	if err := ns.hp.deleteHostpathVolume(volumeID); err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete volume: %s", err))
 	}

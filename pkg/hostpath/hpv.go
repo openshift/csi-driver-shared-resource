@@ -5,22 +5,27 @@ import (
 	"sync"
 )
 
+// NOTE / TODO: the fields in this struct need to start with a capital letter since we are
+// externalizing / storing to disk, unless there is someway to get the golang encoding
+// logic to use our getters/setters
 type hostPathVolume struct {
-	VolID            string     `json:"volID"`
-	VolName          string     `json:"volName"`
-	VolSize          int64      `json:"volSize"`
-	VolPath          string     `json:"volPath"`
-	VolAccessType    accessType `json:"volAccessType"`
-	TargetPath       string     `json:"targetPath"`
-	SharedDataKey    string     `json:"sharedDataKey"`
-	SharedDataKind   string     `json:"sharedDataKind"`
-	SharedDataId     string     `json:"sharedDataId"`
-	ShareDataVersion string     `json:"sharedDataVersion"`
-	PodNamespace     string     `json:"podNamespace"`
-	PodName          string     `json:"podName"`
-	PodUID           string     `json:"podUID"`
-	PodSA            string     `json:"podSA"`
-	Allowed          bool       `json:"allowed"`
+	VolID               string     `json:"volID"`
+	VolName             string     `json:"volName"`
+	VolSize             int64      `json:"volSize"`
+	VolPathAnchorDir    string     `json:"volPathAnchorDir"`
+	VolPathBindMountDir string     `json:"volPathBindMountDir"`
+	VolAccessType       accessType `json:"volAccessType"`
+	TargetPath          string     `json:"targetPath"`
+	SharedDataKey       string     `json:"sharedDataKey"`
+	SharedDataKind      string     `json:"sharedDataKind"`
+	SharedDataId        string     `json:"sharedDataId"`
+	ShareDataVersion    string     `json:"sharedDataVersion"`
+	PodNamespace        string     `json:"podNamespace"`
+	PodName             string     `json:"podName"`
+	PodUID              string     `json:"podUID"`
+	PodSA               string     `json:"podSA"`
+	Allowed             bool       `json:"allowed"`
+	ReadOnly            bool       `json:"readOnly"`
 	// hpv's can be accessed/modified by both the share events and the configmap/secret events; to prevent data races
 	// we serialize access to a given hpv with a per hpv mutex stored in this map; access to hpv fields should not
 	// be done directly, but only by each field's getter and setter.  Getters and setters then leverage the per hpv
@@ -51,10 +56,15 @@ func (hpv *hostPathVolume) GetVolSize() int64 {
 	defer hpv.Lock.Unlock()
 	return hpv.VolSize
 }
-func (hpv *hostPathVolume) GetVolPath() string {
+func (hpv *hostPathVolume) GetVolPathAnchorDir() string {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
-	return hpv.VolPath
+	return hpv.VolPathAnchorDir
+}
+func (hpv *hostPathVolume) GetVolPathBindMountDir() string {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	return hpv.VolPathBindMountDir
 }
 func (hpv *hostPathVolume) GetVolAccessType() accessType {
 	hpv.Lock.Lock()
@@ -111,6 +121,11 @@ func (hpv *hostPathVolume) IsAllowed() bool {
 	defer hpv.Lock.Unlock()
 	return hpv.Allowed
 }
+func (hpv *hostPathVolume) IsReadOnly() bool {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	return hpv.ReadOnly
+}
 
 func (hpv *hostPathVolume) SetVolName(volName string) {
 	hpv.Lock.Lock()
@@ -123,10 +138,15 @@ func (hpv *hostPathVolume) SetVolSize(size int64) {
 	defer hpv.Lock.Unlock()
 	hpv.VolSize = size
 }
-func (hpv *hostPathVolume) SetVolPath(path string) {
+func (hpv *hostPathVolume) SetVolPathAnchorDir(path string) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
-	hpv.VolPath = path
+	hpv.VolPathAnchorDir = path
+}
+func (hpv *hostPathVolume) SetVolPathBindMountDir(path string) {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	hpv.VolPathBindMountDir = path
 }
 func (hpv *hostPathVolume) SetVolAccessType(at accessType) {
 	hpv.Lock.Lock()
@@ -200,4 +220,9 @@ func (hpv *hostPathVolume) SetAllowed(allowed bool) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	hpv.Allowed = allowed
+}
+func (hpv *hostPathVolume) SetReadOnly(readOnly bool) {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	hpv.ReadOnly = readOnly
 }

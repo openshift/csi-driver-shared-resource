@@ -104,8 +104,8 @@ func RestartDaemonSet(t *TestArgs) {
 	t.T.Logf("%s: csi driver pods are up with no deletion timestamps", time.Now().String())
 }
 
-//TODO presumably this can go away once we have an OLM based deploy that is also integrated with our CI
-// so that repo images built from PRs are used when setting up this driver's daemonset
+//TODO possibly this can go away once we are in the OCP payload, though the csi driver operator element for all that needs to get sorted out,
+// but if it can, then hopefully repo images built from PRs are used when setting up this driver's daemonset
 func CreateCSIDriverPlugin(t *TestArgs) {
 	_, err1 := kubeClient.CoreV1().Services(client.DefaultNamespace).Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
 	_, err2 := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace).Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})

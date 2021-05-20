@@ -21,6 +21,7 @@ type TestArgs struct {
 	SecondShareSubDir   bool
 	DaemonSetUp         bool
 	TestPodUp           bool
+	ReadOnly            bool
 	TestDuration        time.Duration
 }
 
