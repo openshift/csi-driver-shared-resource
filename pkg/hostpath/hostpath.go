@@ -355,6 +355,28 @@ func shareUpdateRanger(key, value interface{}) bool {
 			klog.Warningf("share %s vol %s target path %s delete error %s",
 				shareId, volID, oldTargetPath, err.Error())
 		}
+		//TODO removing contents from a read only volume, where we employ an intermediate bind mount, is the single
+		// item in our list of update content features that still works when this driver is restarted after a Pod
+		// is started with one of our volumes.  The question is do we even bother supporting this, or just make
+		// the general statement that "results may vary" and do not claim any production level support for updating
+		// contents with read only volumes since we don't have a comprehensive solution for when the driver is restarted.
+		if hpv.IsReadOnly() {
+			tp := hpv.GetTargetPath()
+			empty, err := isDirEmpty(tp)
+			errStr := ""
+			if err != nil {
+				errStr = err.Error()
+			}
+			klog.V(4).Infof("shareUpdateRanger kubelet dir %s empty %v err %s", tp, empty, errStr)
+			if !empty {
+				err = commonOSRemove(tp)
+				if err != nil {
+					errStr = err.Error()
+				}
+				klog.V(4).Infof("shareUpdateRanger kubelet dir %s commonOsRemove err %s", tp, errStr)
+
+			}
+		}
 		objcache.UnregisterSecretUpsertCallback(volID)
 		objcache.UnregisterSecretDeleteCallback(volID)
 		objcache.UnregisterConfigMapDeleteCallback(volID)
