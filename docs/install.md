@@ -108,13 +108,11 @@ daemonset.apps/csi-hostpathplugin created
 
 ## Installing from the release page  (only developer preview level support)
 
-1. Run the following command
+Follow the instructions for any of the releases listed on [the Releases page](https://github.com/openshift/csi-driver-projected-resource/releases) that you are interested in, starting with release 'v0.4.8-rc.0'
 
-```bash
-oc apply -f --filename https://github.com/openshift/csi-driver-projected-resource/releases/download/v0.1.0/release.yaml
-```
+NOTE:  the 'intro-blog-post' tag does not have a single 'release.yaml' file to install from.
 
-You should see an output similar to the following printed on the terminal showing the creation or modification of the various
+After following those instructions, you should see an output similar to the following printed on the terminal showing the creation or modification of the various
 Kubernetes resource:
 
 ```shell
