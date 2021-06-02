@@ -11,10 +11,22 @@ spec:
       volumeMounts:
         - mountPath: "/data"
           name: my-csi-volume
-      command: [ "sleep", "1000000" ]
+      command:
+        - sh
+        - -c
+        - |
+          while true
+          do
+            ls -la /data
+            touch /data/foo
+            ls -la /data
+            echo "calling sleep"
+            sleep 120
+          done
   volumes:
     - name: my-csi-volume
       csi:
+        #readOnly: true
         driver: csi-driver-projected-resource.openshift.io
         volumeAttributes:
           share: my-share

@@ -36,6 +36,7 @@ func CreateTestPod(t *TestArgs) {
 					Name: "my-csi-volume",
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
+							ReadOnly:         &t.ReadOnly,
 							Driver:           client.DriverName,
 							VolumeAttributes: map[string]string{"share": t.Name},
 						},
@@ -63,6 +64,7 @@ func CreateTestPod(t *TestArgs) {
 			Name: "my-csi-volume" + secondShareSuffix,
 			VolumeSource: corev1.VolumeSource{
 				CSI: &corev1.CSIVolumeSource{
+					ReadOnly:         &t.ReadOnly,
 					Driver:           client.DriverName,
 					VolumeAttributes: map[string]string{"share": t.SecondName},
 				},

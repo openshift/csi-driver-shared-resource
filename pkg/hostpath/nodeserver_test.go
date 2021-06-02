@@ -52,6 +52,8 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 		nodeID:            "node1",
 		maxVolumesPerNode: 0,
 		mounter:           mount.NewFakeMounter([]mount.MountPoint{}),
+		readOnlyMounter:   &WriteOnceReadMany{},
+		readWriteMounter:  &ReadWriteMany{},
 		hp:                hp,
 	}
 	return ns, tmpDir, volPathTmpDir, nil
@@ -173,6 +175,7 @@ func TestNodePublishVolume(t *testing.T) {
 			name: "missing share key",
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
@@ -193,6 +196,7 @@ func TestNodePublishVolume(t *testing.T) {
 			name: "missing share",
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
@@ -226,6 +230,7 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
@@ -260,6 +265,7 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
@@ -294,6 +300,7 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
@@ -317,6 +324,7 @@ func TestNodePublishVolume(t *testing.T) {
 			reactor: denyReactorFunc,
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
@@ -340,6 +348,7 @@ func TestNodePublishVolume(t *testing.T) {
 			reactor: acceptReactorFunc,
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
+				Readonly:   true,
 				TargetPath: getTestTargetPath(t),
 				VolumeCapability: &csi.VolumeCapability{
 					AccessType: &csi.VolumeCapability_Mount{
