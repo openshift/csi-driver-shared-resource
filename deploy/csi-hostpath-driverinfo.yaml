@@ -1,7 +1,7 @@
 apiVersion: storage.k8s.io/v1
 kind: CSIDriver
 metadata:
-  name: csi-driver-projected-resource.openshift.io
+  name: csi.shared-resources.openshift.io
 spec:
   # Supports ephemeral inline volumes.
   volumeLifecycleModes:
