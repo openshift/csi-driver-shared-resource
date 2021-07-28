@@ -8,7 +8,7 @@ import (
 
 const (
 	Version   = "v1alpha1"
-	GroupName = "projectedresource.storage.openshift.io"
+	GroupName = "sharedresource.storage.openshift.io"
 )
 
 var (
