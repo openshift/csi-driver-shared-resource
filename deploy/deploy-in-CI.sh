@@ -15,7 +15,7 @@ run () {
 
 # deploy hostpath plugin and registrar sidecar
 echo "creating share CRD"
-run oc apply -f ${BASE_DIR}/0000_10_projectedresource.crd.yaml
+run oc apply -f ${BASE_DIR}/0000_10_sharedresource.crd.yaml
 run oc apply -f ${BASE_DIR}/00-namespace.yaml
 run oc apply -f ${BASE_DIR}/01-service-account.yaml
 run oc apply -f ${BASE_DIR}/02-cluster-role.yaml
