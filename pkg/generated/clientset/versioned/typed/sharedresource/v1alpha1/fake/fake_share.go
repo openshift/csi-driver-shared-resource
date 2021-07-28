@@ -11,7 +11,7 @@ package fake
 import (
 	"context"
 
-	v1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	v1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/sharedresource/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,12 +22,12 @@ import (
 
 // FakeShares implements ShareInterface
 type FakeShares struct {
-	Fake *FakeProjectedresourceV1alpha1
+	Fake *FakeSharedresourceV1alpha1
 }
 
-var sharesResource = schema.GroupVersionResource{Group: "projectedresource.storage.openshift.io", Version: "v1alpha1", Resource: "shares"}
+var sharesResource = schema.GroupVersionResource{Group: "sharedresource.storage.openshift.io", Version: "v1alpha1", Resource: "shares"}
 
-var sharesKind = schema.GroupVersionKind{Group: "projectedresource.storage.openshift.io", Version: "v1alpha1", Kind: "Share"}
+var sharesKind = schema.GroupVersionKind{Group: "sharedresource.storage.openshift.io", Version: "v1alpha1", Kind: "Share"}
 
 // Get takes name of the share, and returns the corresponding share object, and an error if there is any.
 func (c *FakeShares) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Share, err error) {

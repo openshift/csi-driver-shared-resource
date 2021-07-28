@@ -51,11 +51,11 @@ func CleanupTestNamespace(t *TestArgs) {
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting cluster role binding %s: %s", t.Name, err.Error())
 	}
-	err = shareClient.ProjectedresourceV1alpha1().Shares().Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
+	err = shareClient.SharedresourceV1alpha1().Shares().Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}
-	err = shareClient.ProjectedresourceV1alpha1().Shares().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
+	err = shareClient.SharedresourceV1alpha1().Shares().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}

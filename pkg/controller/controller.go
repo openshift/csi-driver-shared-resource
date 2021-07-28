@@ -15,7 +15,7 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-projected-resource/pkg/cache"
 	"github.com/openshift/csi-driver-projected-resource/pkg/client"
 	shareclientv1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned"
@@ -123,13 +123,13 @@ func NewController(shareRelist time.Duration) (*Controller, error) {
 		shareInformerFactory: shareInformerFactory,
 		cfgMapInformer:       informerFactory.Core().V1().ConfigMaps().Informer(),
 		secInformer:          informerFactory.Core().V1().Secrets().Informer(),
-		shareInformer:        shareInformerFactory.Projectedresource().V1alpha1().Shares().Informer(),
+		shareInformer:        shareInformerFactory.Sharedresource().V1alpha1().Shares().Informer(),
 		listers:              client.GetListers(),
 	}
 
 	client.SetConfigMapsLister(c.informerFactory.Core().V1().ConfigMaps().Lister())
 	client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
-	client.SetSharesLister(c.shareInformerFactory.Projectedresource().V1alpha1().Shares().Lister())
+	client.SetSharesLister(c.shareInformerFactory.Sharedresource().V1alpha1().Shares().Lister())
 
 	c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
 	c.secInformer.AddEventHandler(c.secretEventHandler())

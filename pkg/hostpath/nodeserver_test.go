@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-projected-resource/pkg/client"
 	"golang.org/x/net/context"
 

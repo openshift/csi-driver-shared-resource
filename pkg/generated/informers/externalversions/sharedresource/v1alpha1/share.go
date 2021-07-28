@@ -12,10 +12,10 @@ import (
 	"context"
 	time "time"
 
-	projectedresourcev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	sharedresourcev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/sharedresource/v1alpha1"
 	versioned "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned"
 	internalinterfaces "github.com/openshift/csi-driver-projected-resource/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/listers/projectedresource/v1alpha1"
+	v1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/listers/sharedresource/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -51,16 +51,16 @@ func NewFilteredShareInformer(client versioned.Interface, resyncPeriod time.Dura
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ProjectedresourceV1alpha1().Shares().List(context.TODO(), options)
+				return client.SharedresourceV1alpha1().Shares().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ProjectedresourceV1alpha1().Shares().Watch(context.TODO(), options)
+				return client.SharedresourceV1alpha1().Shares().Watch(context.TODO(), options)
 			},
 		},
-		&projectedresourcev1alpha1.Share{},
+		&sharedresourcev1alpha1.Share{},
 		resyncPeriod,
 		indexers,
 	)
@@ -71,7 +71,7 @@ func (f *shareInformer) defaultInformer(client versioned.Interface, resyncPeriod
 }
 
 func (f *shareInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&projectedresourcev1alpha1.Share{}, f.defaultInformer)
+	return f.factory.InformerFor(&sharedresourcev1alpha1.Share{}, f.defaultInformer)
 }
 
 func (f *shareInformer) Lister() v1alpha1.ShareLister {
