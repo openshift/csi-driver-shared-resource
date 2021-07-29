@@ -3,13 +3,13 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: shares.sharedresource.storage.openshift.io
+  name: shares.sharedresource.openshift.io
   annotations:
     displayName: Shares
     description: Extension for sharing ConfigMaps and Secrets across Namespaces
 spec:
   scope: Cluster
-  group: sharedresource.storage.openshift.io
+  group: sharedresource.openshift.io
   names:
     plural: shares
     singular: share
