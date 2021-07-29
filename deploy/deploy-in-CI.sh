@@ -13,11 +13,11 @@ run () {
 }
 
 
-# deploy hostpath plugin and registrar sidecar
+# deploy daemonset without registering the CSI driver
 echo "creating share CRD"
 run oc apply -f ${BASE_DIR}/0000_10_sharedresource.crd.yaml
 run oc apply -f ${BASE_DIR}/00-namespace.yaml
 run oc apply -f ${BASE_DIR}/01-service-account.yaml
 run oc apply -f ${BASE_DIR}/02-cluster-role.yaml
 run oc apply -f ${BASE_DIR}/03-cluster-role-binding.yaml
-run oc apply -f ${BASE_DIR}/csi-hostpath-driverinfo.yaml
+run oc apply -f ${BASE_DIR}/05-csi-driver-daemonset.yaml

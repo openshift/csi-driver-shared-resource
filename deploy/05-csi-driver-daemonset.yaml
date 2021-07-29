@@ -5,13 +5,13 @@
 kind: Service
 apiVersion: v1
 metadata:
-  name: csi-hostpathplugin
-  namespace: csi-driver-projected-resource
+  name: csi-driver-shared-resource
+  namespace: csi-driver-shared-resource
   labels:
-    app: csi-hostpathplugin
+    app: csi-driver-shared-resource
 spec:
   selector:
-    app: csi-hostpathplugin
+    app: csi-driver-shared-resource
   ports:
     - name: dummy
       port: 12345
@@ -19,20 +19,20 @@ spec:
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-hostpathplugin
-  namespace: csi-driver-projected-resource
+  name: csi-driver-shared-resource
+  namespace: csi-driver-shared-resource
   labels:
-    app: csi-hostpathplugin
+    app: csi-driver-shared-resource
 spec:
   selector:
     matchLabels:
-      app: csi-hostpathplugin
+      app: csi-driver-shared-resource
   template:
     metadata:
       labels:
-        app: csi-hostpathplugin
+        app: csi-driver-shared-resource
     spec:
-      serviceAccountName: csi-driver-projected-resource-plugin
+      serviceAccountName: csi-driver-shared-resource
       containers:
         - name: node-driver-registrar
           image: quay.io/openshift/origin-csi-node-driver-registrar:4.8.0
@@ -66,7 +66,7 @@ spec:
           command:
             - csi-driver-projected-resource
           args:
-            - "--drivername=csi.shared-resources.openshift.io"
+            - "--drivername=csi.sharedresource.openshift.io"
             - "--v=4"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"

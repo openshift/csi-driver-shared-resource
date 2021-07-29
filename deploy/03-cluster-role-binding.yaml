@@ -1,25 +1,25 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: projected-resource-privileged
+  name: csi-driver-shared-resource-privileged
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: system:openshift:scc:privileged
 subjects:
   - kind: ServiceAccount
-    name: csi-driver-projected-resource-plugin
-    namespace: csi-driver-projected-resource
+    name: csi-driver-shared-resource
+    namespace: csi-driver-shared-resource
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: projected-resource-secret-configmap-share-watch-sar-create
+  name: csi-driver-shared-resource
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: projected-resource-secret-configmap-share-watch-sar-create
+  name: csi-driver-shared-resource-deployment
 subjects:
   - kind: ServiceAccount
-    name: csi-driver-projected-resource-plugin
-    namespace: csi-driver-projected-resource
+    name: csi-drivver-shared-resource
+    namespace: csi-driver-shared-resource
