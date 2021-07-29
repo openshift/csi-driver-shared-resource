@@ -101,7 +101,7 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string) (bool, error) {
 	sarClient := kubeClient.AuthorizationV1().SubjectAccessReviews()
 	resourceAttributes := &authorizationv1.ResourceAttributes{
 		Verb:     "get",
-		Group:    "projectedresource.storage.openshift.io",
+		Group:    "sharedresource.openshift.io",
 		Resource: "shares",
 		Name:     shareName,
 	}

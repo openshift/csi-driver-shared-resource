@@ -19,7 +19,7 @@ type SharedresourceV1alpha1Interface interface {
 	SharesGetter
 }
 
-// SharedresourceV1alpha1Client is used to interact with features provided by the sharedresource.storage.openshift.io group.
+// SharedresourceV1alpha1Client is used to interact with features provided by the sharedresource.openshift.io group.
 type SharedresourceV1alpha1Client struct {
 	restClient rest.Interface
 }

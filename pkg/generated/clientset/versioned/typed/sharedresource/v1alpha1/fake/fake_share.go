@@ -25,9 +25,9 @@ type FakeShares struct {
 	Fake *FakeSharedresourceV1alpha1
 }
 
-var sharesResource = schema.GroupVersionResource{Group: "sharedresource.storage.openshift.io", Version: "v1alpha1", Resource: "shares"}
+var sharesResource = schema.GroupVersionResource{Group: "sharedresource.openshift.io", Version: "v1alpha1", Resource: "shares"}
 
-var sharesKind = schema.GroupVersionKind{Group: "sharedresource.storage.openshift.io", Version: "v1alpha1", Kind: "Share"}
+var sharesKind = schema.GroupVersionKind{Group: "sharedresource.openshift.io", Version: "v1alpha1", Kind: "Share"}
 
 // Get takes name of the share, and returns the corresponding share object, and an error if there is any.
 func (c *FakeShares) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Share, err error) {
