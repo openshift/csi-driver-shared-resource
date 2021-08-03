@@ -3,13 +3,13 @@ package framework
 import (
 	"context"
 	"fmt"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"os"
 	"strings"
 	"time"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
@@ -155,7 +155,7 @@ func CreateCSIDriverPlugin(t *TestArgs) {
 			imageNameOverride, found = os.LookupEnv("IMAGE_FORMAT")
 			if found {
 				t.T.Logf("%s: found CI image %s", time.Now().String(), imageNameOverride)
-				imageNameOverride = strings.ReplaceAll(imageNameOverride, "${component}", "csi-driver-projected-resource")
+				imageNameOverride = strings.ReplaceAll(imageNameOverride, "${component}", "csi-driver-shared-resource")
 				imageNameOverride = strings.ReplaceAll(imageNameOverride, "stable", "pipeline")
 				imageName = imageNameOverride
 			}
