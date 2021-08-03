@@ -19,7 +19,7 @@ import (
 func WaitForDaemonSet(t *TestArgs) error {
 	dsClient := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace)
 	err := wait.PollImmediate(1*time.Second, 10*time.Minute, func() (bool, error) {
-		_, err := dsClient.Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
+		_, err := dsClient.Get(context.TODO(), "csi-driver-shared-resource", metav1.GetOptions{})
 		if err != nil {
 			t.T.Logf("%s: error waiting for driver daemonset to exist: %v", time.Now().String(), err)
 			return false, nil
@@ -107,23 +107,23 @@ func RestartDaemonSet(t *TestArgs) {
 //TODO possibly this can go away once we are in the OCP payload, though the csi driver operator element for all that needs to get sorted out,
 // but if it can, then hopefully repo images built from PRs are used when setting up this driver's daemonset
 func CreateCSIDriverPlugin(t *TestArgs) {
-	_, err1 := kubeClient.CoreV1().Services(client.DefaultNamespace).Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
-	_, err2 := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace).Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
+	_, err1 := kubeClient.CoreV1().Services(client.DefaultNamespace).Get(context.TODO(), "csi-driver-shared-resource", metav1.GetOptions{})
+	_, err2 := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace).Get(context.TODO(), "csi-driver-shared-resource", metav1.GetOptions{})
 	if err1 == nil && err2 == nil {
 		return
 	}
 	if err1 != nil {
 		service := &corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "csi-hostpathplugin",
+				Name:      "csi-driver-shared-resource",
 				Namespace: client.DefaultNamespace,
 				Labels: map[string]string{
-					"app": "csi-hostpathplugin",
+					"app": "csi-driver-shared-resource",
 				},
 			},
 			Spec: corev1.ServiceSpec{
 				Selector: map[string]string{
-					"app": "csi-hostpathplugin",
+					"app": "csi-driver-shared-resource",
 				},
 				Ports: []corev1.ServicePort{
 					{
@@ -162,26 +162,26 @@ func CreateCSIDriverPlugin(t *TestArgs) {
 		}
 		daemonSet := &appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "csi-hostpathplugin",
+				Name:      "csi-driver-shared-resource",
 				Namespace: client.DefaultNamespace,
 				Labels: map[string]string{
-					"app": "csi-hostpathplugin",
+					"app": "csi-driver-shared-resource",
 				},
 			},
 			Spec: appsv1.DaemonSetSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
-						"app": "csi-hostpathplugin",
+						"app": "csi-driver-shared-resource",
 					},
 				},
 				Template: corev1.PodTemplateSpec{
 					ObjectMeta: metav1.ObjectMeta{
 						Labels: map[string]string{
-							"app": "csi-hostpathplugin",
+							"app": "csi-driver-shared-resource",
 						},
 					},
 					Spec: corev1.PodSpec{
-						ServiceAccountName: "csi-driver-projected-resource-plugin",
+						ServiceAccountName: "csi-driver-shared-resource",
 						Volumes: []corev1.Volume{
 							{
 								Name: "socket-dir",
@@ -291,7 +291,7 @@ func CreateCSIDriverPlugin(t *TestArgs) {
 								ImagePullPolicy: corev1.PullAlways,
 								Command:         []string{"csi-driver-projected-resource"},
 								Args: []string{
-									"--drivername=csi.shared-resources.openshift.io",
+									"--drivername=csi.sharedresource.openshift.io",
 									"--v=4",
 									"--endpoint=$(CSI_ENDPOINT)",
 									"--nodeid=$(KUBE_NODE_NAME)",
