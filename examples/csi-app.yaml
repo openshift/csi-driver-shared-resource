@@ -27,6 +27,6 @@ spec:
     - name: my-csi-volume
       csi:
         #readOnly: true
-        driver: csi.shared-resources.openshift.io
+        driver: csi.sharedresource.openshift.io
         volumeAttributes:
           share: my-share

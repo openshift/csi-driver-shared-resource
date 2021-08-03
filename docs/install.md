@@ -24,13 +24,13 @@ Kubernetes resources:
 ```shell
 namespace/csi-driver-projected-resource created
 customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
-serviceaccount/csi-driver-projected-resource-plugin created
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
+serviceaccount/csi-driver-shared-resource created
+clusterrole.rbac.authorization.k8s.io/csi-driver-shared-resource created
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource-privileged created
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource created
 csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/csi-driver-shared-resource created
+daemonset.apps/csi-driver-shared-resource created
 ```
 
 ### Installing from a local clone of this repository
@@ -55,21 +55,21 @@ oc apply -f ./deploy/00-namespace.yaml
 namespace/csi-driver-projected-resource created
    ./deploy/01-service-account.yaml
 oc apply -f ./deploy/01-service-account.yaml
-serviceaccount/csi-driver-projected-resource-plugin created
+serviceaccount/csi-driver-shared-resource created
    ./deploy/02-cluster-role.yaml
 oc apply -f ./deploy/02-cluster-role.yaml
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
+clusterrole.rbac.authorization.k8s.io/csi-driver-shared-resource created
    ./deploy/03-cluster-role-binding.yaml
 oc apply -f ./deploy/03-cluster-role-binding.yaml
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged unchanged
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create unchanged
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource-privileged unchanged
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource unchanged
    ./deploy/csi-hostpath-driverinfo.yaml
 oc apply -f ./deploy/csi-hostpath-driverinfo.yaml
 csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
    ./deploy/csi-hostpath-plugin.yaml
 oc apply -f ./deploy/csi-hostpath-plugin.yaml
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/csi-driver-shared-resource created
+daemonset.apps/csi-driver-shared-resource created
 16:21:25 waiting for hostpath deployment to complete, attempt #0
 ```
 
@@ -93,13 +93,13 @@ Kubernetes resources:
 ```shell
 namespace/csi-driver-projected-resource created
 customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
-serviceaccount/csi-driver-projected-resource-plugin created
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
+serviceaccount/csi-driver-shared-resource created
+clusterrole.rbac.authorization.k8s.io/csi-driver-shared-resource created
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource-privileged created
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource created
 csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/csi-driver-shared-resource created
+daemonset.apps/csi-driver-shared-resource created
 ```
 
 
@@ -123,13 +123,13 @@ Kubernetes resources:
 ```shell
 namespace/csi-driver-projected-resource created
 customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
-serviceaccount/csi-driver-projected-resource-plugin created
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
+serviceaccount/csi-driver-shared-resource created
+clusterrole.rbac.authorization.k8s.io/csi-driver-shared-resource created
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource-privileged created
+clusterrolebinding.rbac.authorization.k8s.io/csi-driver-shared-resource created
 csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/csi-driver-shared-resource created
+daemonset.apps/csi-driver-shared-resource created
 ```
 
 
@@ -141,7 +141,7 @@ On a 3 node OCP cluster, this will look something like:
 ```shell
 $ oc get pods -n csi-driver-projected-resource
 NAME                       READY   STATUS    RESTARTS   AGE
-csi-hostpathplugin-c7bbk   2/2     Running   0          23m
-csi-hostpathplugin-m4smv   2/2     Running   0          23m
-csi-hostpathplugin-x9xjw   2/2     Running   0          23m
+csi-driver-shared-resource-c7bbk   2/2     Running   0          23m
+csi-driver-shared-resource-m4smv   2/2     Running   0          23m
+csi-driver-shared-resource-x9xjw   2/2     Running   0          23m
 ```
