@@ -3,16 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"k8s.io/klog/v2"
 
-	"github.com/openshift/api/operator/v1"
 	"github.com/openshift/csi-driver-projected-resource/pkg/controller"
 	"github.com/openshift/csi-driver-projected-resource/pkg/hostpath"
 )
@@ -62,7 +62,8 @@ func init() {
 
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 	rootCmd.Flags().StringVar(&endPoint, "endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	rootCmd.Flags().StringVar(&driverName, "drivername", string(v1.SharedResourcesCSIDriver), "name of the driver")
+	// TODO: Use name registered in openshift/api
+	rootCmd.Flags().StringVar(&driverName, "drivername", "csi.sharedresource.openshift.io", "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
 	rootCmd.Flags().StringVar(&shareRelistInterval, "share-relist-interval", "",
