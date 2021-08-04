@@ -289,7 +289,7 @@ func CreateCSIDriverPlugin(t *TestArgs) {
 								Name:            "hostpath",
 								Image:           imageName,
 								ImagePullPolicy: corev1.PullAlways,
-								Command:         []string{"csi-driver-projected-resource"},
+								Command:         []string{"csi-driver-shared-resource"},
 								Args: []string{
 									"--drivername=csi.shared-resources.openshift.io",
 									"--v=4",

@@ -52,13 +52,13 @@ verify: ## Run verifications. Example: make verify
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
-	go build -a -mod=vendor -race -ldflags $(LDFLAGS) -o _output/csi-driver-projected-resource ./cmd
+	go build -a -mod=vendor -race -ldflags $(LDFLAGS) -o _output/csi-driver-shared-resource ./cmd
 .PHONY: build
 
 build-image: ## Build the images and push them to the remote registry. Example: make build-image
 	rm -rf _output
-	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-projected-resource:$(TAG) .
-	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-projected-resource:$(TAG)
+	$(CONTAINER_RUNTIME) build -f Dockerfile -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource:$(TAG) .
+	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource:$(TAG)
 .PHONY: build-image
 
 clean: ## Clean up the workspace. Example: make clean
