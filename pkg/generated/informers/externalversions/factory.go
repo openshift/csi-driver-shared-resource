@@ -13,9 +13,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned"
-	internalinterfaces "github.com/openshift/csi-driver-projected-resource/pkg/generated/informers/externalversions/internalinterfaces"
-	projectedresource "github.com/openshift/csi-driver-projected-resource/pkg/generated/informers/externalversions/projectedresource"
+	versioned "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
+	internalinterfaces "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/internalinterfaces"
+	projectedresource "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/projectedresource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

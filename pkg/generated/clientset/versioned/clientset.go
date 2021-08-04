@@ -11,7 +11,7 @@ package versioned
 import (
 	"fmt"
 
-	projectedresourcev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1"
+	projectedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

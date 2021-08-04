@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/openshift/csi-driver-projected-resource/test/framework"
+	"github.com/openshift/csi-driver-shared-resource/test/framework"
 )
 
 func prep(t *framework.TestArgs) {

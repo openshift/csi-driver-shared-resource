@@ -9,8 +9,8 @@ SPDX-License-Identifier: Apache-2.0
 package projectedresource
 
 import (
-	internalinterfaces "github.com/openshift/csi-driver-projected-resource/pkg/generated/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/informers/externalversions/projectedresource/v1alpha1"
+	internalinterfaces "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/projectedresource/v1alpha1"
 )
 
 // Interface provides access to each of this group's versions.

@@ -1,12 +1,13 @@
 package cache
 
 import (
-	"k8s.io/klog/v2"
 	"sync"
+
+	"k8s.io/klog/v2"
 
 	corev1 "k8s.io/api/core/v1"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
 )
 
 /*

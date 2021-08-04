@@ -11,11 +11,11 @@
 ### Installing from the release page
 
 Run the following command, providing an available release version.
-Available versions can be found on the [releases page](https://github.com/openshift/csi-driver-projected-resource/releases).
+Available versions can be found on the [releases page](https://github.com/openshift/csi-driver-shared-resource/releases).
 
 ```bash
 $ export RELEASE_VERSION="v0.4.8-rc.0"
-$ oc apply -f "https://github.com/openshift/csi-driver-projected-resource/releases/download/${RELEASE_VERSION}/release.yaml"
+$ oc apply -f "https://github.com/openshift/csi-driver-shared-resource/releases/download/${RELEASE_VERSION}/release.yaml"
 ```
 
 You should see an output similar to the following printed on the terminal showing the creation or modification of the various

@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/openshift/csi-driver-projected-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 func WaitForDaemonSet(t *TestArgs) error {

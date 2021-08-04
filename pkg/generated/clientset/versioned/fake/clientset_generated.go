@@ -9,9 +9,9 @@ SPDX-License-Identifier: Apache-2.0
 package fake
 
 import (
-	clientset "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned"
-	projectedresourcev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1"
-	fakeprojectedresourcev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1/fake"
+	clientset "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
+	projectedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1"
+	fakeprojectedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

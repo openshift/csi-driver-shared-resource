@@ -3,18 +3,19 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+
 	"k8s.io/klog/v2"
 
-	"github.com/openshift/api/operator/v1"
-	"github.com/openshift/csi-driver-projected-resource/pkg/controller"
-	"github.com/openshift/csi-driver-projected-resource/pkg/hostpath"
+	v1 "github.com/openshift/api/operator/v1"
+	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
+	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 )
 
 var (
