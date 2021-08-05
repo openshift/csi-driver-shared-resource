@@ -28,22 +28,19 @@ test: ## Run unit tests. Example: make test
 test-e2e:
 	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
 	# the test code will adjust the image supplied to the daemonset hostpath container
-	./deploy/deploy-in-CI.sh
-	KUBERNETES_CONFIG=${KUBECONFIG} go test -race -count 1 -tags normal -timeout 30m -v ./test/e2e/...
+	./hack/test-e2e.sh
 .PHONY: test-e2e
 
 test-e2e-slow:
 	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
 	# the test code will adjust the image supplied to the daemonset hostpath container
-	./deploy/deploy-in-CI.sh
-	KUBERNETES_CONFIG=${KUBECONFIG} go test -race -count 1 -tags slow -timeout 30m -v ./test/e2e/...
+	TEST_SUITE="slow" ./hack/test-e2e.sh
 .PHONY: test-e2e
 
 test-e2e-disruptive:
 	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
 	# the test code will adjust the image supplied to the daemonset hostpath container
-	./deploy/deploy-in-CI.sh
-	KUBERNETES_CONFIG=${KUBECONFIG} go test -race -count 1 -tags disruptive -timeout 30m -v ./test/e2e/...
+	TEST_SUITE="disruptive" ./hack/test-e2e.sh
 .PHONY: test-e2e
 
 verify: ## Run verifications. Example: make verify

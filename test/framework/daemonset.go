@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -107,6 +108,18 @@ func RestartDaemonSet(t *TestArgs) {
 //TODO possibly this can go away once we are in the OCP payload, though the csi driver operator element for all that needs to get sorted out,
 // but if it can, then hopefully repo images built from PRs are used when setting up this driver's daemonset
 func CreateCSIDriverPlugin(t *TestArgs) {
+	if skipDeploy, ok := os.LookupEnv("SKIP_DEPLOY"); ok {
+		skip, err := strconv.ParseBool(skipDeploy)
+		if err != nil {
+			t.T.Logf("Could not parse SKIP_DEPLOY value %s. Assuming deployment should happen.", skipDeploy)
+			skip = false
+		}
+		if skip {
+			t.T.Logf("Skipping deployment of the CSI Driver plugin. Tests may fail if the csi driver has not been deployed elsewhere.")
+			return
+		}
+	}
+
 	_, err1 := kubeClient.CoreV1().Services(client.DefaultNamespace).Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
 	_, err2 := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace).Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
 	if err1 == nil && err2 == nil {
@@ -152,6 +165,8 @@ func CreateCSIDriverPlugin(t *TestArgs) {
 		}
 		if !found {
 			// for CI override
+			// TODO: this has been deprecated in CI. Steps should decare dependencies, and ci-operator takes care of resolving the exact image.
+			// See https://docs.ci.openshift.org/docs/architecture/ci-operator/#referring-to-images-in-tests
 			imageNameOverride, found = os.LookupEnv("IMAGE_FORMAT")
 			if found {
 				t.T.Logf("%s: found CI image %s", time.Now().String(), imageNameOverride)
