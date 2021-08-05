@@ -31,9 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
-	objcache "github.com/openshift/csi-driver-projected-resource/pkg/cache"
-	"github.com/openshift/csi-driver-projected-resource/pkg/client"
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
+	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 type hostPath struct {

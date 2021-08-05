@@ -64,7 +64,7 @@ spec:
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:
-            - csi-driver-projected-resource
+            - csi-driver-shared-resource
           args:
             - "--drivername=csi.shared-resources.openshift.io"
             - "--v=4"

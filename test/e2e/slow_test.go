@@ -3,7 +3,7 @@
 package e2e
 
 import (
-	"github.com/openshift/csi-driver-projected-resource/test/framework"
+	"github.com/openshift/csi-driver-shared-resource/test/framework"
 	"testing"
 	"time"
 )

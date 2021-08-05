@@ -13,7 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 
-	"github.com/openshift/csi-driver-projected-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 func WaitForDaemonSet(t *TestArgs) error {
@@ -289,7 +289,7 @@ func CreateCSIDriverPlugin(t *TestArgs) {
 								Name:            "hostpath",
 								Image:           imageName,
 								ImagePullPolicy: corev1.PullAlways,
-								Command:         []string{"csi-driver-projected-resource"},
+								Command:         []string{"csi-driver-shared-resource"},
 								Args: []string{
 									"--drivername=csi.shared-resources.openshift.io",
 									"--v=4",

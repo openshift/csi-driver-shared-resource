@@ -8,8 +8,8 @@ import (
 	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
 
-	"github.com/openshift/csi-driver-projected-resource/pkg/client"
-	shareset "github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	shareset "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
 )
 
 var (

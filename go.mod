@@ -1,4 +1,4 @@
-module github.com/openshift/csi-driver-projected-resource
+module github.com/openshift/csi-driver-shared-resource
 
 go 1.14
 

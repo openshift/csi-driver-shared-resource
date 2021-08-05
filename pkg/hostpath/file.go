@@ -7,7 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2"
 
-	"github.com/openshift/csi-driver-projected-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 type Payload struct {

@@ -11,11 +11,11 @@
 ### Installing from the release page
 
 Run the following command, providing an available release version.
-Available versions can be found on the [releases page](https://github.com/openshift/csi-driver-projected-resource/releases).
+Available versions can be found on the [releases page](https://github.com/openshift/csi-driver-shared-resource/releases).
 
 ```bash
 $ export RELEASE_VERSION="v0.4.8-rc.0"
-$ oc apply -f "https://github.com/openshift/csi-driver-projected-resource/releases/download/${RELEASE_VERSION}/release.yaml"
+$ oc apply -f "https://github.com/openshift/csi-driver-shared-resource/releases/download/${RELEASE_VERSION}/release.yaml"
 ```
 
 You should see an output similar to the following printed on the terminal showing the creation or modification of the various
@@ -78,13 +78,13 @@ daemonset.apps/csi-hostpathplugin created
 1. Run the following command
 
 ```bash
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/00-namespace.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/0000_10_projectedresource.crd.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/01-service-account.yaml 
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/02-cluster-role.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/03-cluster-role-binding.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/csi-hostpath-driverinfo.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/master/deploy/csi-hostpath-plugin.yaml 
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/00-namespace.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/0000_10_projectedresource.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/01-service-account.yaml 
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/02-cluster-role.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/03-cluster-role-binding.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/csi-hostpath-driverinfo.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/csi-hostpath-plugin.yaml 
 ```
 
 You should see an output similar to the following printed on the terminal showing the creation or modification of the various
@@ -108,13 +108,13 @@ daemonset.apps/csi-hostpathplugin created
 1. Run the following command
 
 ```bash
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/00-namespace.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/0000_10_projectedresource.crd.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/01-service-account.yaml 
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/02-cluster-role.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/03-cluster-role-binding.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/csi-hostpath-driverinfo.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-projected-resource/release-4.8/deploy/csi-hostpath-plugin.yaml 
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/00-namespace.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/0000_10_projectedresource.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/01-service-account.yaml 
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/02-cluster-role.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/03-cluster-role-binding.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/csi-hostpath-driverinfo.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/csi-hostpath-plugin.yaml 
 ```
 
 You should see an output similar to the following printed on the terminal showing the creation or modification of the various

@@ -7,7 +7,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	shareapi "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
+	shareapi "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
 )
 
 func CreateShare(t *TestArgs) {

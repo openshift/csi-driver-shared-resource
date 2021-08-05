@@ -9,8 +9,8 @@ SPDX-License-Identifier: Apache-2.0
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/openshift/csi-driver-projected-resource/pkg/api/projectedresource/v1alpha1"
-	"github.com/openshift/csi-driver-projected-resource/pkg/generated/clientset/versioned/scheme"
+	v1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
+	"github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
 
