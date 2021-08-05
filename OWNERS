@@ -4,3 +4,5 @@ reviewers:
 approvers:
 - adambkaplan
 - gabemontero
+component: Storage
+subcomponent: Shared Resource CSI Driver
