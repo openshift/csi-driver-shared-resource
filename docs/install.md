@@ -39,7 +39,7 @@ daemonset.apps/csi-hostpathplugin created
 
 ```bash
 # change directories into you clone of this repository, then
-./deploy/deploy.sh
+make deploy
 ```
 
 You should see an output similar to the following printed on the terminal showing the creation or modification of the various

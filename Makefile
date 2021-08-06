@@ -25,21 +25,20 @@ test: ## Run unit tests. Example: make test
 	go test -race -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
-test-e2e:
-	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
-	# the test code will adjust the image supplied to the daemonset hostpath container
+deploy:
+	# For local testing set DRIVER_IMAGE to whatever image you produced via 'make build-image'
+	./deploy/deploy.sh
+.PHONY: deploy
+
+test-e2e: deploy
 	./hack/test-e2e.sh
 .PHONY: test-e2e
 
-test-e2e-slow:
-	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
-	# the test code will adjust the image supplied to the daemonset hostpath container
+test-e2e-slow: deploy
 	TEST_SUITE="slow" ./hack/test-e2e.sh
 .PHONY: test-e2e
 
-test-e2e-disruptive:
-	# for local testing set IMAGE_NAME to whatever image you produced via 'make build-image'
-	# the test code will adjust the image supplied to the daemonset hostpath container
+test-e2e-disruptive: deploy
 	TEST_SUITE="disruptive" ./hack/test-e2e.sh
 .PHONY: test-e2e
 

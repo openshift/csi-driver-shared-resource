@@ -9,7 +9,6 @@ import (
 
 func prep(t *framework.TestArgs) {
 	framework.SetupClients(t)
-	framework.LaunchDriver(t)
 	t.DaemonSetUp = true
 	err := framework.WaitForDaemonSet(t)
 	if err != nil {
