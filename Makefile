@@ -30,8 +30,12 @@ deploy:
 	./deploy/deploy.sh
 .PHONY: deploy
 
-test-e2e: deploy
-	./hack/test-e2e.sh
+TEST_SUITE ?= normal
+TEST_TIMEOUT ?= 30m
+test-e2e-no-deploy:
+	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) ./hack/test-e2e.sh
+
+test-e2e: deploy test-e2e-no-deploy
 .PHONY: test-e2e
 
 test-e2e-slow: deploy
