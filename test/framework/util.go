@@ -40,9 +40,3 @@ func LogAndDebugTestError(t *TestArgs) {
 	t.T.Logf("*** TEST %s FAILED END OF TEST EVENT DUMP at time %s", t.T.Name(), time.Now().String())
 	t.T.Fatalf(t.MessageString)
 }
-
-//TODO presumably this can go away once we have an OLM based deploy that is also integrated with our CI
-// so that repo images built from PRs are used when setting up this driver's daemonset
-func LaunchDriver(t *TestArgs) {
-	CreateCSIDriverPlugin(t)
-}
