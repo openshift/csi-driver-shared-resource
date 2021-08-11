@@ -22,7 +22,7 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
@@ -66,7 +66,7 @@ func getPodDetails(volumeContext map[string]string) (string, string, string, str
 }
 
 func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.Share, error) {
-	shareName, sok := req.GetVolumeContext()[ProjectedResourceShareKey]
+	shareName, sok := req.GetVolumeContext()[SharedResourceShareKey]
 	if !sok || len(strings.TrimSpace(shareName)) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"the csi driver reference is missing the volumeAttribute 'share'")

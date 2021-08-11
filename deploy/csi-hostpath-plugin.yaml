@@ -6,7 +6,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-hostpathplugin
-  namespace: csi-driver-projected-resource
+  namespace: csi-driver-shared-resource
   labels:
     app: csi-hostpathplugin
 spec:
@@ -20,7 +20,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-hostpathplugin
-  namespace: csi-driver-projected-resource
+  namespace: csi-driver-shared-resource
   labels:
     app: csi-hostpathplugin
 spec:
@@ -32,7 +32,7 @@ spec:
       labels:
         app: csi-hostpathplugin
     spec:
-      serviceAccountName: csi-driver-projected-resource-plugin
+      serviceAccountName: csi-driver-shared-resource-plugin
       containers:
         - name: node-driver-registrar
           image: quay.io/openshift/origin-csi-node-driver-registrar:4.8.0
@@ -60,7 +60,7 @@ spec:
               name: csi-data-dir
 
         - name: hostpath
-          image: quay.io/openshift/origin-csi-driver-projected-resource:4.8.0
+          image: quay.io/openshift/origin-csi-driver-shared-resource:4.9.0
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:

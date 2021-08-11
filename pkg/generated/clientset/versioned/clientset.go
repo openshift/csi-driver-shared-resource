@@ -11,7 +11,7 @@ package versioned
 import (
 	"fmt"
 
-	projectedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1"
+	sharedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/sharedresource/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -19,19 +19,19 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	ProjectedresourceV1alpha1() projectedresourcev1alpha1.ProjectedresourceV1alpha1Interface
+	SharedresourceV1alpha1() sharedresourcev1alpha1.SharedresourceV1alpha1Interface
 }
 
 // Clientset contains the clients for groups. Each group has exactly one
 // version included in a Clientset.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	projectedresourceV1alpha1 *projectedresourcev1alpha1.ProjectedresourceV1alpha1Client
+	sharedresourceV1alpha1 *sharedresourcev1alpha1.SharedresourceV1alpha1Client
 }
 
-// ProjectedresourceV1alpha1 retrieves the ProjectedresourceV1alpha1Client
-func (c *Clientset) ProjectedresourceV1alpha1() projectedresourcev1alpha1.ProjectedresourceV1alpha1Interface {
-	return c.projectedresourceV1alpha1
+// SharedresourceV1alpha1 retrieves the SharedresourceV1alpha1Client
+func (c *Clientset) SharedresourceV1alpha1() sharedresourcev1alpha1.SharedresourceV1alpha1Interface {
+	return c.sharedresourceV1alpha1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -55,7 +55,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 	}
 	var cs Clientset
 	var err error
-	cs.projectedresourceV1alpha1, err = projectedresourcev1alpha1.NewForConfig(&configShallowCopy)
+	cs.sharedresourceV1alpha1, err = sharedresourcev1alpha1.NewForConfig(&configShallowCopy)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func NewForConfig(c *rest.Config) (*Clientset, error) {
 // panics if there is an error in the config.
 func NewForConfigOrDie(c *rest.Config) *Clientset {
 	var cs Clientset
-	cs.projectedresourceV1alpha1 = projectedresourcev1alpha1.NewForConfigOrDie(c)
+	cs.sharedresourceV1alpha1 = sharedresourcev1alpha1.NewForConfigOrDie(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClientForConfigOrDie(c)
 	return &cs
@@ -80,7 +80,7 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.projectedresourceV1alpha1 = projectedresourcev1alpha1.New(c)
+	cs.sharedresourceV1alpha1 = sharedresourcev1alpha1.New(c)
 
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs

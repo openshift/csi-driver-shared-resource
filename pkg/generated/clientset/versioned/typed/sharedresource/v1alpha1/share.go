@@ -12,7 +12,7 @@ import (
 	"context"
 	"time"
 
-	v1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
+	v1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 	scheme "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
@@ -46,7 +46,7 @@ type shares struct {
 }
 
 // newShares returns a Shares
-func newShares(c *ProjectedresourceV1alpha1Client) *shares {
+func newShares(c *SharedresourceV1alpha1Client) *shares {
 	return &shares{
 		client: c.RESTClient(),
 	}

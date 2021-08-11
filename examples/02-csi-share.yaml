@@ -1,4 +1,4 @@
-apiVersion: projectedresource.storage.openshift.io/v1alpha1
+apiVersion: sharedresource.openshift.io/v1alpha1
 kind: Share
 metadata:
   name: my-share

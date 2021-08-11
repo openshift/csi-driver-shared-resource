@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -25,7 +27,7 @@ import (
 
 const (
 	// TODO eventually change to the CSO csi driver namespace when shared-resources-operator is fully integrated into CSO and OCP
-	DefaultNamespace = "csi-driver-projected-resource"
+	DefaultNamespace = "csi-driver-shared-resource"
 )
 
 var (
@@ -101,7 +103,7 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string) (bool, error) {
 	sarClient := kubeClient.AuthorizationV1().SubjectAccessReviews()
 	resourceAttributes := &authorizationv1.ResourceAttributes{
 		Verb:     "get",
-		Group:    "projectedresource.storage.openshift.io",
+		Group:    sharev1alpha1.GroupName,
 		Resource: "shares",
 		Name:     shareName,
 	}

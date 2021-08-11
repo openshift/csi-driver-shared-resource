@@ -6,7 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 )
 
 /*

@@ -9,22 +9,22 @@ SPDX-License-Identifier: Apache-2.0
 package fake
 
 import (
-	v1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/projectedresource/v1alpha1"
+	v1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/sharedresource/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeProjectedresourceV1alpha1 struct {
+type FakeSharedresourceV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeProjectedresourceV1alpha1) Shares() v1alpha1.ShareInterface {
+func (c *FakeSharedresourceV1alpha1) Shares() v1alpha1.ShareInterface {
 	return &FakeShares{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeProjectedresourceV1alpha1) RESTClient() rest.Interface {
+func (c *FakeSharedresourceV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

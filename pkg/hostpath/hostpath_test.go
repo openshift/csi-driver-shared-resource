@@ -30,7 +30,7 @@ import (
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	fakekubetesting "k8s.io/client-go/testing"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/projectedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
