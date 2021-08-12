@@ -33,6 +33,8 @@ deploy:
 TEST_SUITE ?= normal
 TEST_TIMEOUT ?= 30m
 test-e2e-no-deploy:
+	# temporary creation of CRD until it lands in openshift/api, openshift/openshift-apiserver, etc.
+	oc apply -f ./deploy/0000_10_projectedresource.crd.yaml
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) ./hack/test-e2e.sh
 
 test-e2e: deploy test-e2e-no-deploy
