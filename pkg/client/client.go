@@ -26,8 +26,7 @@ import (
 )
 
 const (
-	// TODO eventually change to the CSO csi driver namespace when shared-resources-operator is fully integrated into CSO and OCP
-	DefaultNamespace = "csi-driver-shared-resource"
+	DefaultNamespace = "openshift-cluster-csi-drivers"
 )
 
 var (

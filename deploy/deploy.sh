@@ -54,7 +54,7 @@ done
 # Wait until all pods are running.
 expected_running_pods=3
 cnt=0
-while [ "$(oc get pods -n csi-driver-shared-resource 2>/dev/null | grep -c '^csi-hostpath.* Running ')" -lt ${expected_running_pods} ]; do
+while [ "$(oc get pods -n openshift-cluster-csi-drivers 2>/dev/null | grep -c '^csi-hostpath.* Running ')" -lt ${expected_running_pods} ]; do
     if [ $cnt -gt 30 ]; then
         echo "$(oc get pods 2>/dev/null | grep -c '^csi-hostpath.* Running ') running pods:"
         oc describe pods

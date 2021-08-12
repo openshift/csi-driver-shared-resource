@@ -6,7 +6,7 @@ kind: Service
 apiVersion: v1
 metadata:
   name: csi-hostpathplugin
-  namespace: csi-driver-shared-resource
+  namespace: openshift-cluster-csi-drivers
   labels:
     app: csi-hostpathplugin
 spec:
@@ -20,7 +20,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: csi-hostpathplugin
-  namespace: csi-driver-shared-resource
+  namespace: openshift-cluster-csi-drivers
   labels:
     app: csi-hostpathplugin
 spec:
