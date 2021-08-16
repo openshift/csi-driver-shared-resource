@@ -1,7 +1,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: projected-resource-secret-configmap-share-watch-sar-create
+  name: shared-resource-secret-configmap-share-watch-sar-create
 rules:
   - apiGroups:
       - ""
@@ -14,7 +14,7 @@ rules:
       - list
       - watch
   - apiGroups:
-      - projectedresource.storage.openshift.io
+      - sharedresource.openshift.io
     resources:
       - shares
     verbs:

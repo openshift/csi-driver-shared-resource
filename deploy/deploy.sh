@@ -29,9 +29,9 @@ echo "Creating deploy directory"
 rm -rf "${DEPLOY_DIR}"
 mkdir -p "${DEPLOY_DIR}"
 
-defaultRegistrarImage="quay.io/openshift/origin-csi-node-driver-registrar:4.8.0"
+defaultRegistrarImage="quay.io/openshift/origin-csi-node-driver-registrar:4.9.0"
 registrarImage=${NODE_REGISTRAR_IMAGE:-${defaultRegistrarImage}}
-defaultDriverImage="quay.io/openshift/origin-csi-driver-projected-resource:4.8.0"
+defaultDriverImage="quay.io/openshift/origin-csi-driver-shared-resource:4.9.0"
 driverImage=${DRIVER_IMAGE:-${defaultDriverImage}}
 
 cp -r "${BASE_DIR}"/* "${DEPLOY_DIR}"
@@ -54,7 +54,7 @@ done
 # Wait until all pods are running.
 expected_running_pods=3
 cnt=0
-while [ "$(oc get pods -n csi-driver-projected-resource 2>/dev/null | grep -c '^csi-hostpath.* Running ')" -lt ${expected_running_pods} ]; do
+while [ "$(oc get pods -n openshift-cluster-csi-drivers 2>/dev/null | grep -c '^csi-hostpath.* Running ')" -lt ${expected_running_pods} ]; do
     if [ $cnt -gt 30 ]; then
         echo "$(oc get pods 2>/dev/null | grep -c '^csi-hostpath.* Running ') running pods:"
         oc describe pods

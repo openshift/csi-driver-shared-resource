@@ -32,7 +32,7 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:     "driver-projected-resource",
+	Use:     "csi-driver-shared-resource",
 	Version: "0.0.1",
 	Short:   "",
 	Long:    ``,

@@ -17,7 +17,7 @@ func createShareClusterRole(t *TestArgs) {
 		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs:         []string{"get", "list", "watch"},
-				APIGroups:     []string{"projectedresource.storage.openshift.io"},
+				APIGroups:     []string{"sharedresource.openshift.io"},
 				Resources:     []string{"shares"},
 				ResourceNames: []string{t.Name},
 			},

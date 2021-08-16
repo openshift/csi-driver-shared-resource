@@ -26,7 +26,7 @@ func generateName(base string) string {
 }
 
 func CreateTestNamespace(t *TestArgs) string {
-	testNamespace := generateName("e2e-test-csi-driver-projected-resource-")
+	testNamespace := generateName("e2e-test-csi-driver-shared-resource-")
 	t.T.Logf("%s: Creating test namespace %s", time.Now().String(), testNamespace)
 	ns := &corev1.Namespace{}
 	ns.Name = testNamespace
@@ -51,11 +51,11 @@ func CleanupTestNamespace(t *TestArgs) {
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting cluster role binding %s: %s", t.Name, err.Error())
 	}
-	err = shareClient.ProjectedresourceV1alpha1().Shares().Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
+	err = shareClient.SharedresourceV1alpha1().Shares().Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}
-	err = shareClient.ProjectedresourceV1alpha1().Shares().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
+	err = shareClient.SharedresourceV1alpha1().Shares().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}

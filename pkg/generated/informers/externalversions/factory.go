@@ -15,7 +15,7 @@ import (
 
 	versioned "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
 	internalinterfaces "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/internalinterfaces"
-	projectedresource "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/projectedresource"
+	sharedresource "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions/sharedresource"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -162,9 +162,9 @@ type SharedInformerFactory interface {
 	ForResource(resource schema.GroupVersionResource) (GenericInformer, error)
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
-	Projectedresource() projectedresource.Interface
+	Sharedresource() sharedresource.Interface
 }
 
-func (f *sharedInformerFactory) Projectedresource() projectedresource.Interface {
-	return projectedresource.New(f, f.namespace, f.tweakListOptions)
+func (f *sharedInformerFactory) Sharedresource() sharedresource.Interface {
+	return sharedresource.New(f, f.namespace, f.tweakListOptions)
 }

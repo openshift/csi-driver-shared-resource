@@ -3,6 +3,7 @@ package framework
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -32,14 +33,24 @@ func WaitForDaemonSet(t *TestArgs) error {
 		}
 
 		if t.DaemonSetUp {
-			if podList.Items == nil || len(podList.Items) != 3 {
+			if podList.Items == nil || len(podList.Items) < 3 {
 				t.T.Logf("%s: number of pods not yet at 3", time.Now().String())
 				return false, nil
 			}
+			podCount := 0
 			for _, pod := range podList.Items {
+				if strings.HasPrefix(pod.Name, "csi-hostpathplugin") {
+					podCount++
+				} else {
+					continue
+				}
 				if pod.Status.Phase != corev1.PodRunning || pod.DeletionTimestamp != nil {
 					t.T.Logf("%s: pod %s in phase %s with deletion timestamp %v\n", time.Now().String(), pod.Name, pod.Status.Phase, pod.DeletionTimestamp)
 					return false, nil
+				}
+				if podCount < 3 {
+					t.T.Logf("%s: number of csi-hostpathplugin pods not yet at 3", time.Now().String())
+					continue
 				}
 			}
 			t.T.Logf("%s: all 3 daemonset pods are running", time.Now().String())
@@ -49,6 +60,9 @@ func WaitForDaemonSet(t *TestArgs) error {
 				return true, nil
 			}
 			for _, pod := range podList.Items {
+				if !strings.HasPrefix(pod.Name, "csi-hostpathplugin") {
+					continue
+				}
 				t.T.Logf("%s: pod %s has status %s and delete timestamp %v\n", time.Now().String(), pod.Name, pod.Status.Phase, pod.DeletionTimestamp)
 				if pod.DeletionTimestamp == nil {
 					t.T.Logf("%s: pod %s still does not have a deletion timestamp\n", time.Now().String(), pod.Name)
