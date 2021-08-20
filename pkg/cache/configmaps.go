@@ -1,9 +1,12 @@
 package cache
 
 import (
+	"context"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
@@ -24,7 +27,7 @@ On the use of sync.Map, see the comments in share.go
 
 var (
 	// configmaps is our global configmap id (namespace + name) to configmap map, where entries are populated from
-	// contorller events; it serves to facilitate quick lookup during share event processing, when the share references
+	// controller events; it serves to facilitate quick lookup during share event processing, when the share references
 	// a configmap
 	configmaps = sync.Map{}
 	// configmapUpsertCallbacks has a key of the CSI volume ID and a value of the function to be called when a given
@@ -54,6 +57,23 @@ func GetConfigMap(key interface{}) *corev1.ConfigMap {
 		cm, _ := obj.(*corev1.ConfigMap)
 		return cm
 	}
+	return nil
+}
+
+// SetConfigMap based on the shared-data-key, which contains the resource's namespace and name, this
+// method can fetch and store it on cache.
+func SetConfigMap(kubeClient kubernetes.Interface, sharedDataKey string) error {
+	ns, name, err := SplitKey(sharedDataKey)
+	if err != nil {
+		return err
+	}
+
+	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	UpsertConfigMap(cm)
 	return nil
 }
 

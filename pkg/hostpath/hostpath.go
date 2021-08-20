@@ -29,6 +29,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
@@ -48,6 +49,10 @@ type hostPath struct {
 	ns  *nodeServer
 
 	root string
+
+	// kubeClient optional clientset, when informed the driver will employ it to update the cache
+	// based on the Share's backing-resource.
+	kubeClient kubernetes.Interface
 }
 
 var (
@@ -101,7 +106,10 @@ type HostPathDriver interface {
 	mapVolumeToPod(hpv *hostPathVolume) error
 }
 
-func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, maxVolumesPerNode int64, version string) (*hostPath, error) {
+// NewHostPathDriver instantiate the HostPathDriver with the driver details.  Optionally, a
+// Kubernetes Clientset can be informed to update (warm up) the object cache before creating the
+// volume (and it's data) for mounting on the incoming pod.
+func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, maxVolumesPerNode int64, version string, kubeClient kubernetes.Interface) (*hostPath, error) {
 	if driverName == "" {
 		return nil, errors.New("no driver name provided")
 	}
@@ -128,6 +136,10 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 	klog.Infof("Driver: %v ", driverName)
 	klog.Infof("Version: %s", vendorVersion)
 
+	if kubeClient != nil {
+		klog.Info("HostPathDriver will directly read Kubernetes resources!")
+	}
+
 	hp := &hostPath{
 		name:              driverName,
 		version:           vendorVersion,
@@ -135,6 +147,7 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 		endpoint:          endpoint,
 		maxVolumesPerNode: maxVolumesPerNode,
 		root:              root,
+		kubeClient:        kubeClient,
 	}
 
 	volMapOnDiskPath = filepath.Join(volMapRoot, VolumeMapFile)
@@ -148,7 +161,11 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 func (hp *hostPath) Run() {
 	// Create GRPC servers
 	hp.ids = NewIdentityServer(hp.name, hp.version)
-	hp.ns = NewNodeServer(hp)
+
+	// the node-server will be on always-read-only mode when the object-cache is being populated
+	// directly, which happens when an instantiated kubeClient is informed to this component
+	alwaysReadOnly := hp.kubeClient != nil
+	hp.ns = NewNodeServer(hp, alwaysReadOnly)
 
 	s := NewNonBlockingGRPCServer()
 	s.Start(hp.endpoint, hp.ids, hp.ns)
@@ -524,8 +541,33 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 	return nil
 }
 
+// updateObjCache fetches the resources and populates the object-cache just before mounting.
+func (hp *hostPath) updateObjCache(hpv *hostPathVolume) error {
+	kind := hpv.GetSharedDataKind()
+	key := hpv.GetSharedDataKey()
+	klog.V(4).Infof("populating object-cache with '%s' (key='%s') before mounting", kind, key)
+	switch strings.TrimSpace(kind) {
+	case "ConfigMap":
+		return objcache.SetConfigMap(hp.kubeClient, key)
+	case "Secret":
+		return objcache.SetSecret(hp.kubeClient, key)
+	default:
+		return fmt.Errorf("invalid share backing resource kind %s", kind)
+	}
+}
+
 func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
 	klog.V(4).Infof("mapVolumeToPod calling mapBackingResourceToPod")
+
+	// given the kubeclient is instantiated, it will use it to fetch the resources just before
+	// mounting the volume on the pod, otherwise, it's exected the object-cache already contains the
+	// resource in question
+	if hp.kubeClient != nil {
+		if err := hp.updateObjCache(hpv); err != nil {
+			return err
+		}
+	}
+
 	err := mapBackingResourceToPod(hpv)
 	if err != nil {
 		return err
