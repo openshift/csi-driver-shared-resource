@@ -7,6 +7,21 @@ REPOSITORY ?= openshift
 # Allows overriding of the tag to generate for the image
 TAG ?= latest
 
+# allows overwrite of node registrar image
+NODE_REGISTRAR_IMAGE ?=
+# allows overwite of CSI driver image
+DRIVER_IMAGE ?=
+# when non-empty it enables "--refreshresource=false" deployment
+DEPLOY_MODE ?=
+
+# amount of pods the daemonset will produce before starting end-to-end tests
+DAEMONSET_PODS ?= 3
+
+# end-to-end test suite name
+TEST_SUITE ?= normal
+# ent-to-end test timeout
+TEST_TIMEOUT ?= 30m
+
 LDFLAGS ?= '-extldflags "-static"'
 
 .DEFAULT_GOAL := help
@@ -26,27 +41,30 @@ test: ## Run unit tests. Example: make test
 .PHONY: test
 
 deploy:
-	# For local testing set DRIVER_IMAGE to whatever image you produced via 'make build-image'
-	./deploy/deploy.sh
+	NODE_REGISTRAR_IMAGE=$(NODE_REGISTRAR_IMAGE) DRIVER_IMAGE=$(DRIVER_IMAGE) ./deploy/deploy.sh $(DEPLOY_MODE)
 .PHONY: deploy
 
-TEST_SUITE ?= normal
-TEST_TIMEOUT ?= 30m
-test-e2e-no-deploy:
+# overwrites the deployment mode variable to disable refresh-resources
+deploy-no-refreshresources: DEPLOY_MODE = "no-refreshresources"
+deploy-no-refreshresources: deploy
+
+crd:
 	# temporary creation of CRD until it lands in openshift/api, openshift/openshift-apiserver, etc.
 	oc apply -f ./deploy/0000_10_projectedresource.crd.yaml
-	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) ./hack/test-e2e.sh
 
-test-e2e: deploy test-e2e-no-deploy
-.PHONY: test-e2e
+test-e2e-no-deploy: crd
+	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh
+.PHONY: test-e2e-no-deploy
 
-test-e2e-slow: deploy
-	TEST_SUITE="slow" ./hack/test-e2e.sh
-.PHONY: test-e2e
+test-e2e: crd deploy test-e2e-no-deploy
 
-test-e2e-disruptive: deploy
-	TEST_SUITE="disruptive" ./hack/test-e2e.sh
-.PHONY: test-e2e
+test-e2e-no-refreshresources: crd deploy-no-refreshresources test-e2e-no-deploy
+
+test-e2e-slow: TEST_SUITE = "slow"
+test-e2e-slow: deploy test-e2e
+
+test-e2e-disruptive: TEST_SUITE = "disruptive" 
+test-e2e-disruptive: deploy test-e2e
 
 verify: ## Run verifications. Example: make verify
 	go vet ./cmd/... ./pkg/... ./test/...

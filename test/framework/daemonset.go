@@ -3,6 +3,8 @@ package framework
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,21 @@ import (
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
+
+var daemonSetReplicas = 3
+
+func init() {
+	dsReplicas := os.Getenv("DAEMONSET_PODS")
+	if dsReplicas == "" {
+		return
+	}
+
+	i, err := strconv.Atoi(dsReplicas)
+	if err != nil {
+		return
+	}
+	daemonSetReplicas = i
+}
 
 func WaitForDaemonSet(t *TestArgs) error {
 	dsClient := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace)
@@ -33,8 +50,8 @@ func WaitForDaemonSet(t *TestArgs) error {
 		}
 
 		if t.DaemonSetUp {
-			if podList.Items == nil || len(podList.Items) < 3 {
-				t.T.Logf("%s: number of pods not yet at 3", time.Now().String())
+			if podList.Items == nil || len(podList.Items) < daemonSetReplicas {
+				t.T.Logf("%s: number of pods not yet at %d", time.Now().String(), daemonSetReplicas)
 				return false, nil
 			}
 			podCount := 0
@@ -48,8 +65,8 @@ func WaitForDaemonSet(t *TestArgs) error {
 					t.T.Logf("%s: pod %s in phase %s with deletion timestamp %v\n", time.Now().String(), pod.Name, pod.Status.Phase, pod.DeletionTimestamp)
 					return false, nil
 				}
-				if podCount < 3 {
-					t.T.Logf("%s: number of csi-hostpathplugin pods not yet at 3", time.Now().String())
+				if podCount < daemonSetReplicas {
+					t.T.Logf("%s: number of csi-hostpathplugin pods not yet at %d", time.Now().String(), daemonSetReplicas)
 					continue
 				}
 			}

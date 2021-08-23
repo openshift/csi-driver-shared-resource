@@ -16,54 +16,122 @@
 set -e
 set -o pipefail
 
+# when not empty it will run CSI driver with "--refreshresources=false" flag.
+NO_REFRESH_RESOURCES="${1}"
+
+# customize images used by registrar and csi-driver containers
+NODE_REGISTRAR_IMAGE="${NODE_REGISTRAR_IMAGE:-}"
+DRIVER_IMAGE="${DRIVER_IMAGE:-}"
+
 # BASE_DIR will default to deploy
 BASE_DIR="deploy"
 DEPLOY_DIR="_output/deploy"
+
+KUSTOMIZATION_FILE="${DEPLOY_DIR}/kustomization.yaml"
 
 function run () {
     echo "$@" >&2
     "$@"
 }
 
-echo "Creating deploy directory"
-rm -rf "${DEPLOY_DIR}"
+# initialize a kustomization.yaml file, listing all other yaml files as resources.
+function kustomize_init () {
+    cat <<EOS > ${KUSTOMIZATION_FILE}
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+EOS
+
+  for f in $(find "${DEPLOY_DIR}"/*.yaml |grep -v kustomization |sort); do
+    f=$(basename ${f})
+    echo "## ${f}"
+    echo "  - ${f}" >> ${KUSTOMIZATION_FILE}
+  done
+
+  echo "images:" >> ${KUSTOMIZATION_FILE}
+}
+
+# creates a new entry with informed name and target image. The target image is split on URL and tag.
+function kustomize_set_image () {
+  local NAME=${1}
+  local TARGET=${2}
+
+  # splitting target image in URL and tag
+  IFS=':' read -a PARTS <<< ${TARGET}
+
+  cat <<EOS >> ${KUSTOMIZATION_FILE}
+  - name: ${NAME}
+    newName: ${PARTS[0]}
+    newTag: ${PARTS[1]}
+EOS
+}
+
+# patches the CSI DaemonSet primary container to include one more argument.
+function kustomize_add_arg () {
+  local ARG=${1}
+  local FILE="args-patch-${ARG}.json"
+  cat <<EOS > ${DEPLOY_DIR}/${FILE}
+[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/1/args/-",
+    "value": "${ARG}"
+  }
+]
+EOS
+  cat <<EOS >> ${KUSTOMIZATION_FILE}
+patchesJson6902:
+  - path: ${FILE}
+    target:
+      group: apps
+      version: v1
+      kind: DaemonSet
+      namespace: openshift-cluster-csi-drivers
+      name: csi-hostpathplugin
+EOS
+}
+
+# uses `oc wait` to wait for CSI driver pod to reach condition ready.
+function wait_for_pod () {
+  oc --namespace="openshift-cluster-csi-drivers" wait pod \
+    --for="condition=Ready=true" \
+    --selector="app=csi-hostpathplugin" \
+    --timeout="5m"
+}
+
+echo "# Creating deploy directory at '${DEPLOY_DIR}'"
+
+rm -rf "${DEPLOY_DIR}" || true
 mkdir -p "${DEPLOY_DIR}"
 
-defaultRegistrarImage="quay.io/openshift/origin-csi-node-driver-registrar:4.9.0"
-registrarImage=${NODE_REGISTRAR_IMAGE:-${defaultRegistrarImage}}
-defaultDriverImage="quay.io/openshift/origin-csi-driver-shared-resource:4.9.0"
-driverImage=${DRIVER_IMAGE:-${defaultDriverImage}}
+cp -r -v "${BASE_DIR}"/* "${DEPLOY_DIR}"
 
-cp -r "${BASE_DIR}"/* "${DEPLOY_DIR}"
+echo "# Customizing resources..."
 
-echo "Deploying using node driver registrar ${registrarImage}"
-echo "Deploying using csi driver ${driverImage}"
+# initializing kustomize and adding the all resource files it should use
+kustomize_init
 
-# Replace the image refs in the canonical deployment YAML with env var overrides
-sed -i -e "s|${defaultRegistrarImage}|${registrarImage}|g" \
-  -e "s|${defaultDriverImage}|${driverImage}|g" \
-  "${DEPLOY_DIR}/csi-hostpath-plugin.yaml"
+if [ ! -z "${NODE_REGISTRAR_IMAGE}" ] ; then
+  echo "# Patching node-registrar image to use '${NODE_REGISTRAR_IMAGE}'"
+  kustomize_set_image "quay.io/openshift/origin-csi-node-driver-registrar" "${NODE_REGISTRAR_IMAGE}"
+fi
+
+if [ ! -z "${DRIVER_IMAGE}" ] ; then
+  echo "# Patching node-csi-driver image to use '${DRIVER_IMAGE}'"
+  kustomize_set_image "quay.io/openshift/origin-csi-driver-shared-resource" "${DRIVER_IMAGE}"
+fi
+
+# adding to disable refresh-resources using kustomize-v3 approach (embedded on `oc`)
+if [ ! -z "${NO_REFRESH_RESOURCES}" ] ; then
+  echo "# Patching DaemonSet container to use '--refreshresources=false' flag"
+  kustomize_add_arg "--refreshresources=false"
+fi
 
 # deploy hostpath plugin and registrar sidecar
-echo "deploying csi driver components"
-for i in $(find "${DEPLOY_DIR}"/*.yaml | sort); do
-    echo "   $i"
-    run oc apply -f "$i"
-done
+echo "# Deploying csi driver components"
+run oc apply --kustomize ${DEPLOY_DIR}/
 
-# Wait until all pods are running.
-expected_running_pods=3
-cnt=0
-while [ "$(oc get pods -n openshift-cluster-csi-drivers 2>/dev/null | grep -c '^csi-hostpath.* Running ')" -lt ${expected_running_pods} ]; do
-    if [ $cnt -gt 30 ]; then
-        echo "$(oc get pods 2>/dev/null | grep -c '^csi-hostpath.* Running ') running pods:"
-        oc describe pods
-
-        echo >&2 "ERROR: hostpath deployment not ready after over 5min"
-        exit 1
-    fi
-    echo "$(date +%H:%M:%S) waiting for hostpath deployment to complete, attempt #$cnt"
-    cnt=$((cnt + 1))
-    sleep 10
-done
-
+# waiting for all pods to reach condition ready
+echo "# Waiting for pods to be ready..."
+wait_for_pod || sleep 15 && wait_for_pod
