@@ -1,0 +1,5 @@
+- op: add
+  path: /spec/versions/name=v1alpha1/schema/openAPIV3Schema/properties/spec/properties/resource/oneOf
+  value:
+    - required: ["configMap"]
+    - required: ["secret"]
