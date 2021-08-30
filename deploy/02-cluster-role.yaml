@@ -14,9 +14,9 @@ rules:
       - list
       - watch
   - apiGroups:
-      - sharedresource.openshift.io
+      - storage.openshift.io
     resources:
-      - shares
+      - sharedresources
     verbs:
       - get
       - list

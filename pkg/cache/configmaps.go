@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
 )
 
 /*
@@ -78,16 +78,16 @@ func SetConfigMap(kubeClient kubernetes.Interface, sharedDataKey string) error {
 }
 
 func UpsertConfigMap(configmap *corev1.ConfigMap) {
-	key := GetKey(configmap)
+	key := GetKeyFrom(configmap)
 	klog.V(0).Infof("UpsertConfigMap key %s", key)
 	configmaps.Store(key, configmap)
 	// in case share arrived before configmap
 	processSharesWithoutConfigmaps := []string{}
 	sharesWaitingOnConfigmaps.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
-		share := value.(*sharev1alpha1.Share)
-		br := share.Spec.BackingResource
-		configmapKey := BuildKey(br.Namespace, br.Name)
+		share := value.(*storagev1alpha1.SharedResource)
+		br := share.Spec.Resource
+		configmapKey := BuildKeyUsing(br.ConfigMap.Namespace, br.ConfigMap.Name)
 		configmapsWithShares.Store(configmapKey, configmap)
 		//NOTE: share update ranger will store share in shares sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.
@@ -104,7 +104,7 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 }
 
 func DelConfigMap(configmap *corev1.ConfigMap) {
-	key := GetKey(configmap)
+	key := GetKeyFrom(configmap)
 	klog.V(4).Infof("DelConfigMap key %s", key)
 	configmaps.Delete(key)
 	configmapDeleteCallbacks.Range(buildRanger(buildCallbackMap(key, configmap)))

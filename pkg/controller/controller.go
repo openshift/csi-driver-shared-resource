@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -11,15 +12,16 @@ import (
 	"k8s.io/client-go/informers/internalinterfaces"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
+	kcache "k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
-	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
+	storageclient "github.com/openshift/client-go/storage/clientset/versioned"
+	storageinformer "github.com/openshift/client-go/storage/informers/externalversions"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	shareclientv1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
-	shareinformer "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions"
 )
 
 const (
@@ -35,11 +37,11 @@ type Controller struct {
 	secretWorkqueue workqueue.RateLimitingInterface
 	shareWorkqueue  workqueue.RateLimitingInterface
 
-	cfgMapInformer cache.SharedIndexInformer
-	secInformer    cache.SharedIndexInformer
-	shareInformer  cache.SharedIndexInformer
+	cfgMapInformer kcache.SharedIndexInformer
+	secInformer    kcache.SharedIndexInformer
+	shareInformer  kcache.SharedIndexInformer
 
-	shareInformerFactory shareinformer.SharedInformerFactory
+	shareInformerFactory storageinformer.SharedInformerFactory
 	informerFactory      informers.SharedInformerFactory
 
 	listers *client.Listers
@@ -59,7 +61,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 		return nil, err
 	}
 
-	shareClient, err := shareclientv1alpha1.NewForConfig(kubeRestConfig)
+	shareClient, err := storageclient.NewForConfig(kubeRestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -69,24 +71,18 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 	// "system" namespaces with chatty configmaps like the leaderelection related ones
 	// that are updated every few seconds
 	tweakListOptions := internalinterfaces.TweakListOptionsFunc(func(options *metav1.ListOptions) {
-		fsString := ""
-		namespaceFieldSelector := "metadata.namespace!=%s"
+		ignored := []string{}
 		for _, ns := range ignoredNamespaces {
-			klog.V(4).Infof("namespace '%s' is being ignored", ns)
-			nsfs := fmt.Sprintf(namespaceFieldSelector, ns)
-			if len(fsString) == 0 {
-				fsString = nsfs
-			} else {
-				fsString = fsString + "," + nsfs
-			}
+			klog.V(4).Infof("namespace %q is being ignored", ns)
+			ignored = append(ignored, fmt.Sprintf("metadata.namespace!=%s", ns))
 		}
-		options.FieldSelector = fsString
+		options.FieldSelector = strings.Join(ignored, ",")
 	})
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient,
 		DefaultResyncDuration, informers.WithTweakListOptions(tweakListOptions))
 
 	klog.V(5).Infof("configured share relist %v", shareRelist)
-	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient,
+	shareInformerFactory := storageinformer.NewSharedInformerFactoryWithOptions(shareClient,
 		shareRelist)
 
 	c := &Controller{
@@ -96,7 +92,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 			"shared-resource-share-changes"),
 		informerFactory:      informerFactory,
 		shareInformerFactory: shareInformerFactory,
-		shareInformer:        shareInformerFactory.Sharedresource().V1alpha1().Shares().Informer(),
+		shareInformer:        shareInformerFactory.Storage().V1alpha1().SharedResources().Informer(),
 		listers:              client.GetListers(),
 	}
 
@@ -112,7 +108,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 		client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
 	}
 
-	client.SetSharesLister(c.shareInformerFactory.Sharedresource().V1alpha1().Shares().Lister())
+	client.SetSharesLister(c.shareInformerFactory.Storage().V1alpha1().SharedResources().Lister())
 
 	if refreshResources {
 		c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
@@ -133,13 +129,13 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	c.informerFactory.Start(stopCh)
 	c.shareInformerFactory.Start(stopCh)
 
-	if c.cfgMapInformer != nil && !cache.WaitForCacheSync(stopCh, c.cfgMapInformer.HasSynced) {
+	if c.cfgMapInformer != nil && !kcache.WaitForCacheSync(stopCh, c.cfgMapInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for ConfigMap informer cache to sync")
 	}
-	if c.secInformer != nil && !cache.WaitForCacheSync(stopCh, c.secInformer.HasSynced) {
+	if c.secInformer != nil && !kcache.WaitForCacheSync(stopCh, c.secInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for Secrets informer cache to sync")
 	}
-	if !cache.WaitForCacheSync(stopCh, c.shareInformer.HasSynced) {
+	if !kcache.WaitForCacheSync(stopCh, c.shareInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
@@ -166,8 +162,8 @@ func (c *Controller) addConfigMapToQueue(cm *corev1.ConfigMap, verb client.Objec
 
 // as the actions we have to take *MAY* vary to a significant enough degree between add, update, and delete,
 // especially if we move off of vanilla os.MkdirAll / os.Create, we propagate that distinction down the line
-func (c *Controller) configMapEventHandler() cache.ResourceEventHandlerFuncs {
-	return cache.ResourceEventHandlerFuncs{
+func (c *Controller) configMapEventHandler() kcache.ResourceEventHandlerFuncs {
+	return kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(o interface{}) {
 			switch v := o.(type) {
 			case *corev1.ConfigMap:
@@ -186,7 +182,7 @@ func (c *Controller) configMapEventHandler() cache.ResourceEventHandlerFuncs {
 		},
 		DeleteFunc: func(o interface{}) {
 			switch v := o.(type) {
-			case cache.DeletedFinalStateUnknown:
+			case kcache.DeletedFinalStateUnknown:
 				switch vv := v.Obj.(type) {
 				case *corev1.ConfigMap:
 					// log recovered deleted obj from tombstone via vv.GetName()
@@ -239,15 +235,15 @@ func (c *Controller) syncConfigMap(event client.Event) error {
 	klog.V(5).Infof("verb %s obj namespace %s configmap name %s", event.Verb, cm.Namespace, cm.Name)
 	switch event.Verb {
 	case client.DeleteObjectAction:
-		objcache.DelConfigMap(cm)
+		cache.DelConfigMap(cm)
 	case client.AddObjectAction:
 		// again, add vs. update distinctions upheld for now, even though the path is common, in case
 		// host filesystem interactions changes such that different methods for add vs. update are needed
-		objcache.UpsertConfigMap(cm)
+		cache.UpsertConfigMap(cm)
 	case client.UpdateObjectAction:
 		// again, add vs. update distinctions upheld for now, even though the path is common, in case
 		// host filesystem interactions changes such that different methods for add vs. update are needed
-		objcache.UpsertConfigMap(cm)
+		cache.UpsertConfigMap(cm)
 	default:
 		return fmt.Errorf("unexpected configmap event action: %s", event.Verb)
 	}
@@ -264,8 +260,8 @@ func (c *Controller) addSecretToQueue(s *corev1.Secret, verb client.ObjectAction
 
 // as the actions we have to take vary to a significant enough degree between add, update, and delete
 // we propagate that distinction down the line
-func (c *Controller) secretEventHandler() cache.ResourceEventHandlerFuncs {
-	return cache.ResourceEventHandlerFuncs{
+func (c *Controller) secretEventHandler() kcache.ResourceEventHandlerFuncs {
+	return kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(o interface{}) {
 			switch v := o.(type) {
 			case *corev1.Secret:
@@ -284,7 +280,7 @@ func (c *Controller) secretEventHandler() cache.ResourceEventHandlerFuncs {
 		},
 		DeleteFunc: func(o interface{}) {
 			switch v := o.(type) {
-			case cache.DeletedFinalStateUnknown:
+			case kcache.DeletedFinalStateUnknown:
 				switch vv := v.Obj.(type) {
 				case *corev1.Secret:
 					// log recovered deleted obj from tombstone via vv.GetName()
@@ -336,22 +332,22 @@ func (c *Controller) syncSecret(event client.Event) error {
 	klog.V(5).Infof("verb %s obj namespace %s secret name %s", event.Verb, secret.Namespace, secret.Name)
 	switch event.Verb {
 	case client.DeleteObjectAction:
-		objcache.DelSecret(secret)
+		cache.DelSecret(secret)
 	case client.AddObjectAction:
 		// again, add vs. update distinctions upheld for now, even though the path is common, in case
 		// host filesystem interactions changes such that different methods for add vs. update are needed
-		objcache.UpsertSecret(secret)
+		cache.UpsertSecret(secret)
 	case client.UpdateObjectAction:
 		// again, add vs. update distinctions upheld for now, even though the path is common, in case
 		// host filesystem interactions changes such that different methods for add vs. update are needed
-		objcache.UpsertSecret(secret)
+		cache.UpsertSecret(secret)
 	default:
 		return fmt.Errorf("unexpected secret event action: %s", event.Verb)
 	}
 	return nil
 }
 
-func (c *Controller) addShareToQueue(s *sharev1alpha1.Share, verb client.ObjectAction) {
+func (c *Controller) addShareToQueue(s *storagev1alpha1.SharedResource, verb client.ObjectAction) {
 	event := client.Event{
 		Object: s,
 		Verb:   verb,
@@ -359,11 +355,11 @@ func (c *Controller) addShareToQueue(s *sharev1alpha1.Share, verb client.ObjectA
 	c.shareWorkqueue.Add(event)
 }
 
-func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
-	return cache.ResourceEventHandlerFuncs{
+func (c *Controller) shareEventHandler() kcache.ResourceEventHandlerFuncs {
+	return kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(o interface{}) {
 			switch v := o.(type) {
-			case *sharev1alpha1.Share:
+			case *storagev1alpha1.SharedResource:
 				c.addShareToQueue(v, client.AddObjectAction)
 			default:
 				//log unrecognized type
@@ -371,7 +367,7 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 		},
 		UpdateFunc: func(o, n interface{}) {
 			switch v := n.(type) {
-			case *sharev1alpha1.Share:
+			case *storagev1alpha1.SharedResource:
 				c.addShareToQueue(v, client.UpdateObjectAction)
 			default:
 				//log unrecognized type
@@ -379,15 +375,15 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 		},
 		DeleteFunc: func(o interface{}) {
 			switch v := o.(type) {
-			case cache.DeletedFinalStateUnknown:
+			case kcache.DeletedFinalStateUnknown:
 				switch vv := v.Obj.(type) {
-				case *sharev1alpha1.Share:
+				case *storagev1alpha1.SharedResource:
 					// log recovered deleted obj from tombstone via vv.GetName()
 					c.addShareToQueue(vv, client.DeleteObjectAction)
 				default:
 					// log  error decoding obj tombstone
 				}
-			case *sharev1alpha1.Share:
+			case *storagev1alpha1.SharedResource:
 				c.addShareToQueue(v, client.DeleteObjectAction)
 			default:
 				//log unrecognized type
@@ -423,18 +419,18 @@ func (c *Controller) shareEventProcessor() {
 
 func (c *Controller) syncShare(event client.Event) error {
 	obj := event.Object.DeepCopyObject()
-	share, ok := obj.(*sharev1alpha1.Share)
+	share, ok := obj.(*storagev1alpha1.SharedResource)
 	if share == nil || !ok {
 		return fmt.Errorf("unexpected object vs. share: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
 	klog.V(4).Infof("verb %s share name %s", event.Verb, share.Name)
 	switch event.Verb {
 	case client.DeleteObjectAction:
-		objcache.DelShare(share)
+		cache.DelShare(share)
 	case client.AddObjectAction:
-		objcache.AddShare(share)
+		cache.AddShare(share)
 	case client.UpdateObjectAction:
-		objcache.UpdateShare(share)
+		cache.UpdateShare(share)
 	default:
 		return fmt.Errorf("unexpected share event action: %s", event.Verb)
 	}

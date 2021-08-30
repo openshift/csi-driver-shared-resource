@@ -6,12 +6,11 @@ set -o pipefail
 
 FILES=(
 "00-namespace.yaml"
-"0000_10_projectedresource.crd.yaml"
 "01-service-account.yaml"
 "02-cluster-role.yaml"
 "03-cluster-role-binding.yaml"
-"csi-hostpath-driverinfo.yaml"
-"csi-hostpath-plugin.yaml"
+"04-csi-hostpath-driverinfo.yaml"
+"05-csi-hostpath-plugin.yaml"
 )
 
 rm -f release.yaml
@@ -23,3 +22,4 @@ do
 	cat deploy/${FILE} >> release.yaml
 
 done
+cat ./vendor/github.com/openshift/api/storage/v1alpha1/0000_10_sharedresource.crd.yaml >> release.yaml

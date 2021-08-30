@@ -8,8 +8,9 @@ import (
 	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
 
+	storageclient "github.com/openshift/client-go/storage/clientset/versioned"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	shareset "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
 )
 
 var (
@@ -20,7 +21,7 @@ var (
 	namespaceClient          corev1client.NamespaceInterface
 	clusterRoleClient        rbacv1client.ClusterRoleInterface
 	clusterRoleBindingClient rbacv1client.ClusterRoleBindingInterface
-	shareClient              shareset.Interface
+	shareClient              storageclient.Interface
 )
 
 func SetupClients(t *TestArgs) {
@@ -55,7 +56,7 @@ func SetupClients(t *TestArgs) {
 	if clusterRoleBindingClient == nil {
 		clusterRoleBindingClient = kubeClient.RbacV1().ClusterRoleBindings()
 	}
-	shareClient, err = shareset.NewForConfig(kubeConfig)
+	shareClient, err = storageclient.NewForConfig(kubeConfig)
 	if err != nil {
 		t.T.Fatalf("%#v", err)
 	}

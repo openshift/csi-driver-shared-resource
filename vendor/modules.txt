@@ -650,8 +650,6 @@ k8s.io/client-go/util/homedir
 k8s.io/client-go/util/jsonpath
 k8s.io/client-go/util/keyutil
 k8s.io/client-go/util/workqueue
-# k8s.io/code-generator v0.22.0-rc.0
-## explicit
 # k8s.io/component-base v0.21.2
 k8s.io/component-base/version
 # k8s.io/klog/v2 v2.9.0

@@ -29,13 +29,6 @@ LDFLAGS ?= '-extldflags "-static"'
 all: clean generate verify build test
 .PHONY: all
 
-generate:
-	./hack/update-generated.sh
-.PHONY: generate
-
-generate-crd:
-	./hack/update-crd.sh
-
 test: ## Run unit tests. Example: make test
 	go test -race -count 1 ./cmd/... ./pkg/...
 .PHONY: test
@@ -50,7 +43,7 @@ deploy-no-refreshresources: deploy
 
 crd:
 	# temporary creation of CRD until it lands in openshift/api, openshift/openshift-apiserver, etc.
-	oc apply -f ./deploy/0000_10_projectedresource.crd.yaml
+	oc apply -f ./vendor/github.com/openshift/api/storage/v1alpha1/0000_10_sharedresource.crd.yaml
 
 test-e2e-no-deploy: crd
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh

@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -23,6 +21,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
+
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
 )
 
 const (
@@ -102,8 +102,8 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string) (bool, error) {
 	sarClient := kubeClient.AuthorizationV1().SubjectAccessReviews()
 	resourceAttributes := &authorizationv1.ResourceAttributes{
 		Verb:     "get",
-		Group:    sharev1alpha1.GroupName,
-		Resource: "shares",
+		Group:    storagev1alpha1.GroupName,
+		Resource: "sharedresources",
 		Name:     shareName,
 	}
 	sar := &authorizationv1.SubjectAccessReview{

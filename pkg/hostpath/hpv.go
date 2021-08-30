@@ -3,29 +3,31 @@ package hostpath
 import (
 	"strconv"
 	"sync"
+
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
 )
 
 // NOTE / TODO: the fields in this struct need to start with a capital letter since we are
 // externalizing / storing to disk, unless there is someway to get the golang encoding
 // logic to use our getters/setters
 type hostPathVolume struct {
-	VolID               string     `json:"volID"`
-	VolName             string     `json:"volName"`
-	VolSize             int64      `json:"volSize"`
-	VolPathAnchorDir    string     `json:"volPathAnchorDir"`
-	VolPathBindMountDir string     `json:"volPathBindMountDir"`
-	VolAccessType       accessType `json:"volAccessType"`
-	TargetPath          string     `json:"targetPath"`
-	SharedDataKey       string     `json:"sharedDataKey"`
-	SharedDataKind      string     `json:"sharedDataKind"`
-	SharedDataId        string     `json:"sharedDataId"`
-	ShareDataVersion    string     `json:"sharedDataVersion"`
-	PodNamespace        string     `json:"podNamespace"`
-	PodName             string     `json:"podName"`
-	PodUID              string     `json:"podUID"`
-	PodSA               string     `json:"podSA"`
-	Allowed             bool       `json:"allowed"`
-	ReadOnly            bool       `json:"readOnly"`
+	VolID               string                                `json:"volID"`
+	VolName             string                                `json:"volName"`
+	VolSize             int64                                 `json:"volSize"`
+	VolPathAnchorDir    string                                `json:"volPathAnchorDir"`
+	VolPathBindMountDir string                                `json:"volPathBindMountDir"`
+	VolAccessType       accessType                            `json:"volAccessType"`
+	TargetPath          string                                `json:"targetPath"`
+	SharedDataKey       string                                `json:"sharedDataKey"`
+	SharedDataType      storagev1alpha1.ResourceReferenceType `json:"sharedDataType"`
+	SharedDataId        string                                `json:"sharedDataId"`
+	ShareDataVersion    string                                `json:"sharedDataVersion"`
+	PodNamespace        string                                `json:"podNamespace"`
+	PodName             string                                `json:"podName"`
+	PodUID              string                                `json:"podUID"`
+	PodSA               string                                `json:"podSA"`
+	Allowed             bool                                  `json:"allowed"`
+	ReadOnly            bool                                  `json:"readOnly"`
 	// hpv's can be accessed/modified by both the share events and the configmap/secret events; to prevent data races
 	// we serialize access to a given hpv with a per hpv mutex stored in this map; access to hpv fields should not
 	// be done directly, but only by each field's getter and setter.  Getters and setters then leverage the per hpv
@@ -81,10 +83,10 @@ func (hpv *hostPathVolume) GetSharedDataKey() string {
 	defer hpv.Lock.Unlock()
 	return hpv.SharedDataKey
 }
-func (hpv *hostPathVolume) GetSharedDataKind() string {
+func (hpv *hostPathVolume) GetSharedDataType() storagev1alpha1.ResourceReferenceType {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
-	return hpv.SharedDataKind
+	return hpv.SharedDataType
 }
 func (hpv *hostPathVolume) GetSharedDataId() string {
 	hpv.Lock.Lock()
@@ -163,10 +165,10 @@ func (hpv *hostPathVolume) SetSharedDataKey(key string) {
 	defer hpv.Lock.Unlock()
 	hpv.SharedDataKey = key
 }
-func (hpv *hostPathVolume) SetSharedDataKind(kind string) {
+func (hpv *hostPathVolume) SetSharedDataType(dataType storagev1alpha1.ResourceReferenceType) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
-	hpv.SharedDataKind = kind
+	hpv.SharedDataType = dataType
 }
 func (hpv *hostPathVolume) SetSharedDataId(id string) {
 	hpv.Lock.Lock()

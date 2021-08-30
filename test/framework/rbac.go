@@ -17,8 +17,8 @@ func createShareClusterRole(t *TestArgs) {
 		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs:         []string{"get", "list", "watch"},
-				APIGroups:     []string{"sharedresource.openshift.io"},
-				Resources:     []string{"shares"},
+				APIGroups:     []string{"storage.openshift.io"},
+				Resources:     []string{"sharedresources"},
 				ResourceNames: []string{t.Name},
 			},
 		},
@@ -26,6 +26,7 @@ func createShareClusterRole(t *TestArgs) {
 	if t.SecondShare {
 		clusterRole.Rules[0].ResourceNames = append(clusterRole.Rules[0].ResourceNames, t.SecondName)
 	}
+	t.T.Logf("creating cluster role: %#v", clusterRole)
 	_, err := clusterRoleClient.Create(context.TODO(), clusterRole, metav1.CreateOptions{})
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.T.Fatalf("error creating test cluster role: %s", err.Error())
@@ -50,6 +51,7 @@ func createShareClusterRoleBinding(t *TestArgs) {
 			Name:     t.Name,
 		},
 	}
+	t.T.Logf("creating cluster role binding: %#v", clusterRoleBinding)
 	_, err := clusterRoleBindingClient.Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{})
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.T.Fatalf("error creating test cluster role binding: %s", err.Error())

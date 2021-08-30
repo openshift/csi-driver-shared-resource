@@ -1,14 +1,15 @@
 package client
 
 import (
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/listers/sharedresource/v1alpha1"
 	corev1 "k8s.io/client-go/listers/core/v1"
+
+	storagev1alpha1 "github.com/openshift/client-go/storage/listers/storage/v1alpha1"
 )
 
 type Listers struct {
 	Secrets    corev1.SecretLister
 	ConfigMaps corev1.ConfigMapLister
-	Shares     sharev1alpha1.ShareLister
+	Shares     storagev1alpha1.SharedResourceLister
 }
 
 var singleton Listers
@@ -25,7 +26,7 @@ func SetConfigMapsLister(c corev1.ConfigMapLister) {
 	singleton.ConfigMaps = c
 }
 
-func SetSharesLister(s sharev1alpha1.ShareLister) {
+func SetSharesLister(s storagev1alpha1.SharedResourceLister) {
 	singleton.Shares = s
 }
 

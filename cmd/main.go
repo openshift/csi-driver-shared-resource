@@ -15,6 +15,7 @@ import (
 	"k8s.io/klog/v2"
 
 	v1 "github.com/openshift/api/operator/v1"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
 	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"

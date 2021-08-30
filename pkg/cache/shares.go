@@ -1,13 +1,13 @@
 package cache
 
 import (
+	"reflect"
 	"sync"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
-	corev1 "k8s.io/api/core/v1"
-
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
 )
 
 /*
@@ -56,16 +56,16 @@ var (
 	shareDeleteCallbacks = sync.Map{}
 )
 
-func AddShare(share *sharev1alpha1.Share) {
-	br := share.Spec.BackingResource
-	key := BuildKey(br.Namespace, br.Name)
-	klog.V(4).Infof("AddShare key %s kind %s", key, br.Kind)
-	switch br.Kind {
-	case "ConfigMap":
-		obj, ok := configmaps.Load(key)
+func AddShare(share *storagev1alpha1.SharedResource) {
+	resKey := GetKeyFrom(share.Spec.Resource)
+	klog.V(4).Infof("AddShare key %s type %s", resKey, share.Spec.Resource.Type)
+
+	switch share.Spec.Resource.Type {
+	case storagev1alpha1.ResourceReferenceTypeConfigMap:
+		obj, ok := configmaps.Load(resKey)
 		if obj != nil && ok {
 			cm := obj.(*corev1.ConfigMap)
-			configmapsWithShares.Store(key, cm)
+			configmapsWithShares.Store(resKey, cm)
 			// so this line build a map with a single entry, the share from this event, and then
 			// applies the function(s) supplied by the CSI volume code in order to make changes based
 			// on this event
@@ -75,11 +75,11 @@ func AddShare(share *sharev1alpha1.Share) {
 		} else {
 			sharesWaitingOnConfigmaps.Store(share.Name, share)
 		}
-	case "Secret":
-		obj, ok := secrets.Load(key)
+	case storagev1alpha1.ResourceReferenceTypeSecret:
+		obj, ok := secrets.Load(resKey)
 		if obj != nil && ok {
 			s := obj.(*corev1.Secret)
-			secretsWithShare.Store(key, s)
+			secretsWithShare.Store(resKey, s)
 			// so this line build a map with a single entry, the share from this event, and then
 			// applies the function(s) supplied by the CSI volume code in order to make changes based
 			// on this event
@@ -92,43 +92,31 @@ func AddShare(share *sharev1alpha1.Share) {
 	}
 }
 
-func UpdateShare(share *sharev1alpha1.Share) {
-	klog.V(4).Infof("UpdateShare key %s kind %s", share.Name, share.Spec.BackingResource.Kind)
+func UpdateShare(share *storagev1alpha1.SharedResource) {
+	klog.V(4).Infof("UpdateShare key %s type %s", share.Name, share.Spec.Resource.Type)
 	old, ok := shares.Load(share.Name)
 	if !ok || old == nil {
 		AddShare(share)
 		return
 	}
-	oldShare := old.(*sharev1alpha1.Share)
-	diffInstance := false
-	oldBr := oldShare.Spec.BackingResource
-	newBr := share.Spec.BackingResource
-	switch {
-	case oldBr.Kind != newBr.Kind:
-		diffInstance = true
-	case oldBr.Namespace != newBr.Namespace:
-		diffInstance = true
-	case oldBr.Name != newBr.Name:
-		diffInstance = true
-	}
-	klog.V(4).Infof("UpdateShare key %s kind %s diff %v", share.Name, share.Spec.BackingResource.Kind, diffInstance)
-	if !diffInstance {
+	oldShare := old.(*storagev1alpha1.SharedResource)
+
+	klog.V(4).Infof("UpdateShare key %s type %s", share.Name, share.Spec.Resource.Type)
+	if !reflect.DeepEqual(oldShare, share) {
 		shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 		return
 	}
 
 	shares.Store(share.Name, share)
-	br := share.Spec.BackingResource
-	key := BuildKey(br.Namespace, br.Name)
+	key := GetKeyFrom(share.Spec.Resource)
 	configmapsWithShares.Delete(key)
 	secretsWithShare.Delete(key)
 	AddShare(share)
 }
 
-func DelShare(share *sharev1alpha1.Share) {
-	br := share.Spec.BackingResource
-	key := BuildKey(br.Namespace, br.Name)
-	klog.V(4).Infof("DelShare key %s kind %s", key, br.Kind)
+func DelShare(share *storagev1alpha1.SharedResource) {
+	key := GetKeyFrom(share.Spec.Resource)
+	klog.V(4).Infof("DelShare key %s type %s", key, share.Spec.Resource.Type)
 	configmapsWithShares.Delete(key)
 	secretsWithShare.Delete(key)
 	shares.Delete(share.Name)

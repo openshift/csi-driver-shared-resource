@@ -32,7 +32,7 @@ func init() {
 
 func WaitForDaemonSet(t *TestArgs) error {
 	dsClient := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace)
-	err := wait.PollImmediate(1*time.Second, 10*time.Minute, func() (bool, error) {
+	if err := wait.PollImmediate(1*time.Second, 10*time.Minute, func() (bool, error) {
 		_, err := dsClient.Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
 		if err != nil {
 			t.T.Logf("%s: error waiting for driver daemonset to exist: %v", time.Now().String(), err)
@@ -40,9 +40,11 @@ func WaitForDaemonSet(t *TestArgs) error {
 		}
 		t.T.Logf("%s: found operator deployment", time.Now().String())
 		return true, nil
-	})
+	}); err != nil {
+		return err
+	}
 	podClient = kubeClient.CoreV1().Pods(client.DefaultNamespace)
-	err = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (bool, error) {
+	err := wait.PollImmediate(10*time.Second, 2*time.Minute, func() (bool, error) {
 		podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			t.T.Logf("%s: error listing pods: %s\n", time.Now().String(), err.Error())

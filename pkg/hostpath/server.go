@@ -23,11 +23,10 @@ import (
 	"strings"
 	"sync"
 
-	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/kubernetes-csi/csi-lib-utils/protosanitizer"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
 
 	"k8s.io/klog/v2"
 )
@@ -43,12 +42,8 @@ type nonBlockingGRPCServer struct {
 }
 
 func (s *nonBlockingGRPCServer) Start(endpoint string, ids csi.IdentityServer, ns csi.NodeServer) {
-
 	s.wg.Add(1)
-
 	go s.serve(endpoint, ids, ns)
-
-	return
 }
 
 func (s *nonBlockingGRPCServer) Wait() {
@@ -57,10 +52,12 @@ func (s *nonBlockingGRPCServer) Wait() {
 
 func (s *nonBlockingGRPCServer) Stop() {
 	s.server.GracefulStop()
+	s.wg.Done()
 }
 
 func (s *nonBlockingGRPCServer) ForceStop() {
 	s.server.Stop()
+	s.wg.Done()
 }
 
 func (s *nonBlockingGRPCServer) serve(endpoint string, ids csi.IdentityServer, ns csi.NodeServer) {
@@ -108,7 +105,7 @@ func parseEndpoint(ep string) (string, string, error) {
 			return s[0], s[1], nil
 		}
 	}
-	return "", "", fmt.Errorf("Invalid endpoint: %v", ep)
+	return "", "", fmt.Errorf("invalid endpoint: %v", ep)
 }
 
 func logGRPC(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {

@@ -15,7 +15,7 @@ const (
 	CSIPodUID                         = "csi.storage.k8s.io/pod.uid"
 	CSIPodSA                          = "csi.storage.k8s.io/serviceAccount.name"
 	CSIEphemeral                      = "csi.storage.k8s.io/ephemeral"
-	SharedResourceShareKey            = "share"
+	SharedResourceShareKey            = "sharedresource"
 	anchorDir                         = "anchor-dir"
 	bindDir                           = "bind-dir"
 	mountAccess            accessType = iota

@@ -22,18 +22,17 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"k8s.io/klog/v2"
 	"k8s.io/utils/mount"
-)
 
-var (
-	listers client.Listers
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 type nodeServer struct {
@@ -59,42 +58,33 @@ func NewNodeServer(hp *hostPath, alwaysReadOnly bool) *nodeServer {
 }
 
 func getPodDetails(volumeContext map[string]string) (string, string, string, string) {
-	podName, _ := volumeContext[CSIPodName]
-	podNamespace, _ := volumeContext[CSIPodNamespace]
-	podSA, _ := volumeContext[CSIPodSA]
-	podUID, _ := volumeContext[CSIPodUID]
+	podName := volumeContext[CSIPodName]
+	podNamespace := volumeContext[CSIPodNamespace]
+	podSA := volumeContext[CSIPodSA]
+	podUID := volumeContext[CSIPodUID]
 	return podNamespace, podName, podUID, podSA
 
 }
 
-func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.Share, error) {
+func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*storagev1alpha1.SharedResource, error) {
 	shareName, sok := req.GetVolumeContext()[SharedResourceShareKey]
 	if !sok || len(strings.TrimSpace(shareName)) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument,
-			"the csi driver reference is missing the volumeAttribute 'share'")
+			"the csi driver reference is missing the volumeAttribute '%s'", SharedResourceShareKey)
 	}
 
 	share, err := client.GetListers().Shares.Get(shareName)
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument,
-			"the csi driver volumeAttribute 'share' reference had an error: %s", err.Error())
+			"the csi driver volumeAttribute '%s' reference had an error: %s", SharedResourceShareKey, err.Error())
 	}
 
-	switch strings.TrimSpace(share.Spec.BackingResource.Kind) {
-	case "Secret":
-	case "ConfigMap":
-	default:
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s has an invalid backing resource kind %s", shareName, share.Spec.BackingResource.Kind)
+	namespace, name := cache.GetNamespaceAndNameFrom(share.Spec.Resource)
+	if len(strings.TrimSpace(namespace)) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "the referenced resource for share %s must have a namespace set", shareName)
 	}
-
-	if len(strings.TrimSpace(share.Spec.BackingResource.Namespace)) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s backing resource namespace needs to be set", shareName)
-	}
-	if len(strings.TrimSpace(share.Spec.BackingResource.Name)) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s backing resource name needs to be set", shareName)
+	if len(strings.TrimSpace(name)) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "the referenced resource for share %s must have a name set", shareName)
 	}
 
 	podNamespace, podName, _, podSA := getPodDetails(req.GetVolumeContext())

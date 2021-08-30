@@ -3,9 +3,10 @@
 package e2e
 
 import (
-	"github.com/openshift/csi-driver-shared-resource/test/framework"
 	"testing"
 	"time"
+
+	"github.com/openshift/csi-driver-shared-resource/test/framework"
 )
 
 func TestNoRBAC(t *testing.T) {

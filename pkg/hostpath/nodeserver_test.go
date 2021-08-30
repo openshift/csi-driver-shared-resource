@@ -1,14 +1,13 @@
 package hostpath
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"golang.org/x/net/context"
 
 	authorizationv1 "k8s.io/api/authorization/v1"
@@ -20,20 +19,24 @@ import (
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	fakekubetesting "k8s.io/client-go/testing"
 	"k8s.io/utils/mount"
+
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 type fakeShareLister struct {
-	share *sharev1alpha1.Share
+	share *storagev1alpha1.SharedResource
 }
 
-func (f *fakeShareLister) List(selector labels.Selector) (ret []*sharev1alpha1.Share, err error) {
+func (f *fakeShareLister) List(selector labels.Selector) (ret []*storagev1alpha1.SharedResource, err error) {
 	if f.share == nil {
-		return []*sharev1alpha1.Share{}, nil
+		return []*storagev1alpha1.SharedResource{}, nil
 	}
-	return []*sharev1alpha1.Share{f.share}, nil
+	return []*storagev1alpha1.SharedResource{f.share}, nil
 }
 
-func (f *fakeShareLister) Get(name string) (*sharev1alpha1.Share, error) {
+func (f *fakeShareLister) Get(name string) (*storagev1alpha1.SharedResource, error) {
 	if f.share == nil {
 		return nil, kerrors.NewNotFound(schema.GroupResource{}, name)
 	}
@@ -75,27 +78,28 @@ func TestNodePublishVolume(t *testing.T) {
 	denyReactorFunc = func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: false}}, nil
 	}
-	validShare := &sharev1alpha1.Share{
+	validShare := &storagev1alpha1.SharedResource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "share1",
 		},
-		Spec: sharev1alpha1.ShareSpec{
-			BackingResource: sharev1alpha1.BackingResource{
-				Kind:       "Secret",
-				APIVersion: "v1",
-				Name:       "cool-secret",
-				Namespace:  "cool-secret-namespace",
+		Spec: storagev1alpha1.SharedResourceSpec{
+			Resource: storagev1alpha1.ResourceReference{
+				Type: storagev1alpha1.ResourceReferenceTypeSecret,
+				Secret: &storagev1alpha1.ResourceReferenceSecret{
+					Name:      "cool-secret",
+					Namespace: "cool-secret-namespace",
+				},
 			},
 			Description: "",
 		},
-		Status: sharev1alpha1.ShareStatus{},
+		Status: storagev1alpha1.SharedResourceStatus{},
 	}
 
 	tests := []struct {
 		name              string
 		nodePublishVolReq csi.NodePublishVolumeRequest
 		expectedMsg       string
-		share             *sharev1alpha1.Share
+		share             *storagev1alpha1.SharedResource
 		reactor           fakekubetesting.ReactionFunc
 	}{
 		{
@@ -190,7 +194,7 @@ func TestNodePublishVolume(t *testing.T) {
 					CSIPodSA:        "sa1",
 				},
 			},
-			expectedMsg: "the csi driver reference is missing the volumeAttribute 'share'",
+			expectedMsg: fmt.Sprintf("the csi driver reference is missing the volumeAttribute '%s'", SharedResourceShareKey),
 		},
 		{
 			name: "missing share",
@@ -212,56 +216,24 @@ func TestNodePublishVolume(t *testing.T) {
 					SharedResourceShareKey: "share1",
 				},
 			},
-			expectedMsg: "the csi driver volumeAttribute 'share' reference had an error",
-		},
-		{
-			name: "bad backing resource kind",
-			share: &sharev1alpha1.Share{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "share1",
-				},
-				Spec: sharev1alpha1.ShareSpec{
-					BackingResource: sharev1alpha1.BackingResource{
-						Kind: "BadKind",
-					},
-					Description: "",
-				},
-				Status: sharev1alpha1.ShareStatus{},
-			},
-			nodePublishVolReq: csi.NodePublishVolumeRequest{
-				VolumeId:   "testvolid1",
-				Readonly:   true,
-				TargetPath: getTestTargetPath(t),
-				VolumeCapability: &csi.VolumeCapability{
-					AccessType: &csi.VolumeCapability_Mount{
-						Mount: &csi.VolumeCapability_MountVolume{},
-					},
-				},
-				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
-				},
-			},
-			expectedMsg: "has an invalid backing resource kind",
+			expectedMsg: fmt.Sprintf("the csi driver volumeAttribute '%s' reference had an error", SharedResourceShareKey),
 		},
 		{
 			name: "bad backing resource namespace",
-			share: &sharev1alpha1.Share{
+			share: &storagev1alpha1.SharedResource{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.ShareSpec{
-					BackingResource: sharev1alpha1.BackingResource{
-						Kind: "ConfigMap",
-						Name: "configmap1",
+				Spec: storagev1alpha1.SharedResourceSpec{
+					Resource: storagev1alpha1.ResourceReference{
+						Type: storagev1alpha1.ResourceReferenceTypeConfigMap,
+						ConfigMap: &storagev1alpha1.ResourceReferenceConfigMap{
+							Name: "configmap1",
+						},
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.ShareStatus{},
+				Status: storagev1alpha1.SharedResourceStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -281,22 +253,24 @@ func TestNodePublishVolume(t *testing.T) {
 					SharedResourceShareKey: "share1",
 				},
 			},
-			expectedMsg: "backing resource namespace needs to be set",
+			expectedMsg: "must have a namespace set",
 		},
 		{
 			name: "bad backing resource name",
-			share: &sharev1alpha1.Share{
+			share: &storagev1alpha1.SharedResource{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.ShareSpec{
-					BackingResource: sharev1alpha1.BackingResource{
-						Kind:      "ConfigMap",
-						Namespace: "namespace1",
+				Spec: storagev1alpha1.SharedResourceSpec{
+					Resource: storagev1alpha1.ResourceReference{
+						Type: storagev1alpha1.ResourceReferenceTypeConfigMap,
+						ConfigMap: &storagev1alpha1.ResourceReferenceConfigMap{
+							Namespace: "namespace1",
+						},
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.ShareStatus{},
+				Status: storagev1alpha1.SharedResourceStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -316,7 +290,7 @@ func TestNodePublishVolume(t *testing.T) {
 					SharedResourceShareKey: "share1",
 				},
 			},
-			expectedMsg: "backing resource name needs to be set",
+			expectedMsg: "must have a name set",
 		},
 		{
 			name:    "sar fails",

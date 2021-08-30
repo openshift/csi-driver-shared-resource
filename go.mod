@@ -1,6 +1,6 @@
 module github.com/openshift/csi-driver-shared-resource
 
-go 1.14
+go 1.16
 
 require (
 	github.com/container-storage-interface/spec v1.3.0
@@ -14,7 +14,6 @@ require (
 	k8s.io/api v0.22.0-rc.0
 	k8s.io/apimachinery v0.22.0-rc.0
 	k8s.io/client-go v0.22.0-rc.0
-	k8s.io/code-generator v0.22.0-rc.0 // indirect
 	k8s.io/klog/v2 v2.9.0
 	k8s.io/kubectl v0.21.2
 	k8s.io/utils v0.0.0-20210707171843-4b05e18ac7d9

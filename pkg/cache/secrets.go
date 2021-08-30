@@ -4,12 +4,12 @@ import (
 	"context"
 	"sync"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
-	corev1 "k8s.io/api/core/v1"
+	storagev1alpha1 "github.com/openshift/api/storage/v1alpha1"
 )
 
 /*
@@ -79,16 +79,16 @@ func SetSecret(kubeClient kubernetes.Interface, sharedDataKey string) error {
 }
 
 func UpsertSecret(secret *corev1.Secret) {
-	key := GetKey(secret)
+	key := GetKeyFrom(secret)
 	klog.V(4).Infof("UpsertSecret key %s", key)
 	secrets.Store(key, secret)
 	// in case share arrived before secret
 	processedSharesWithoutSecrets := []string{}
 	sharesWaitingOnSecrets.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
-		share := value.(*sharev1alpha1.Share)
-		br := share.Spec.BackingResource
-		secretKey := BuildKey(br.Namespace, br.Name)
+		share := value.(*storagev1alpha1.SharedResource)
+		br := share.Spec.Resource
+		secretKey := BuildKeyUsing(br.Secret.Namespace, br.Secret.Name)
 		secretsWithShare.Store(secretKey, secret)
 		//NOTE: share update ranger will store share in shares sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.
@@ -105,7 +105,7 @@ func UpsertSecret(secret *corev1.Secret) {
 }
 
 func DelSecret(secret *corev1.Secret) {
-	key := GetKey(secret)
+	key := GetKeyFrom(secret)
 	klog.V(4).Infof("DelSecret key %s", key)
 	secrets.Delete(key)
 	secretDeleteCallbacks.Range(buildRanger(buildCallbackMap(key, secret)))

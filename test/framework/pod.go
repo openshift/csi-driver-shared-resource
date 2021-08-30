@@ -17,7 +17,9 @@ import (
 	kubexec "k8s.io/kubectl/pkg/cmd/exec"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 )
 
 const (
@@ -39,7 +41,7 @@ func CreateTestPod(t *TestArgs) {
 						CSI: &corev1.CSIVolumeSource{
 							ReadOnly:         &t.ReadOnly,
 							Driver:           string(operatorv1.SharedResourcesCSIDriver),
-							VolumeAttributes: map[string]string{"share": t.Name},
+							VolumeAttributes: map[string]string{hostpath.SharedResourceShareKey: t.Name},
 						},
 					},
 				},
@@ -67,7 +69,7 @@ func CreateTestPod(t *TestArgs) {
 				CSI: &corev1.CSIVolumeSource{
 					ReadOnly:         &t.ReadOnly,
 					Driver:           string(operatorv1.SharedResourcesCSIDriver),
-					VolumeAttributes: map[string]string{"share": t.SecondName},
+					VolumeAttributes: map[string]string{hostpath.SharedResourceShareKey: t.SecondName},
 				},
 			},
 		})
