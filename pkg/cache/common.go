@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,6 +18,15 @@ func GetKey(o interface{}) string {
 
 func BuildKey(namespace, name string) string {
 	return namespace + ":" + name
+}
+
+// SplitKey splits the shared-data-key into namespace and name.
+func SplitKey(key string) (string, string, error) {
+	s := strings.Split(key, ":")
+	if len(s) != 2 || s[0] == "" || s[1] == "" {
+		return "", "", fmt.Errorf("unable to split key '%s' into namespace and name", key)
+	}
+	return s[0], s[1], nil
 }
 
 func buildCallbackMap(key, value interface{}) *sync.Map {

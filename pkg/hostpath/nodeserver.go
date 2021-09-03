@@ -43,9 +43,10 @@ type nodeServer struct {
 	readOnlyMounter   FileSystemMounter
 	readWriteMounter  FileSystemMounter
 	mounter           mount.Interface
+	alwaysReadOnly    bool
 }
 
-func NewNodeServer(hp *hostPath) *nodeServer {
+func NewNodeServer(hp *hostPath, alwaysReadOnly bool) *nodeServer {
 	return &nodeServer{
 		nodeID:            hp.nodeID,
 		maxVolumesPerNode: hp.maxVolumesPerNode,
@@ -53,6 +54,7 @@ func NewNodeServer(hp *hostPath) *nodeServer {
 		mounter:           mount.New(""),
 		readOnlyMounter:   &WriteOnceReadMany{},
 		readWriteMounter:  &ReadWriteMany{},
+		alwaysReadOnly:    alwaysReadOnly,
 	}
 }
 
@@ -160,14 +162,15 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	kubeletTargetPath = req.GetTargetPath()
-	readOnly := req.GetReadonly()
+	// when on always-read-only mode it will make sure the volume mounts won't be writable at all
+	readOnly := ns.alwaysReadOnly || req.GetReadonly()
 
 	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, req.GetVolumeContext(), share, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	klog.V(4).Infof("NodePublishVolume created volume: %s", kubeletTargetPath)
+	klog.V(4).Infof("NodePublishVolume created volume: %s (read-only=%v)", kubeletTargetPath, readOnly)
 
 	notMnt, err := mount.IsNotMountPoint(ns.mounter, kubeletTargetPath)
 

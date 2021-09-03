@@ -17,6 +17,7 @@ limitations under the License.
 package hostpath
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	fakekubetesting "k8s.io/client-go/testing"
 
@@ -42,7 +44,7 @@ const (
 	configmapvalue1 = "configmapvalue1"
 )
 
-func testHostPathDriver(testName string) (*hostPath, string, string, error) {
+func testHostPathDriver(testName string, kubeClient kubernetes.Interface) (*hostPath, string, string, error) {
 	tmpDir1, err := ioutil.TempDir(os.TempDir(), testName)
 	if err != nil {
 		return nil, "", "", err
@@ -51,7 +53,7 @@ func testHostPathDriver(testName string) (*hostPath, string, string, error) {
 	if err != nil {
 		return nil, "", "", err
 	}
-	hp, err := NewHostPathDriver(tmpDir1, tmpDir2, testName, "nodeID1", "endpoint1", 0, "version1")
+	hp, err := NewHostPathDriver(tmpDir1, tmpDir2, testName, "nodeID1", "endpoint1", 0, "version1", kubeClient)
 	return hp, tmpDir1, tmpDir2, err
 }
 
@@ -66,7 +68,7 @@ func seedVolumeContext() map[string]string {
 }
 
 func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
-	hp, dir1, dir2, err := testHostPathDriver(t.Name())
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 	if err != nil {
 		t.Fatalf("%s", err.Error())
 	}
@@ -85,7 +87,7 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 func TestCreateDeleteConfigMap(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -114,7 +116,7 @@ func TestCreateDeleteConfigMap(t *testing.T) {
 func TestCreateDeleteSecret(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -143,7 +145,7 @@ func TestCreateDeleteSecret(t *testing.T) {
 func TestDeleteSecretVolume(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -157,7 +159,7 @@ func TestDeleteSecretVolume(t *testing.T) {
 		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, nil)
 		err = hp.deleteHostpathVolume(t.Name())
 		if err != nil {
-			t.Fatalf("unexpeted error on delete volume: %s", err.Error())
+			t.Fatalf("unexpected error on delete volume: %s", err.Error())
 		}
 		foundSecret, _ := findSharedItems(t, searchPath)
 
@@ -181,7 +183,7 @@ func TestDeleteSecretVolume(t *testing.T) {
 func TestChangeKeys(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -224,7 +226,7 @@ func TestChangeKeys(t *testing.T) {
 func TestDeleteConfigMapVolume(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -238,7 +240,7 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 		_, searchPath := primeConfigMapVolume(t, hp, targetPath, ro, nil)
 		err = hp.deleteHostpathVolume(t.Name())
 		if err != nil {
-			t.Fatalf("unexpeted error on delete volume: %s", err.Error())
+			t.Fatalf("unexpected error on delete volume: %s", err.Error())
 		}
 		_, foundConfigMap := findSharedItems(t, searchPath)
 
@@ -261,7 +263,7 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 func TestDeleteShare(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -320,7 +322,7 @@ func TestDeleteShare(t *testing.T) {
 func TestDeleteReAddShare(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -387,7 +389,7 @@ func TestDeleteReAddShare(t *testing.T) {
 func TestUpdateShare(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -462,7 +464,7 @@ func TestUpdateShare(t *testing.T) {
 func TestPermChanges(t *testing.T) {
 	readOnly := []bool{true, false}
 	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name())
+		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
 		if err != nil {
 			t.Fatalf("%s", err.Error())
 		}
@@ -533,6 +535,112 @@ func TestPermChanges(t *testing.T) {
 		}
 		// clear out hpv for next run
 		hp.deleteHostpathVolume(t.Name())
+	}
+}
+
+// TestMapVolumeToPodWithKubeClient creates a new HostPathDriver with a kubernetes client, which
+// changes the behavior of the component, so instead of directly reading backing-resources from the
+// object-cache, it directly updates the cache before trying to mount the volume.
+func TestMapVolumeToPodWithKubeClient(t *testing.T) {
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret",
+			Namespace: "secret-namespace",
+		},
+		Data: map[string][]byte{secretkey1: []byte(secretvalue1)},
+	}
+	configMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "configmap",
+			Namespace: "configmap-namespace",
+		},
+		Data: map[string]string{configmapkey1: configmapvalue1},
+	}
+
+	tests := []struct {
+		name       string
+		share      *sharev1alpha1.Share
+		kubeClient kubernetes.Interface
+	}{{
+		name: "Secret",
+		share: &sharev1alpha1.Share{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-secret", t.Name()),
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: sharev1alpha1.ShareSpec{
+				BackingResource: sharev1alpha1.BackingResource{
+					Kind:       "Secret",
+					APIVersion: "v1",
+					Name:       secret.GetName(),
+					Namespace:  secret.GetNamespace(),
+				},
+				Description: "",
+			},
+			Status: sharev1alpha1.ShareStatus{},
+		},
+		kubeClient: fakekubeclientset.NewSimpleClientset(&secret),
+	}, {
+		name: "ConfigMap",
+		share: &sharev1alpha1.Share{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      fmt.Sprintf("%s-secret", t.Name()),
+				Namespace: metav1.NamespaceDefault,
+			},
+			Spec: sharev1alpha1.ShareSpec{
+				BackingResource: sharev1alpha1.BackingResource{
+					Kind:       "ConfigMap",
+					APIVersion: "v1",
+					Name:       configMap.GetName(),
+					Namespace:  configMap.GetNamespace(),
+				},
+				Description: "",
+			},
+			Status: sharev1alpha1.ShareStatus{},
+		},
+		kubeClient: fakekubeclientset.NewSimpleClientset(&configMap),
+	}}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			cache.AddShare(test.share)
+
+			// making sure the tests are running on temporary directories, those will be deleted at
+			// the end of each test pass
+			targetPath, err := ioutil.TempDir(os.TempDir(), test.name)
+			if err != nil {
+				t.Fatalf("err on targetPath %s", err.Error())
+			}
+			hp, dir1, dir2, err := testHostPathDriver(test.name, test.kubeClient)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.RemoveAll(dir1)
+			defer os.RemoveAll(dir2)
+
+			// creating hostPathVolume only for this test
+			volCtx := seedVolumeContext()
+			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, volCtx, test.share, 0, mountAccess)
+			if err != nil {
+				t.Fatalf("unexpected error on createHostpathVolume: '%s'", err.Error())
+			}
+
+			// creating the mount point infrastructure, materializing the objects in cache as files
+			if err = hp.mapVolumeToPod(hpv); err != nil {
+				t.Fatalf("unexpected error on mapVolumeToPod: '%s'", err.Error())
+			}
+
+			// given it's a read-only mount point, the target-path needs to be amended with the inner
+			// bind directory
+			bindDir := filepath.Join(hp.root, "bind-dir")
+
+			// inspecting bind directory looking for files originated from testing resources
+			foundSecret, foundConfigMap := findSharedItems(t, bindDir)
+			t.Logf("mount point contents: secret='%v', configmap='%v'", foundSecret, foundConfigMap)
+			if !foundSecret && !foundConfigMap {
+				t.Fatalf("mount point doesn't have data: secret='%v', configmap='%v'", foundSecret, foundConfigMap)
+			}
+		})
 	}
 }
 

@@ -11,9 +11,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	v1 "github.com/openshift/api/operator/v1"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
 	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 )
@@ -26,6 +28,8 @@ var (
 	maxVolumesPerNode   int64
 	version             string
 	shareRelistInterval string
+	refreshResources    bool
+	ignoredNamespaces   []string
 
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
 	onlyOneSignalHandler = make(chan struct{})
@@ -37,7 +41,19 @@ var rootCmd = &cobra.Command{
 	Short:   "",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		driver, err := hostpath.NewHostPathDriver(hostpath.DataRoot, hostpath.VolumeMapRoot, driverName, nodeID, endPoint, maxVolumesPerNode, version)
+		var kubeClient kubernetes.Interface
+		var err error
+
+		if !refreshResources {
+			fmt.Println("Refresh-Resources disabled, loading a Kubernetes client for HostPathDriver")
+
+			if kubeClient, err = loadKubernetesClientset(); err != nil {
+				fmt.Printf("Failed to load Kubernetes API client: %s", err.Error())
+				os.Exit(1)
+			}
+		}
+
+		driver, err := hostpath.NewHostPathDriver(hostpath.DataRoot, hostpath.VolumeMapRoot, driverName, nodeID, endPoint, maxVolumesPerNode, version, kubeClient)
 		if err != nil {
 			fmt.Printf("Failed to initialize driver: %s", err.Error())
 			os.Exit(1)
@@ -68,6 +84,17 @@ func init() {
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
 	rootCmd.Flags().StringVar(&shareRelistInterval, "share-relist-interval", "",
 		"the time between controller relist on the share resource expressed with golang time.Duration syntax(default=10m")
+	rootCmd.Flags().BoolVar(&refreshResources, "refreshresources", true, "watch for resource updates")
+	rootCmd.Flags().StringSliceVar(&ignoredNamespaces, "ignorenamespace", []string{}, "Specify a namespace to be ignored by the controller")
+}
+
+// loadKubernetesClientset instantiate a clientset using local config.
+func loadKubernetesClientset() (kubernetes.Interface, error) {
+	kubeRestConfig, err := client.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	return kubernetes.NewForConfig(kubeRestConfig)
 }
 
 func runOperator() {
@@ -81,7 +108,7 @@ func runOperator() {
 			shareRelist = controller.DefaultResyncDuration
 		}
 	}
-	c, err := controller.NewController(shareRelist)
+	c, err := controller.NewController(shareRelist, refreshResources, ignoredNamespaces)
 	if err != nil {
 		fmt.Printf("Failed to set up controller: %s", err.Error())
 		os.Exit(1)

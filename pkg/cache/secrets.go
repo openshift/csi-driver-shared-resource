@@ -1,8 +1,11 @@
 package cache
 
 import (
+	"context"
 	"sync"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
@@ -25,7 +28,7 @@ On the use of sync.Map, see the comments in share.go
 
 var (
 	// secrets is our global configmap id (namespace + name) to secret map, where entries are populated from
-	// contorller events; it serves to facilitate quick lookup during share event processing, when the share references
+	// controller events; it serves to facilitate quick lookup during share event processing, when the share references
 	// a secret
 	secrets = sync.Map{}
 	// secretUpsertCallbacks has a key of the CSI volume ID and a value of the function to be called when a given
@@ -55,6 +58,23 @@ func GetSecret(key interface{}) *corev1.Secret {
 		s, _ := obj.(*corev1.Secret)
 		return s
 	}
+	return nil
+}
+
+// SetSecret based on the shared-data-key, which contains the resource's namespace and name, this
+// method can fetch and store it on cache.
+func SetSecret(kubeClient kubernetes.Interface, sharedDataKey string) error {
+	ns, name, err := SplitKey(sharedDataKey)
+	if err != nil {
+		return err
+	}
+
+	secret, err := kubeClient.CoreV1().Secrets(ns).Get(context.TODO(), name, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	UpsertSecret(secret)
 	return nil
 }
 

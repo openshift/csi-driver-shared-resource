@@ -29,6 +29,8 @@ const (
 type Controller struct {
 	kubeRestConfig *rest.Config
 
+	kubeClient *kubernetes.Clientset
+
 	cfgMapWorkqueue workqueue.RateLimitingInterface
 	secretWorkqueue workqueue.RateLimitingInterface
 	shareWorkqueue  workqueue.RateLimitingInterface
@@ -43,7 +45,10 @@ type Controller struct {
 	listers *client.Listers
 }
 
-func NewController(shareRelist time.Duration) (*Controller, error) {
+// NewController instantiate a new controller with relisting interval, and optional refresh-resources
+// mode. Refresh-resources mode means the controller will keep watching for ConfigMaps and Secrets
+// for future changes, when disabled it only loads the resource contents before mounting the volume.
+func NewController(shareRelist time.Duration, refreshResources bool, ignoredNamespaces []string) (*Controller, error) {
 	kubeRestConfig, err := client.GetConfig()
 	if err != nil {
 		return nil, err
@@ -63,37 +68,11 @@ func NewController(shareRelist time.Duration) (*Controller, error) {
 	// informers.NewSharedInformerFactoryWithOptions, but we restrict OpenShift
 	// "system" namespaces with chatty configmaps like the leaderelection related ones
 	// that are updated every few seconds
-	//TODO make this list externally configurable
 	tweakListOptions := internalinterfaces.TweakListOptionsFunc(func(options *metav1.ListOptions) {
 		fsString := ""
 		namespaceFieldSelector := "metadata.namespace!=%s"
-		namespaces := []string{"kube-system",
-			"openshift-machine-api",
-			"openshift-kube-apiserver",
-			"openshift-kube-apiserver-operator",
-			"openshift-kube-scheduler",
-			"openshift-kube-controller-manager",
-			"openshift-kube-controller-manager-operator",
-			"openshift-kube-scheduler-operator",
-			"openshift-console-operator",
-			"openshift-controller-manager",
-			"openshift-controller-manager-operator",
-			"openshift-cloud-credential-operator",
-			"openshift-authentication-operator",
-			"openshift-service-ca",
-			"openshift-kube-storage-version-migrator-operator",
-			"openshift-config-operator",
-			"openshift-etcd-operator",
-			"openshift-apiserver-operator",
-			"openshift-cluster-csi-drivers",
-			"openshift-cluster-storage-operator",
-			"openshift-cluster-version",
-			"openshift-image-registry",
-			"openshift-machine-config-operator",
-			"openshift-sdn",
-			"openshift-service-ca-operator",
-		}
-		for _, ns := range namespaces {
+		for _, ns := range ignoredNamespaces {
+			klog.V(4).Infof("namespace '%s' is being ignored", ns)
 			nsfs := fmt.Sprintf(namespaceFieldSelector, ns)
 			if len(fsString) == 0 {
 				fsString = nsfs
@@ -102,7 +81,6 @@ func NewController(shareRelist time.Duration) (*Controller, error) {
 			}
 		}
 		options.FieldSelector = fsString
-
 	})
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient,
 		DefaultResyncDuration, informers.WithTweakListOptions(tweakListOptions))
@@ -112,46 +90,65 @@ func NewController(shareRelist time.Duration) (*Controller, error) {
 		shareRelist)
 
 	c := &Controller{
+		kubeClient:     kubeClient,
 		kubeRestConfig: kubeRestConfig,
-		cfgMapWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
-			"shared-resource-configmap-changes"),
-		secretWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
-			"shared-resource-secret-changes"),
 		shareWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
 			"shared-resource-share-changes"),
 		informerFactory:      informerFactory,
 		shareInformerFactory: shareInformerFactory,
-		cfgMapInformer:       informerFactory.Core().V1().ConfigMaps().Informer(),
-		secInformer:          informerFactory.Core().V1().Secrets().Informer(),
 		shareInformer:        shareInformerFactory.Sharedresource().V1alpha1().Shares().Informer(),
 		listers:              client.GetListers(),
 	}
 
-	client.SetConfigMapsLister(c.informerFactory.Core().V1().ConfigMaps().Lister())
-	client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
+	if refreshResources {
+		c.cfgMapWorkqueue = workqueue.NewNamedRateLimitingQueue(
+			workqueue.DefaultControllerRateLimiter(), "shared-resource-configmap-changes")
+		c.secretWorkqueue = workqueue.NewNamedRateLimitingQueue(
+			workqueue.DefaultControllerRateLimiter(), "shared-resource-secret-changes")
+		c.cfgMapInformer = informerFactory.Core().V1().ConfigMaps().Informer()
+		c.secInformer = informerFactory.Core().V1().Secrets().Informer()
+
+		client.SetConfigMapsLister(c.informerFactory.Core().V1().ConfigMaps().Lister())
+		client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
+	}
+
 	client.SetSharesLister(c.shareInformerFactory.Sharedresource().V1alpha1().Shares().Lister())
 
-	c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
-	c.secInformer.AddEventHandler(c.secretEventHandler())
+	if refreshResources {
+		c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
+		c.secInformer.AddEventHandler(c.secretEventHandler())
+	}
 	c.shareInformer.AddEventHandler(c.shareEventHandler())
 
 	return c, nil
 }
 
 func (c *Controller) Run(stopCh <-chan struct{}) error {
-	defer c.cfgMapWorkqueue.ShutDown()
-	defer c.secretWorkqueue.ShutDown()
+	if c.cfgMapWorkqueue != nil && c.secretWorkqueue != nil {
+		defer c.cfgMapWorkqueue.ShutDown()
+		defer c.secretWorkqueue.ShutDown()
+	}
 	defer c.shareWorkqueue.ShutDown()
 
 	c.informerFactory.Start(stopCh)
 	c.shareInformerFactory.Start(stopCh)
 
-	if !cache.WaitForCacheSync(stopCh, c.cfgMapInformer.HasSynced, c.secInformer.HasSynced, c.shareInformer.HasSynced) {
+	if c.cfgMapInformer != nil && !cache.WaitForCacheSync(stopCh, c.cfgMapInformer.HasSynced) {
+		return fmt.Errorf("failed to wait for ConfigMap informer cache to sync")
+	}
+	if c.secInformer != nil && !cache.WaitForCacheSync(stopCh, c.secInformer.HasSynced) {
+		return fmt.Errorf("failed to wait for Secrets informer cache to sync")
+	}
+	if !cache.WaitForCacheSync(stopCh, c.shareInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for caches to sync")
 	}
 
-	go wait.Until(c.configMapEventProcessor, time.Second, stopCh)
-	go wait.Until(c.secretEventProcessor, time.Second, stopCh)
+	if c.cfgMapWorkqueue != nil {
+		go wait.Until(c.configMapEventProcessor, time.Second, stopCh)
+	}
+	if c.secretWorkqueue != nil {
+		go wait.Until(c.secretEventProcessor, time.Second, stopCh)
+	}
 	go wait.Until(c.shareEventProcessor, time.Second, stopCh)
 
 	<-stopCh

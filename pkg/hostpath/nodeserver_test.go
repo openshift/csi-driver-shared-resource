@@ -44,7 +44,7 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 	if strings.Contains(testName, "/") {
 		testName = strings.Split(testName, "/")[0]
 	}
-	hp, tmpDir, volPathTmpDir, err := testHostPathDriver(testName)
+	hp, tmpDir, volPathTmpDir, err := testHostPathDriver(testName, nil)
 	if err != nil {
 		return nil, "", "", err
 	}

@@ -2,7 +2,7 @@
 
 ### Excluded OCP namespaces
 
-The current list of namespaces excluded from the controller's watches:
+The current list of namespaces excluded by default from the controller's watches:
 
 - kube-system
 - openshift-machine-api
@@ -30,7 +30,14 @@ The current list of namespaces excluded from the controller's watches:
 - openshift-sdn
 - openshift-service-ca-operator
 
-The list is not yet configurable, but most likely will become so as the project's lifecycle progresses.
+The list is configurable by informing `--ignorenamespace` to the `hostpath` plugin instance. The
+plugin can also be configured with `--refreshresources` flag, which makes the controller keep a warm
+cache of `ConfigMap` and `Secret` objects, and as they change the controller will follow the updates.
+
+When `--refreshresources` is disabled (i.e. `--refreshresources=false`), the controller will read the
+backing-resource (`.spec.backingResource`) just before mounting the volume instead of keeping a warm
+cache. Additionally, every volume mount will be always read-only preventing tampering with the data
+provided by this CSI driver.
 
 Allowing the disabling processing of updates, or switching the default for the system as not dealing with
 updates, but then allowing for opting into updates, is also under consideration.
