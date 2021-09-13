@@ -22,7 +22,17 @@ TEST_SUITE ?= normal
 # ent-to-end test timeout
 TEST_TIMEOUT ?= 30m
 
-LDFLAGS ?= '-extldflags "-static"'
+TARGET_GOOS ?= $(shell go env GOOS)
+TARGET_GOARCH ?= $(shell go env GOARCH)
+
+# For golang 1.16, race detection is only widely supported for amd64 architectures (linux, windows, darwin, and freebsd).
+# Race detection for ARM is only currently supported for linux (no darwin or windows support yet).
+# s390x and ppc64le do not support race detection at present.
+ifeq ($(TARGET_GOARCH), amd64)
+	RACE = -race
+endif
+
+GOFLAGS ?= -a -mod=vendor $(RACE)
 
 .DEFAULT_GOAL := help
 
@@ -37,7 +47,7 @@ generate-crd:
 	./hack/update-crd.sh
 
 test: ## Run unit tests. Example: make test
-	go test -race -count 1 ./cmd/... ./pkg/...
+	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go test $(GOFLAGS) -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
 deploy:
@@ -72,7 +82,7 @@ verify: ## Run verifications. Example: make verify
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
-	go build -a -mod=vendor -race -ldflags $(LDFLAGS) -o _output/csi-driver-shared-resource ./cmd
+	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go build $(GOFLAGS) -o _output/csi-driver-shared-resource ./cmd
 .PHONY: build
 
 build-image: ## Build the images and push them to the remote registry. Example: make build-image
