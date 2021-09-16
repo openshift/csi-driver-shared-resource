@@ -14,8 +14,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// Shares returns a ShareInformer.
-	Shares() ShareInformer
+	// SharedResources returns a SharedResourceInformer.
+	SharedResources() SharedResourceInformer
 }
 
 type version struct {
@@ -29,7 +29,7 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// Shares returns a ShareInformer.
-func (v *version) Shares() ShareInformer {
-	return &shareInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+// SharedResources returns a SharedResourceInformer.
+func (v *version) SharedResources() SharedResourceInformer {
+	return &sharedResourceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }

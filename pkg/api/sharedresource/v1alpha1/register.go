@@ -8,7 +8,7 @@ import (
 
 const (
 	Version   = "v1alpha1"
-	GroupName = "sharedresource.openshift.io"
+	GroupName = "storage.openshift.io"
 )
 
 var (
@@ -28,8 +28,8 @@ func init() {
 // addKnownTypes adds the set of types defined in this package to the supplied scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Share{},
-		&ShareList{},
+		&SharedResource{},
+		&SharedResourceList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

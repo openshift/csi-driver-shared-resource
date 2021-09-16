@@ -5,9 +5,9 @@ metadata:
   namespace: my-csi-app-namespace
 rules:
   - apiGroups:
-      - sharedresource.openshift.io
+      - storage.openshift.io
     resources:
-      - shares
+      - sharedresources
     resourceNames:
       - my-share
     verbs:

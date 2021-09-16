@@ -2,10 +2,13 @@ package cache
 
 import (
 	"fmt"
+	"k8s.io/klog/v2"
 	"strings"
 	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 )
 
 func GetKey(o interface{}) string {
@@ -13,11 +16,44 @@ func GetKey(o interface{}) string {
 	if !ok {
 		return fmt.Sprintf("%s", o)
 	}
-	return BuildKey(obj.GetNamespace(), obj.GetName())
+
+	return obj.GetNamespace() + ":" + obj.GetName()
 }
 
-func BuildKey(namespace, name string) string {
-	return namespace + ":" + name
+func BuildKey(r sharev1alpha1.ResourceReference) string {
+	switch r.Type {
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+		return r.ConfigMap.Namespace + ":" + r.ConfigMap.Name
+	case sharev1alpha1.ResourceReferenceTypeSecret:
+		return r.Secret.Namespace + ":" + r.Secret.Name
+	default:
+		klog.Warningf("BuildKey unknown type %s", r.Type)
+		return ""
+	}
+}
+
+func GetResourceNamespace(r sharev1alpha1.ResourceReference) string {
+	switch r.Type {
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+		return r.ConfigMap.Namespace
+	case sharev1alpha1.ResourceReferenceTypeSecret:
+		return r.Secret.Namespace
+	default:
+		klog.Warningf("GetResourceNamespace unknown type %s", r.Type)
+		return ""
+	}
+}
+
+func GetResourceName(r sharev1alpha1.ResourceReference) string {
+	switch r.Type {
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+		return r.ConfigMap.Name
+	case sharev1alpha1.ResourceReferenceTypeSecret:
+		return r.Secret.Name
+	default:
+		klog.Warningf("GetResourceName unknown type %s", r.Type)
+		return ""
+	}
 }
 
 // SplitKey splits the shared-data-key into namespace and name.

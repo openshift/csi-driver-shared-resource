@@ -14,17 +14,17 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeSharedresourceV1alpha1 struct {
+type FakeStorageV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakeSharedresourceV1alpha1) Shares() v1alpha1.ShareInterface {
-	return &FakeShares{c}
+func (c *FakeStorageV1alpha1) SharedResources() v1alpha1.SharedResourceInterface {
+	return &FakeSharedResources{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeSharedresourceV1alpha1) RESTClient() rest.Interface {
+func (c *FakeStorageV1alpha1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

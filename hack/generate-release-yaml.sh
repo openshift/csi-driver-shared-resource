@@ -6,7 +6,7 @@ set -o pipefail
 
 FILES=(
 "00-namespace.yaml"
-"0000_10_projectedresource.crd.yaml"
+"0000_10_sharedresource.crd.yaml"
 "01-service-account.yaml"
 "02-cluster-role.yaml"
 "03-cluster-role-binding.yaml"

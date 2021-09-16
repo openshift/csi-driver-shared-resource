@@ -22,12 +22,12 @@ You should see an output similar to the following printed on the terminal showin
 Kubernetes resources:
 
 ```shell
-customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
-serviceaccount/csi-driver-projected-resource-plugin created
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
+customresourcedefinition.apiextensions.k8s.io/sharedresources.storage.openshift.io created
+serviceaccount/csi-driver-shared-resource-plugin created
+clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged created
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
+csidriver.storage.k8s.io/csi-driver-shared-resource.openshift.io created
 service/csi-hostpathplugin created
 daemonset.apps/csi-hostpathplugin created
 ```
@@ -46,25 +46,25 @@ Kubernetes resources:
 
 ```shell
 deploying hostpath components
-   ./deploy/0000_10_projectedresource.crd.yaml
-oc apply -f ./deploy/0000_10_projectedresource.crd.yaml
-customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
+   ./deploy/0000_10_sharedresource.crd.yaml
+oc apply -f ./deploy/0000_10_sharedresource.crd.yaml
+customresourcedefinition.apiextensions.k8s.io/sharedresources.storage.openshift.io created
    ./deploy/00-namespace.yaml
 oc apply -f ./deploy/00-namespace.yaml
 namespace/openshift-cluster-csi-drivers unchanged
    ./deploy/01-service-account.yaml
 oc apply -f ./deploy/01-service-account.yaml
-serviceaccount/csi-driver-projected-resource-plugin created
+serviceaccount/csi-driver-shared-resource-plugin created
    ./deploy/02-cluster-role.yaml
 oc apply -f ./deploy/02-cluster-role.yaml
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
+clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
    ./deploy/03-cluster-role-binding.yaml
 oc apply -f ./deploy/03-cluster-role-binding.yaml
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged unchanged
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create unchanged
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged unchanged
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create unchanged
    ./deploy/csi-hostpath-driverinfo.yaml
 oc apply -f ./deploy/csi-hostpath-driverinfo.yaml
-csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
+csidriver.storage.k8s.io/csi-driver-shared-resource.openshift.io created
    ./deploy/csi-hostpath-plugin.yaml
 oc apply -f ./deploy/csi-hostpath-plugin.yaml
 service/csi-hostpathplugin created
@@ -78,7 +78,7 @@ daemonset.apps/csi-hostpathplugin created
 
 ```bash
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/00-namespace.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/0000_10_projectedresource.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/0000_10_sharedresource.crd.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/01-service-account.yaml 
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/02-cluster-role.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/03-cluster-role-binding.yaml
@@ -90,13 +90,13 @@ You should see an output similar to the following printed on the terminal showin
 Kubernetes resources:
 
 ```shell
-namespace/csi-driver-projected-resource created
-customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
-serviceaccount/csi-driver-projected-resource-plugin created
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
+namespace/csi-driver-shared-resource created
+customresourcedefinition.apiextensions.k8s.io/shareresources.storage.openshift.io created
+serviceaccount/csi-driver-shared-resource-plugin created
+clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged created
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
+csidriver.storage.k8s.io/csi-driver-shared-resource.openshift.io created
 service/csi-hostpathplugin created
 daemonset.apps/csi-hostpathplugin created
 ```
@@ -108,7 +108,7 @@ daemonset.apps/csi-hostpathplugin created
 
 ```bash
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/00-namespace.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/0000_10_projectedresource.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/0000_10_sharedresource.crd.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/01-service-account.yaml 
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/02-cluster-role.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.8/deploy/03-cluster-role-binding.yaml
@@ -120,13 +120,13 @@ You should see an output similar to the following printed on the terminal showin
 Kubernetes resources:
 
 ```shell
-namespace/csi-driver-projected-resource created
-customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
-serviceaccount/csi-driver-projected-resource-plugin created
-clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-privileged created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
-csidriver.storage.k8s.io/csi-driver-projected-resource.openshift.io created
+namespace/openshift-cluster-csi-drivers unchanged
+customresourcedefinition.apiextensions.k8s.io/shareresourcess.storage.openshift.io created
+serviceaccount/csi-driver-shared-resource-plugin created
+clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged created
+clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
+csidriver.storage.k8s.io/csi-driver-shared-resource.openshift.io created
 service/csi-hostpathplugin created
 daemonset.apps/csi-hostpathplugin created
 ```
@@ -134,11 +134,11 @@ daemonset.apps/csi-hostpathplugin created
 
 ## Validate the installation
 
-Every node should have a pod running the driver plugin in the namespace `csi-driver-projected-resource`.
+Every node should have a pod running the driver plugin in the namespace `openshift-cluster-csi-drivers`.
 On a 3 node OCP cluster, this will look something like:
 
 ```shell
-$ oc get pods -n csi-driver-projected-resource
+$ oc get pods -n openshift-cluster-csi-drivers
 NAME                       READY   STATUS    RESTARTS   AGE
 csi-hostpathplugin-c7bbk   2/2     Running   0          23m
 csi-hostpathplugin-m4smv   2/2     Running   0          23m

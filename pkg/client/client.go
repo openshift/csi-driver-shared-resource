@@ -103,7 +103,7 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string) (bool, error) {
 	resourceAttributes := &authorizationv1.ResourceAttributes{
 		Verb:      "use",
 		Group:     sharev1alpha1.GroupName,
-		Resource:  "shares",
+		Resource:  "sharedresources",
 		Name:      shareName,
 		Namespace: podNamespace,
 	}

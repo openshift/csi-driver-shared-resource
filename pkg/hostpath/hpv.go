@@ -1,6 +1,7 @@
 package hostpath
 
 import (
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 	"strconv"
 	"sync"
 )
@@ -81,10 +82,10 @@ func (hpv *hostPathVolume) GetSharedDataKey() string {
 	defer hpv.Lock.Unlock()
 	return hpv.SharedDataKey
 }
-func (hpv *hostPathVolume) GetSharedDataKind() string {
+func (hpv *hostPathVolume) GetSharedDataKind() sharev1alpha1.ResourceReferenceType {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
-	return hpv.SharedDataKind
+	return sharev1alpha1.ResourceReferenceType(hpv.SharedDataKind)
 }
 func (hpv *hostPathVolume) GetSharedDataId() string {
 	hpv.Lock.Lock()

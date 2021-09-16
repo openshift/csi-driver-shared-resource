@@ -75,7 +75,7 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
 	volCtx := seedVolumeContext()
-	_, err = hp.createHostpathVolume(t.Name(), "", false, volCtx, &sharev1alpha1.Share{}, 0, mountAccess+1)
+	_, err = hp.createHostpathVolume(t.Name(), "", false, volCtx, &sharev1alpha1.SharedResource{}, 0, mountAccess+1)
 	if err == nil {
 		t.Fatalf("err nil unexpectedly")
 	}
@@ -282,20 +282,21 @@ func TestDeleteShare(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.Share{
+		share := &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "TestDeleteShare",
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "Secret",
-					APIVersion: "v1",
-					Name:       "secret1",
-					Namespace:  "namespace",
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeSecret,
+					Secret: &sharev1alpha1.ResourceReferenceSecret{
+						Name:      "secret1",
+						Namespace: "namespace",
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		}
 		shareLister := &fakeShareLister{
 			share: share,
@@ -341,21 +342,22 @@ func TestDeleteReAddShare(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.Share{
+		share := &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "TestDeleteReAddShare",
 				ResourceVersion: "1",
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "Secret",
-					APIVersion: "v1",
-					Name:       "secret1",
-					Namespace:  "namespace",
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeSecret,
+					Secret: &sharev1alpha1.ResourceReferenceSecret{
+						Name:      "secret1",
+						Namespace: "namespace",
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		}
 		shareLister := &fakeShareLister{
 			share: share,
@@ -407,21 +409,22 @@ func TestUpdateShare(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.Share{
+		share := &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "TestUpdateShare",
 				ResourceVersion: "1",
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "Secret",
-					APIVersion: "v1",
-					Name:       "secret1",
-					Namespace:  "namespace",
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeSecret,
+					Secret: &sharev1alpha1.ResourceReferenceSecret{
+						Name:      "secret1",
+						Namespace: "namespace",
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		}
 		shareLister := &fakeShareLister{
 			share: share,
@@ -444,8 +447,11 @@ func TestUpdateShare(t *testing.T) {
 		}
 		cache.UpsertConfigMap(cm)
 
-		share.Spec.BackingResource.Kind = "ConfigMap"
-		share.Spec.BackingResource.Name = "configmap1"
+		share.Spec.Resource.Type = sharev1alpha1.ResourceReferenceTypeConfigMap
+		share.Spec.Resource.ConfigMap = &sharev1alpha1.ResourceReferenceConfigMap{
+			Name:      "configmap1",
+			Namespace: "namespace",
+		}
 
 		share.ResourceVersion = "2"
 		cache.UpdateShare(share)
@@ -482,20 +488,21 @@ func TestPermChanges(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.Share{
+		share := &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "TestPermChanges",
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "Secret",
-					APIVersion: "v1",
-					Name:       "secret1",
-					Namespace:  "namespace",
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeSecret,
+					Secret: &sharev1alpha1.ResourceReferenceSecret{
+						Name:      "secret1",
+						Namespace: "namespace",
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		}
 		shareLister := &fakeShareLister{
 			share: share,
@@ -559,44 +566,46 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		share      *sharev1alpha1.Share
+		share      *sharev1alpha1.SharedResource
 		kubeClient kubernetes.Interface
 	}{{
 		name: "Secret",
-		share: &sharev1alpha1.Share{
+		share: &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-secret", t.Name()),
 				Namespace: metav1.NamespaceDefault,
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "Secret",
-					APIVersion: "v1",
-					Name:       secret.GetName(),
-					Namespace:  secret.GetNamespace(),
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeSecret,
+					Secret: &sharev1alpha1.ResourceReferenceSecret{
+						Name:      secret.GetName(),
+						Namespace: secret.GetNamespace(),
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		},
 		kubeClient: fakekubeclientset.NewSimpleClientset(&secret),
 	}, {
 		name: "ConfigMap",
-		share: &sharev1alpha1.Share{
+		share: &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-secret", t.Name()),
 				Namespace: metav1.NamespaceDefault,
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-					Name:       configMap.GetName(),
-					Namespace:  configMap.GetNamespace(),
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
+					ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
+						Name:      configMap.GetName(),
+						Namespace: configMap.GetNamespace(),
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		},
 		kubeClient: fakekubeclientset.NewSimpleClientset(&configMap),
 	}}
@@ -644,23 +653,24 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 	}
 }
 
-func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.Share) (*corev1.Secret, string) {
+func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.SharedResource) (*corev1.Secret, string) {
 	volCtx := seedVolumeContext()
 	if share == nil {
-		share = &sharev1alpha1.Share{
+		share = &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: t.Name(),
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "Secret",
-					APIVersion: "v1",
-					Name:       "secret1",
-					Namespace:  "namespace",
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeSecret,
+					Secret: &sharev1alpha1.ResourceReferenceSecret{
+						Name:      "secret1",
+						Namespace: "namespace",
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		}
 		shareLister := &fakeShareLister{
 			share: share,
@@ -693,23 +703,24 @@ func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly b
 	return secret, targetPath
 }
 
-func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.Share) (*corev1.ConfigMap, string) {
+func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.SharedResource) (*corev1.ConfigMap, string) {
 	volCtx := seedVolumeContext()
 	if share == nil {
-		share = &sharev1alpha1.Share{
+		share = &sharev1alpha1.SharedResource{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: t.Name(),
 			},
-			Spec: sharev1alpha1.ShareSpec{
-				BackingResource: sharev1alpha1.BackingResource{
-					Kind:       "ConfigMap",
-					APIVersion: "v1",
-					Name:       "configmap1",
-					Namespace:  "namespace",
+			Spec: sharev1alpha1.SharedResourceSpec{
+				Resource: sharev1alpha1.ResourceReference{
+					Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
+					ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
+						Name:      "configmap1",
+						Namespace: "namespace",
+					},
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.ShareStatus{},
+			Status: sharev1alpha1.SharedResourceStatus{},
 		}
 		shareLister := &fakeShareLister{
 			share: share,

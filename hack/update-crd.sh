@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-rm -rf deploy/0000_10_projectedresource.crd.yaml
+rm -rf deploy/0000_10_sharedresource.crd.yaml
 
 echo "If you do not have controller-gen installed visit https://github.com/openshift/kubernetes-sigs-controller-tools/releases"
 

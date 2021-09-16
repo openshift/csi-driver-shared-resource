@@ -18,6 +18,7 @@ package hostpath
 
 import (
 	"fmt"
+	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"os"
 	"strings"
 
@@ -67,7 +68,7 @@ func getPodDetails(volumeContext map[string]string) (string, string, string, str
 
 }
 
-func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.Share, error) {
+func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.SharedResource, error) {
 	shareName, sok := req.GetVolumeContext()[SharedResourceShareKey]
 	if !sok || len(strings.TrimSpace(shareName)) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument,
@@ -80,19 +81,19 @@ func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1
 			"the csi driver volumeAttribute 'share' reference had an error: %s", err.Error())
 	}
 
-	switch strings.TrimSpace(share.Spec.BackingResource.Kind) {
-	case "Secret":
-	case "ConfigMap":
+	switch share.Spec.Resource.Type {
+	case sharev1alpha1.ResourceReferenceTypeSecret:
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
 	default:
 		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s has an invalid backing resource kind %s", shareName, share.Spec.BackingResource.Kind)
+			"the share %s has an invalid backing resource kind %s", shareName, share.Spec.Resource.Type)
 	}
 
-	if len(strings.TrimSpace(share.Spec.BackingResource.Namespace)) == 0 {
+	if len(strings.TrimSpace(objcache.GetResourceNamespace(share.Spec.Resource))) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"the share %s backing resource namespace needs to be set", shareName)
 	}
-	if len(strings.TrimSpace(share.Spec.BackingResource.Name)) == 0 {
+	if len(strings.TrimSpace(objcache.GetResourceName(share.Spec.Resource))) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument,
 			"the share %s backing resource name needs to be set", shareName)
 	}

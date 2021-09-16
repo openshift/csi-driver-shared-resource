@@ -1,7 +1,7 @@
 # Simple Example
 
 From the root directory, deploy from the `./examples` directory the
-application `Pod`, along with the associated test namespace, `Share`, `ClusterRole`, and `ClusterRoleBinding` definitions
+application `Pod`, along with the associated test namespace, `SharedResource`, `ClusterRole`, and `ClusterRoleBinding` definitions
 needed to illustrate the mounting of one of the API types (in this instance a `ConfigMap` from the `openshift-config`
 namespace) into the `Pod`
 
@@ -19,14 +19,15 @@ metadata:
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
-  name: projected-resource-my-share
+  name: shared-resource-my-share
+  namespace: my-csi-app-namespace
 rules:
   - apiGroups:
-      - projectedresource.storage.openshift.io
+      - storage.openshift.io
     resources:
-      - shares
+      - sharedresources
     resourceNames:
       - my-share
     verbs:
@@ -38,13 +39,14 @@ rules:
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
-  name: projected-resource-my-share
+  name: shared-resource-my-share
+  namespace: my-csi-app-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: projected-resource-my-share
+  kind: Role
+  name: shared-resource-my-share
 subjects:
   - kind: ServiceAccount
     name: default
@@ -52,8 +54,8 @@ subjects:
 
 ---
 
-apiVersion: projectedresource.storage.openshift.io/v1alpha1
-kind: Share
+apiVersion: storage.openshift.io/v1alpha1
+kind: SharedResource
 metadata:
   name: my-share
 spec:
@@ -82,7 +84,7 @@ spec:
   volumes:
     - name: my-csi-volume
       csi:
-        driver: csi-driver-projected-resource.openshift.io
+        driver: csi-driver-shared-resource.openshift.io
         volumeAttributes:
           share: my-share
 
@@ -93,9 +95,9 @@ If you are fine with running this example as is, then execute:
 ```shell
 $ kubectl apply -f ./examples
 namespace/my-csi-app-namespace created
-clusterrole.rbac.authorization.k8s.io/projected-resource-my-share created
-clusterrolebinding.rbac.authorization.k8s.io/projected-resource-my-share created
-share.projectedresource.storage.openshift.io/my-share created
+role.rbac.authorization.k8s.io/shared-resource-my-share created
+rolebinding.rbac.authorization.k8s.io/shared-resource-my-share created
+share.sharedresource.storage.openshift.io/my-share created
 pod/my-csi-app created
 ```
 

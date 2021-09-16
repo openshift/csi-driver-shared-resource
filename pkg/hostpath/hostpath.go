@@ -24,7 +24,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -51,7 +50,7 @@ type hostPath struct {
 	root string
 
 	// kubeClient optional clientset, when informed the driver will employ it to update the cache
-	// based on the Share's backing-resource.
+	// based on the SharedResource's backing-resource.
 	kubeClient kubernetes.Interface
 }
 
@@ -99,7 +98,7 @@ func remHPV(name string) {
 }
 
 type HostPathDriver interface {
-	createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, share *sharev1alpha1.Share, cap int64, volAccessType accessType) (*hostPathVolume, error)
+	createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, share *sharev1alpha1.SharedResource, cap int64, volAccessType accessType) (*hostPathVolume, error)
 	getHostpathVolume(volID string) *hostPathVolume
 	deleteHostpathVolume(volID string) error
 	getVolumePath(volID string, volCtx map[string]string) (string, string)
@@ -306,8 +305,8 @@ func shareDeleteRanger(hp *hostPath, key interface{}) bool {
 
 func shareUpdateRanger(key, value interface{}) bool {
 	shareId := key.(string)
-	share := value.(*sharev1alpha1.Share)
-	klog.V(4).Infof("share update ranger id %s share name %s type %s version %s", shareId, share.Name, share.Spec.BackingResource.Kind, share.ResourceVersion)
+	share := value.(*sharev1alpha1.SharedResource)
+	klog.V(4).Infof("share update ranger id %s share name %s type %s version %s", shareId, share.Name, share.Spec.Resource.Type, share.ResourceVersion)
 	oldTargetPath := ""
 	volID := ""
 	change := false
@@ -317,9 +316,9 @@ func shareUpdateRanger(key, value interface{}) bool {
 	var hpv *hostPathVolume
 	ranger := func(key, value interface{}) bool {
 		hpv, _ = value.(*hostPathVolume)
-		klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger", shareId, share.Name, share.Spec.BackingResource.Kind)
+		klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger", shareId, share.Name, share.Spec.Resource.Type)
 		if hpv.GetSharedDataId() == shareId {
-			klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger found volume %s", shareId, share.Name, share.Spec.BackingResource.Kind, hpv.GetVolID())
+			klog.V(4).Infof("share update ranger id %s share name %s type %s hpv ranger found volume %s", shareId, share.Name, share.Spec.Resource.Type, hpv.GetVolID())
 			a, err := client.ExecuteSAR(shareId, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetPodSA())
 			allowed := a && err == nil
 
@@ -343,9 +342,9 @@ func shareUpdateRanger(key, value interface{}) bool {
 			}
 
 			switch {
-			case share.Spec.BackingResource.Kind != hpv.GetSharedDataKind():
+			case share.Spec.Resource.Type != hpv.GetSharedDataKind():
 				change = true
-			case objcache.BuildKey(share.Spec.BackingResource.Namespace, share.Spec.BackingResource.Name) != hpv.GetSharedDataKey():
+			case objcache.BuildKey(share.Spec.Resource) != hpv.GetSharedDataKey():
 				change = true
 			}
 			if !change && !lostPermissions && !gainedPermissions {
@@ -364,7 +363,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 	hostPathVolumes.Range(ranger)
 
 	klog.V(4).Infof("share update ranger id %s share name %s type %s, ranged over hpv's: lostPermissions %v change %v gainedPermission %v",
-		shareId, share.Name, share.Spec.BackingResource.Kind, lostPermissions, change, gainedPermissions)
+		shareId, share.Name, share.Spec.Resource.Type, lostPermissions, change, gainedPermissions)
 
 	if lostPermissions {
 		err := commonOSRemove(oldTargetPath)
@@ -413,8 +412,8 @@ func shareUpdateRanger(key, value interface{}) bool {
 		objcache.UnregisterConfigMapDeleteCallback(volID)
 		objcache.UnregisterConfigMapUpsertCallback(volID)
 
-		hpv.SetSharedDataKind(share.Spec.BackingResource.Kind)
-		hpv.SetSharedDataKey(objcache.BuildKey(share.Spec.BackingResource.Namespace, share.Spec.BackingResource.Name))
+		hpv.SetSharedDataKind(string(share.Spec.Resource.Type))
+		hpv.SetSharedDataKey(objcache.BuildKey(share.Spec.Resource))
 		hpv.SetSharedDataId(share.Name)
 
 		mapBackingResourceToPod(hpv)
@@ -428,7 +427,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 		storeVolMapToDisk()
 	}
 
-	klog.V(4).Infof("share update ranger id %s share name %s type %s version %s returning", shareId, share.Name, share.Spec.BackingResource.Kind, share.ResourceVersion)
+	klog.V(4).Infof("share update ranger id %s share name %s type %s version %s returning", shareId, share.Name, share.Spec.Resource.Type, share.ResourceVersion)
 	return true
 }
 
@@ -449,8 +448,8 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 	if err != nil {
 		return err
 	}
-	switch strings.TrimSpace(hpv.GetSharedDataKind()) {
-	case "ConfigMap":
+	switch hpv.GetSharedDataKind() {
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s configmap", hpv.GetVolID())
 		podConfigMapsPath := hpv.GetTargetPath()
 		if readOnly {
@@ -494,7 +493,7 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 			return commonDeleteRanger(podConfigMapsPath, hpv.GetSharedDataKey(), key)
 		}
 		objcache.RegisterConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerCM)
-	case "Secret":
+	case sharev1alpha1.ResourceReferenceTypeSecret:
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s secret", hpv.GetVolID())
 		podSecretsPath := hpv.GetTargetPath()
 		if readOnly {
@@ -546,10 +545,10 @@ func (hp *hostPath) updateObjCache(hpv *hostPathVolume) error {
 	kind := hpv.GetSharedDataKind()
 	key := hpv.GetSharedDataKey()
 	klog.V(4).Infof("populating object-cache with '%s' (key='%s') before mounting", kind, key)
-	switch strings.TrimSpace(kind) {
-	case "ConfigMap":
+	switch kind {
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
 		return objcache.SetConfigMap(hp.kubeClient, key)
-	case "Secret":
+	case sharev1alpha1.ResourceReferenceTypeSecret:
 		return objcache.SetSecret(hp.kubeClient, key)
 	default:
 		return fmt.Errorf("invalid share backing resource kind %s", kind)
@@ -586,7 +585,7 @@ func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
 
 // createVolume create the directory for the hostpath volume.
 // It returns the volume path or err if one occurs.
-func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, share *sharev1alpha1.Share, cap int64, volAccessType accessType) (*hostPathVolume, error) {
+func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, share *sharev1alpha1.SharedResource, cap int64, volAccessType accessType) (*hostPathVolume, error) {
 	fileWriteLock.Lock()
 	defer fileWriteLock.Unlock()
 	hpv := hp.getHostpathVolume(volID)
@@ -622,8 +621,8 @@ func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool
 	hostpathVol.SetPodName(podName)
 	hostpathVol.SetPodUID(podUID)
 	hostpathVol.SetPodSA(podSA)
-	hostpathVol.SetSharedDataKind(share.Spec.BackingResource.Kind)
-	hostpathVol.SetSharedDataKey(objcache.BuildKey(share.Spec.BackingResource.Namespace, share.Spec.BackingResource.Name))
+	hostpathVol.SetSharedDataKind(string(share.Spec.Resource.Type))
+	hostpathVol.SetSharedDataKey(objcache.BuildKey(share.Spec.Resource))
 	hostpathVol.SetSharedDataId(share.Name)
 	hostpathVol.SetSharedDataVersion(share.ResourceVersion)
 	hostpathVol.SetAllowed(true)
