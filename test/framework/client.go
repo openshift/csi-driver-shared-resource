@@ -12,12 +12,12 @@ import (
 )
 
 var (
-	kubeConfig        *rest.Config
-	kubeClient        *kubeset.Clientset
-	podClient         corev1client.PodInterface
-	restClient        *rest.RESTClient
-	namespaceClient   corev1client.NamespaceInterface
-	shareClient       shareset.Interface
+	kubeConfig      *rest.Config
+	kubeClient      *kubeset.Clientset
+	podClient       corev1client.PodInterface
+	restClient      *rest.RESTClient
+	namespaceClient corev1client.NamespaceInterface
+	shareClient     shareset.Interface
 )
 
 func SetupClientsOutsideTestNamespace(t *TestArgs) {

@@ -11,7 +11,4 @@ rules:
     resourceNames:
       - my-share
     verbs:
-      - get
-      - list
-      - watch
       - use

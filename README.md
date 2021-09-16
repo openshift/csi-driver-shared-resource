@@ -1,6 +1,6 @@
-# OpenShift Projected Resource CSI Driver
+# OpenShift Shared Resource CSI Driver
 
-The OpenShift Projected Resource CSI Driver allows for the controlled (via Kubernetes RBAC) sharing of Kubernetes Secrets and ConfigMaps across 
+The OpenShift Sharead Resource CSI Driver allows for the controlled (via Kubernetes RBAC) sharing of Kubernetes Secrets and ConfigMaps across 
 Namespaces in Openshift.
 
 The API used to achieve this support are:
@@ -36,7 +36,13 @@ sufficient privileges to create namespaces and ServiceAccounts, and then create 
 and the creation of `CSIDrivers`.
 
 Then, check out our [entry level example](docs/simple-example.md).  You'll need to have sufficient privileges to create
-namespaces, `ClusterRoles` and `ClusterRoleBindings`, instances of our new `Share` CRD, and pods.
+namespaces, `Roles` and `RoleBindings`, instances of our new `Share` CRD, and pods.
+
+The permission semantics in summary:
+- the `ServiceAccount` associated with a `Pod` needs access to the 'use' verb on the `Share` referenced any `CSIVolume`
+specified in a `Pod` that uses this repository's CSI Driver.
+- separately, any `User` can discover cluster scoped `Shares` based on the permissions granted to them by their cluster
+or namespace administrator.
 
 The full definition of the `Share` custom resource can be found [here](deploy/0000_10_projectedresource.crd.yaml).
 
