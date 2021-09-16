@@ -14,7 +14,7 @@ func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	basicShareSetupAndVerification(testArgs)
 
 	t.Logf("%s: initiating csi driver restart", time.Now().String())

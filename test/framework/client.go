@@ -5,7 +5,6 @@ import (
 	kubeset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
-	rbacv1client "k8s.io/client-go/kubernetes/typed/rbac/v1"
 	"k8s.io/client-go/rest"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
@@ -13,17 +12,15 @@ import (
 )
 
 var (
-	kubeConfig               *rest.Config
-	kubeClient               *kubeset.Clientset
-	podClient                corev1client.PodInterface
-	restClient               *rest.RESTClient
-	namespaceClient          corev1client.NamespaceInterface
-	clusterRoleClient        rbacv1client.ClusterRoleInterface
-	clusterRoleBindingClient rbacv1client.ClusterRoleBindingInterface
-	shareClient              shareset.Interface
+	kubeConfig        *rest.Config
+	kubeClient        *kubeset.Clientset
+	podClient         corev1client.PodInterface
+	restClient        *rest.RESTClient
+	namespaceClient   corev1client.NamespaceInterface
+	shareClient       shareset.Interface
 )
 
-func SetupClients(t *TestArgs) {
+func SetupClientsOutsideTestNamespace(t *TestArgs) {
 	var err error
 	if kubeConfig == nil {
 		kubeConfig, err = client.GetConfig()
@@ -48,12 +45,6 @@ func SetupClients(t *TestArgs) {
 	}
 	if podClient == nil {
 		podClient = kubeClient.CoreV1().Pods(client.DefaultNamespace)
-	}
-	if clusterRoleClient == nil {
-		clusterRoleClient = kubeClient.RbacV1().ClusterRoles()
-	}
-	if clusterRoleBindingClient == nil {
-		clusterRoleBindingClient = kubeClient.RbacV1().ClusterRoleBindings()
 	}
 	shareClient, err = shareset.NewForConfig(kubeConfig)
 	if err != nil {

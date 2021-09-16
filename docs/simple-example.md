@@ -33,6 +33,7 @@ rules:
       - get
       - list
       - watch
+      - use
 
 ---
 

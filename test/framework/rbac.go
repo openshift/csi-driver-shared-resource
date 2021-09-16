@@ -9,14 +9,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func createShareClusterRole(t *TestArgs) {
-	clusterRole := &rbacv1.ClusterRole{
+func createShareRole(t *TestArgs) {
+	role := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: t.Name,
+			Name:      t.Name,
+			Namespace: t.Name,
 		},
 		Rules: []rbacv1.PolicyRule{
 			{
-				Verbs:         []string{"get", "list", "watch"},
+				Verbs:         []string{"get", "list", "watch", "use"},
 				APIGroups:     []string{"sharedresource.openshift.io"},
 				Resources:     []string{"shares"},
 				ResourceNames: []string{t.Name},
@@ -24,18 +25,22 @@ func createShareClusterRole(t *TestArgs) {
 		},
 	}
 	if t.SecondShare {
-		clusterRole.Rules[0].ResourceNames = append(clusterRole.Rules[0].ResourceNames, t.SecondName)
+		role.Rules[0].ResourceNames = append(role.Rules[0].ResourceNames, t.SecondName)
 	}
-	_, err := clusterRoleClient.Create(context.TODO(), clusterRole, metav1.CreateOptions{})
+
+	roleClient := kubeClient.RbacV1().Roles(t.Name)
+
+	_, err := roleClient.Create(context.TODO(), role, metav1.CreateOptions{})
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.T.Fatalf("error creating test cluster role: %s", err.Error())
 	}
 }
 
-func createShareClusterRoleBinding(t *TestArgs) {
-	clusterRoleBinding := &rbacv1.ClusterRoleBinding{
+func createShareRoleBinding(t *TestArgs) {
+	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: t.Name,
+			Name:      t.Name,
+			Namespace: t.Name,
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -46,11 +51,14 @@ func createShareClusterRoleBinding(t *TestArgs) {
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
+			Kind:     "Role",
 			Name:     t.Name,
 		},
 	}
-	_, err := clusterRoleBindingClient.Create(context.TODO(), clusterRoleBinding, metav1.CreateOptions{})
+
+	roleBindingClient := kubeClient.RbacV1().RoleBindings(t.Name)
+
+	_, err := roleBindingClient.Create(context.TODO(), roleBinding, metav1.CreateOptions{})
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.T.Fatalf("error creating test cluster role binding: %s", err.Error())
 	}
@@ -58,11 +66,13 @@ func createShareClusterRoleBinding(t *TestArgs) {
 
 func DeleteShareRelatedRBAC(t *TestArgs) {
 	t.T.Logf("%s: start delete share related rbac %s", time.Now().String(), t.Name)
-	err := clusterRoleBindingClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
+	roleBindingClient := kubeClient.RbacV1().RoleBindings(t.Name)
+	err := roleBindingClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting cluster role %s: %s", t.Name, err.Error())
 	}
-	err = clusterRoleClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
+	roleClient := kubeClient.RbacV1().Roles(t.Name)
+	err = roleClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting cluster role binding %s: %s", t.Name, err.Error())
 	}
@@ -71,7 +81,7 @@ func DeleteShareRelatedRBAC(t *TestArgs) {
 
 func CreateShareRelatedRBAC(t *TestArgs) {
 	t.T.Logf("%s: start create share related rbac %s", time.Now().String(), t.Name)
-	createShareClusterRole(t)
-	createShareClusterRoleBinding(t)
+	createShareRole(t)
+	createShareRoleBinding(t)
 	t.T.Logf("%s: completed share related rbac creation %s", time.Now().String(), t.Name)
 }

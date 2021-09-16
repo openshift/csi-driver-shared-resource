@@ -1,4 +1,4 @@
-# Installing the Projected Resource CSI driver
+# Installing the Shared Resource CSI driver
 
 ## Before you begin
 
@@ -22,7 +22,6 @@ You should see an output similar to the following printed on the terminal showin
 Kubernetes resources:
 
 ```shell
-namespace/csi-driver-projected-resource created
 customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
 serviceaccount/csi-driver-projected-resource-plugin created
 clusterrole.rbac.authorization.k8s.io/projected-resource-secret-configmap-share-watch-sar-create created
@@ -52,7 +51,7 @@ oc apply -f ./deploy/0000_10_projectedresource.crd.yaml
 customresourcedefinition.apiextensions.k8s.io/shares.projectedresource.storage.openshift.io created
    ./deploy/00-namespace.yaml
 oc apply -f ./deploy/00-namespace.yaml
-namespace/csi-driver-projected-resource created
+namespace/openshift-cluster-csi-drivers unchanged
    ./deploy/01-service-account.yaml
 oc apply -f ./deploy/01-service-account.yaml
 serviceaccount/csi-driver-projected-resource-plugin created

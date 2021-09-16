@@ -40,7 +40,7 @@ sh-4.4#
 
 ```
 
-## What happens if the ClusterRole or ClusterRoleBinding are not present when your newly created Pod tries to access an existing Share?
+## What happens if the Role or RoleBinding are not present when your newly created Pod tries to access an existing Share?
 
 ```bash
 $ oc get events
@@ -81,13 +81,13 @@ total 0
 sh-4.4#
 ```
 
-Do note that if your Pod copied the data to other locations, the Projected Resource driver cannot do anything about those copies.  A big motivator for allowing
+Do note that if your Pod copied the data to other locations, the Shared Resource driver cannot do anything about those copies.  A big motivator for allowing
 some customization of the directory and file structure off of the `volumeMount` of the `Pod` is to help reduce the *need* to copy
 files.  Hopefully you can mount that data directly at its final, needed, destination.
 
-Also note that the Projected Resource does not try to reverse engineer which RoleBinding or ClusterRoleBinding allows your Pod to access the Share.
+Also note that the Shared Resource does not try to reverse engineer which RoleBinding or ClusterRoleBinding allows your Pod to access the Share.
 The Kubernetes and OpenShift libraries for this are not currently structured to be openly consumed by other components.  Nor did we entertain taking
-snapshots of that code to serve such a purpose.  So instead of listening to RoleBinding or Role changes, on the Projected Resource controller’s re-list interval
+snapshots of that code to serve such a purpose.  So instead of listening to RoleBinding or Role changes, on the Shared Resource controller’s re-list interval
 (which is configurable via start up argument on the command invoked from out DaemonSet, and whose default is 10 minutes), the controller will re-execute
 Subject Access Review requests for each Pod’s reference to each `Share` on the `Share` re-list and remove content if permission was removed.  But as noted
 in the potential feature list up top, we'll continue to periodically revisit if there is a maintainable way of monitoring permission changes

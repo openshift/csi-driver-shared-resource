@@ -14,7 +14,7 @@ func TestNoRBAC(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	framework.CreateShare(testArgs)
 	framework.CreateTestPod(testArgs)
 }
@@ -25,7 +25,7 @@ func TestNoShare(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	framework.CreateShareRelatedRBAC(testArgs)
 	framework.CreateTestPod(testArgs)
 }
@@ -33,7 +33,7 @@ func TestNoShare(t *testing.T) {
 func coreTestBasicThenNoShareThenShare(testArgs *framework.TestArgs) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	basicShareSetupAndVerification(testArgs)
 
 	testArgs.T.Logf("%s: deleting share for %s", time.Now().String(), testArgs.Name)
@@ -70,7 +70,7 @@ func TestBasicThenNoShareThenShareReadOnly(t *testing.T) {
 func coreTestTwoSharesSeparateMountPaths(testArgs *framework.TestArgs) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	doubleShareSetupAndVerification(testArgs)
 }
 
@@ -108,7 +108,7 @@ func TestTwoSharesSeparateButInheritedMountPaths(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	testArgs.SecondShareSubDir = true
 	doubleShareSetupAndVerification(testArgs)
 }
@@ -119,7 +119,7 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveSubPath(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	testArgs.SecondShareSubDir = true
 	doubleShareSetupAndVerification(testArgs)
 
@@ -140,7 +140,7 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveTopPath(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	testArgs.SecondShareSubDir = true
 	doubleShareSetupAndVerification(testArgs)
 

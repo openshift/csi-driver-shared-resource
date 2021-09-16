@@ -1,7 +1,8 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   name: shared-resource-my-share
+  namespace: my-csi-app-namespace
 rules:
   - apiGroups:
       - sharedresource.openshift.io
@@ -13,3 +14,4 @@ rules:
       - get
       - list
       - watch
+      - use
