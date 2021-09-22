@@ -8,7 +8,7 @@ import (
 )
 
 func prep(t *framework.TestArgs) {
-	framework.SetupClients(t)
+	framework.SetupClientsOutsideTestNamespace(t)
 	t.DaemonSetUp = true
 	err := framework.WaitForDaemonSet(t)
 	if err != nil {

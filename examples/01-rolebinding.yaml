@@ -1,10 +1,11 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
-  name: sharead-resource-my-share
+  name: shared-resource-my-share
+  namespace: my-csi-app-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: shared-resource-my-share
 subjects:
   - kind: ServiceAccount

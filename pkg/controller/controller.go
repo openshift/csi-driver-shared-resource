@@ -96,7 +96,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 			"shared-resource-share-changes"),
 		informerFactory:      informerFactory,
 		shareInformerFactory: shareInformerFactory,
-		shareInformer:        shareInformerFactory.Sharedresource().V1alpha1().Shares().Informer(),
+		shareInformer:        shareInformerFactory.Storage().V1alpha1().SharedResources().Informer(),
 		listers:              client.GetListers(),
 	}
 
@@ -112,8 +112,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 		client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
 	}
 
-	client.SetSharesLister(c.shareInformerFactory.Sharedresource().V1alpha1().Shares().Lister())
-
+	client.SetSharesLister(c.shareInformerFactory.Storage().V1alpha1().SharedResources().Lister())
 	if refreshResources {
 		c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
 		c.secInformer.AddEventHandler(c.secretEventHandler())
@@ -351,7 +350,7 @@ func (c *Controller) syncSecret(event client.Event) error {
 	return nil
 }
 
-func (c *Controller) addShareToQueue(s *sharev1alpha1.Share, verb client.ObjectAction) {
+func (c *Controller) addShareToQueue(s *sharev1alpha1.SharedResource, verb client.ObjectAction) {
 	event := client.Event{
 		Object: s,
 		Verb:   verb,
@@ -363,7 +362,7 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(o interface{}) {
 			switch v := o.(type) {
-			case *sharev1alpha1.Share:
+			case *sharev1alpha1.SharedResource:
 				c.addShareToQueue(v, client.AddObjectAction)
 			default:
 				//log unrecognized type
@@ -371,7 +370,7 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 		},
 		UpdateFunc: func(o, n interface{}) {
 			switch v := n.(type) {
-			case *sharev1alpha1.Share:
+			case *sharev1alpha1.SharedResource:
 				c.addShareToQueue(v, client.UpdateObjectAction)
 			default:
 				//log unrecognized type
@@ -381,13 +380,13 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 			switch v := o.(type) {
 			case cache.DeletedFinalStateUnknown:
 				switch vv := v.Obj.(type) {
-				case *sharev1alpha1.Share:
+				case *sharev1alpha1.SharedResource:
 					// log recovered deleted obj from tombstone via vv.GetName()
 					c.addShareToQueue(vv, client.DeleteObjectAction)
 				default:
 					// log  error decoding obj tombstone
 				}
-			case *sharev1alpha1.Share:
+			case *sharev1alpha1.SharedResource:
 				c.addShareToQueue(v, client.DeleteObjectAction)
 			default:
 				//log unrecognized type
@@ -423,7 +422,7 @@ func (c *Controller) shareEventProcessor() {
 
 func (c *Controller) syncShare(event client.Event) error {
 	obj := event.Object.DeepCopyObject()
-	share, ok := obj.(*sharev1alpha1.Share)
+	share, ok := obj.(*sharev1alpha1.SharedResource)
 	if share == nil || !ok {
 		return fmt.Errorf("unexpected object vs. share: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}

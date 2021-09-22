@@ -3,25 +3,25 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: shares.sharedresource.openshift.io
+  name: sharedresources.storage.openshift.io
   annotations:
-    displayName: Share
+    displayName: SharedResource
     description: Extension for sharing ConfigMaps and Secrets across Namespaces
 spec:
   scope: Cluster
-  group: sharedresource.openshift.io
+  group: storage.openshift.io
   names:
-    plural: shares
-    singular: share
-    kind: Share
-    listKind: ShareList
+    plural: sharedresources
+    singular: sharedresource
+    kind: SharedResource
+    listKind: SharedResourceList
   versions:
     - name: v1alpha1
       served: true
       storage: true
       "schema":
         "openAPIV3Schema":
-          description: Share is the Schema for the shares API
+          description: "SharedResource allows a backing Secret or ConfigMap to be shared across namespaces. Pods can mount the shared Secret or ConfigMap by adding a CSI volume to the pod specification using the \"sharedresource.storage.openshift.io\" CSI driver and a reference to the SharedResource in the volume attributes: \n spec:  volumes:  - name: shared-secret    csi:      driver: sharedresource.storage.openshift.io      volumeAttributes:        sharedResource: my-share \n For the mount to be successful, the pod's service account must be granted permission to 'use' the named SharedResource object within its namespace with an appropriate Role and RoleBinding.  For compactness, here are example `oc` invocations for creating such Role and RoleBinding objects. \n  `oc create role shared-resource-my-share --verb=use --resource=sharedresources.storage.openshift.io --resource-name=my-share`  `oc create rolebinding shared-resource-my-share --role=shared-resource-my-share --serviceaccount=my-namespace:default` \n Administrators can create separate Roles and RoleBindings for their users to be able the list and/or view the available cluster scoped `SharedResources` objects. \n Compatibility level 4: No compatibility is provided, the API can change at any point for any reason. These capabilities should not be used by applications needing long term support. These capabilities should not be used by applications needing long term support."
           type: object
           properties:
             apiVersion:
@@ -33,40 +33,58 @@ spec:
             metadata:
               type: object
             spec:
-              description: ShareSpec defines the desired state of Share
+              description: Specification of the desired shared resource
               type: object
               required:
-                - backingResource
+                - resource
               properties:
-                backingResource:
-                  description: BackingResource captures the ConfigMap or Secret that is shared.
+                description:
+                  description: description is a user readable explanation of what the backing resource provides.
+                  type: string
+                resource:
+                  description: resource references the backing object for this shared resource.
                   type: object
                   required:
-                    - kind
-                    - name
-                    - namespace
+                    - type
                   properties:
-                    apiVersion:
-                      description: APIVersion defines the versioned schema of this representation of an object.
+                    configMap:
+                      description: configMap provides details about the backing object if it is a ConfigMap. If set, type must be "ConfigMap".
+                      type: object
+                      required:
+                        - name
+                        - namespace
+                      properties:
+                        name:
+                          description: name represents the name of the ConfigMap that is being referenced.
+                          type: string
+                        namespace:
+                          description: namespace represents the namespace where the referenced ConfigMap is located.
+                          type: string
+                    secret:
+                      description: secret provides details about the backing object if it is a Secret. If set, type must be "Secret".
+                      type: object
+                      required:
+                        - name
+                        - namespace
+                      properties:
+                        name:
+                          description: name represents the name of the Secret that is being referenced.
+                          type: string
+                        namespace:
+                          description: namespace represents the namespace where the referenced Secret is located.
+                          type: string
+                    type:
+                      description: 'type is the SharedResourceType for the shared resource. Valid types are: ConfigMap, Secret.'
                       type: string
-                    kind:
-                      description: Kind is a string value representing the REST resource this object represents. Currently only Secret and ConfigMap are accepted.
-                      type: string
-                    name:
-                      description: Name is the name of the object serving as the backing resource
-                      type: string
-                    namespace:
-                      description: Namespace is the namespace of the object serving as the backing resource
-                      type: string
-                description:
-                  description: Description is a user readable explanation of what the backing resource provides.
-                  type: string
+                      enum:
+                        - ConfigMap
+                        - Secret
             status:
-              description: ShareStatus defines the observed state of Share
+              description: Observed status of the shared resource
               type: object
               properties:
                 conditions:
-                  description: Conditions are the set of k8s Condition instances provided by the associated controller for Shares.
+                  description: conditions represents any observations made on this particular shared resource by the underlying CSI driver or Share controller.
                   type: array
                   items:
                     description: "Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, type FooStatus struct{     // Represents the observations of a foo's current state.     // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type     // +patchStrategy=merge     // +listType=map     // +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"` \n     // other fields }"

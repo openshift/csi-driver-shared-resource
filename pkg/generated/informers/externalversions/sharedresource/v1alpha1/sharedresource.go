@@ -22,58 +22,58 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// ShareInformer provides access to a shared informer and lister for
-// Shares.
-type ShareInformer interface {
+// SharedResourceInformer provides access to a shared informer and lister for
+// SharedResources.
+type SharedResourceInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.ShareLister
+	Lister() v1alpha1.SharedResourceLister
 }
 
-type shareInformer struct {
+type sharedResourceInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewShareInformer constructs a new informer for Share type.
+// NewSharedResourceInformer constructs a new informer for SharedResource type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewShareInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredShareInformer(client, resyncPeriod, indexers, nil)
+func NewSharedResourceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredSharedResourceInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredShareInformer constructs a new informer for Share type.
+// NewFilteredSharedResourceInformer constructs a new informer for SharedResource type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredShareInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredSharedResourceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SharedresourceV1alpha1().Shares().List(context.TODO(), options)
+				return client.StorageV1alpha1().SharedResources().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SharedresourceV1alpha1().Shares().Watch(context.TODO(), options)
+				return client.StorageV1alpha1().SharedResources().Watch(context.TODO(), options)
 			},
 		},
-		&sharedresourcev1alpha1.Share{},
+		&sharedresourcev1alpha1.SharedResource{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *shareInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredShareInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *sharedResourceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredSharedResourceInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *shareInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&sharedresourcev1alpha1.Share{}, f.defaultInformer)
+func (f *sharedResourceInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&sharedresourcev1alpha1.SharedResource{}, f.defaultInformer)
 }
 
-func (f *shareInformer) Lister() v1alpha1.ShareLister {
-	return v1alpha1.NewShareLister(f.Informer().GetIndexer())
+func (f *sharedResourceInformer) Lister() v1alpha1.SharedResourceLister {
+	return v1alpha1.NewSharedResourceLister(f.Informer().GetIndexer())
 }

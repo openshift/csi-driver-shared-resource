@@ -10,8 +10,8 @@ package fake
 
 import (
 	clientset "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
-	sharedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/sharedresource/v1alpha1"
-	fakesharedresourcev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/sharedresource/v1alpha1/fake"
+	storagev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/sharedresource/v1alpha1"
+	fakestoragev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned/typed/sharedresource/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -66,7 +66,7 @@ func (c *Clientset) Tracker() testing.ObjectTracker {
 
 var _ clientset.Interface = &Clientset{}
 
-// SharedresourceV1alpha1 retrieves the SharedresourceV1alpha1Client
-func (c *Clientset) SharedresourceV1alpha1() sharedresourcev1alpha1.SharedresourceV1alpha1Interface {
-	return &fakesharedresourcev1alpha1.FakeSharedresourceV1alpha1{Fake: &c.Fake}
+// StorageV1alpha1 retrieves the StorageV1alpha1Client
+func (c *Clientset) StorageV1alpha1() storagev1alpha1.StorageV1alpha1Interface {
+	return &fakestoragev1alpha1.FakeStorageV1alpha1{Fake: &c.Fake}
 }

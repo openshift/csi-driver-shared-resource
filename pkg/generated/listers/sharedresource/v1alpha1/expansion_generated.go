@@ -8,6 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
-// ShareListerExpansion allows custom methods to be added to
-// ShareLister.
-type ShareListerExpansion interface{}
+// SharedResourceListerExpansion allows custom methods to be added to
+// SharedResourceLister.
+type SharedResourceListerExpansion interface{}

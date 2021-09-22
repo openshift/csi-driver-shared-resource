@@ -19,7 +19,7 @@ First, some notes on cardinality:
 end of the day manages those CSI volumes, with of course the associated Pod and its various fields key metadata
 
 Second, events.  As the AddShare, UpdateShare, or DelShare names imply, those methods are called when the controller
-processes Add/Update/Delete events for Share instances.  To date, the Update path is a superset of the Add path.  Or
+processes Add/Update/Delete events for SharedResource instances.  To date, the Update path is a superset of the Add path.  Or
 in other words, the UpdateShare ultimately calls the AddShare function.
 
 Third, our data structure of note:  the golang sync.Map.  The implementation provides some key features for us:
@@ -56,12 +56,12 @@ var (
 	shareDeleteCallbacks = sync.Map{}
 )
 
-func AddShare(share *sharev1alpha1.Share) {
-	br := share.Spec.BackingResource
-	key := BuildKey(br.Namespace, br.Name)
-	klog.V(4).Infof("AddShare key %s kind %s", key, br.Kind)
-	switch br.Kind {
-	case "ConfigMap":
+func AddShare(share *sharev1alpha1.SharedResource) {
+	br := share.Spec.Resource
+	key := BuildKey(share.Spec.Resource)
+	klog.V(4).Infof("AddShare key %s kind %s", key, br.Type)
+	switch br.Type {
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
 		obj, ok := configmaps.Load(key)
 		if obj != nil && ok {
 			cm := obj.(*corev1.ConfigMap)
@@ -75,7 +75,7 @@ func AddShare(share *sharev1alpha1.Share) {
 		} else {
 			sharesWaitingOnConfigmaps.Store(share.Name, share)
 		}
-	case "Secret":
+	case sharev1alpha1.ResourceReferenceTypeSecret:
 		obj, ok := secrets.Load(key)
 		if obj != nil && ok {
 			s := obj.(*corev1.Secret)
@@ -92,43 +92,43 @@ func AddShare(share *sharev1alpha1.Share) {
 	}
 }
 
-func UpdateShare(share *sharev1alpha1.Share) {
-	klog.V(4).Infof("UpdateShare key %s kind %s", share.Name, share.Spec.BackingResource.Kind)
+func UpdateShare(share *sharev1alpha1.SharedResource) {
+	klog.V(4).Infof("UpdateShare key %s kind %s", share.Name, share.Spec.Resource.Type)
 	old, ok := shares.Load(share.Name)
 	if !ok || old == nil {
 		AddShare(share)
 		return
 	}
-	oldShare := old.(*sharev1alpha1.Share)
+	oldShare := old.(*sharev1alpha1.SharedResource)
 	diffInstance := false
-	oldBr := oldShare.Spec.BackingResource
-	newBr := share.Spec.BackingResource
+	oldBr := oldShare.Spec.Resource
+	newBr := share.Spec.Resource
 	switch {
-	case oldBr.Kind != newBr.Kind:
+	case oldBr.Type != newBr.Type:
 		diffInstance = true
-	case oldBr.Namespace != newBr.Namespace:
+	case GetResourceNamespace(oldBr) != GetResourceNamespace(newBr):
 		diffInstance = true
-	case oldBr.Name != newBr.Name:
+	case GetResourceName(oldBr) != GetResourceName(newBr):
 		diffInstance = true
 	}
-	klog.V(4).Infof("UpdateShare key %s kind %s diff %v", share.Name, share.Spec.BackingResource.Kind, diffInstance)
+	klog.V(4).Infof("UpdateShare key %s kind %s diff %v", share.Name, share.Spec.Resource.Type, diffInstance)
 	if !diffInstance {
 		shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 		return
 	}
 
 	shares.Store(share.Name, share)
-	br := share.Spec.BackingResource
-	key := BuildKey(br.Namespace, br.Name)
+	br := share.Spec.Resource
+	key := BuildKey(br)
 	configmapsWithShares.Delete(key)
 	secretsWithShare.Delete(key)
 	AddShare(share)
 }
 
-func DelShare(share *sharev1alpha1.Share) {
-	br := share.Spec.BackingResource
-	key := BuildKey(br.Namespace, br.Name)
-	klog.V(4).Infof("DelShare key %s kind %s", key, br.Kind)
+func DelShare(share *sharev1alpha1.SharedResource) {
+	br := share.Spec.Resource
+	key := BuildKey(br)
+	klog.V(4).Infof("DelShare key %s kind %s", key, br.Type)
 	configmapsWithShares.Delete(key)
 	secretsWithShare.Delete(key)
 	shares.Delete(share.Name)

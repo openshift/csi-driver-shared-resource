@@ -85,9 +85,9 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	processSharesWithoutConfigmaps := []string{}
 	sharesWaitingOnConfigmaps.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
-		share := value.(*sharev1alpha1.Share)
-		br := share.Spec.BackingResource
-		configmapKey := BuildKey(br.Namespace, br.Name)
+		share := value.(*sharev1alpha1.SharedResource)
+		br := share.Spec.Resource
+		configmapKey := BuildKey(br)
 		configmapsWithShares.Store(configmapKey, configmap)
 		//NOTE: share update ranger will store share in shares sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.

@@ -86,9 +86,9 @@ func UpsertSecret(secret *corev1.Secret) {
 	processedSharesWithoutSecrets := []string{}
 	sharesWaitingOnSecrets.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
-		share := value.(*sharev1alpha1.Share)
-		br := share.Spec.BackingResource
-		secretKey := BuildKey(br.Namespace, br.Name)
+		share := value.(*sharev1alpha1.SharedResource)
+		br := share.Spec.Resource
+		secretKey := BuildKey(br)
 		secretsWithShare.Store(secretKey, secret)
 		//NOTE: share update ranger will store share in shares sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.

@@ -42,6 +42,6 @@ provided by this CSI driver.
 Allowing the disabling processing of updates, or switching the default for the system as not dealing with
 updates, but then allowing for opting into updates, is also under consideration.
 
-Lastly, the current abilities to switch which Secret or ConfigMap a `Share` references, or even switch between
+Lastly, the current abilities to switch which Secret or ConfigMap a `SharedResource` references, or even switch between
 a ConfigMaps and Secrets (and vice-versa of course) is under consideration, and may be removed during these 
 still early stages of this driver's lifecycle.

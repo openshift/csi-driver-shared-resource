@@ -8,7 +8,7 @@ import (
 type Listers struct {
 	Secrets    corev1.SecretLister
 	ConfigMaps corev1.ConfigMapLister
-	Shares     sharev1alpha1.ShareLister
+	Shares     sharev1alpha1.SharedResourceLister
 }
 
 var singleton Listers
@@ -25,7 +25,7 @@ func SetConfigMapsLister(c corev1.ConfigMapLister) {
 	singleton.ConfigMaps = c
 }
 
-func SetSharesLister(s sharev1alpha1.ShareLister) {
+func SetSharesLister(s sharev1alpha1.SharedResourceLister) {
 	singleton.Shares = s
 }
 

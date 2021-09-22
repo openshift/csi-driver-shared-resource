@@ -41,21 +41,13 @@ func CreateTestNamespace(t *TestArgs) string {
 	return testNamespace
 }
 
-func CleanupTestNamespace(t *TestArgs) {
+func CleanupTestNamespaceAndClusterScopedResources(t *TestArgs) {
 	t.T.Logf("%s: start cleanup of test namespace %s", time.Now().String(), t.Name)
-	err := clusterRoleBindingClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
-	if err != nil && !kerrors.IsNotFound(err) {
-		t.T.Fatalf("error deleting cluster role %s: %s", t.Name, err.Error())
-	}
-	err = clusterRoleClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
-	if err != nil && !kerrors.IsNotFound(err) {
-		t.T.Fatalf("error deleting cluster role binding %s: %s", t.Name, err.Error())
-	}
-	err = shareClient.SharedresourceV1alpha1().Shares().Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
+	err := shareClient.StorageV1alpha1().SharedResources().Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}
-	err = shareClient.SharedresourceV1alpha1().Shares().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
+	err = shareClient.StorageV1alpha1().SharedResources().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}

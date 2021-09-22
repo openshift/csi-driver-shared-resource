@@ -101,10 +101,11 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string) (bool, error) {
 	}
 	sarClient := kubeClient.AuthorizationV1().SubjectAccessReviews()
 	resourceAttributes := &authorizationv1.ResourceAttributes{
-		Verb:     "get",
-		Group:    sharev1alpha1.GroupName,
-		Resource: "shares",
-		Name:     shareName,
+		Verb:      "use",
+		Group:     sharev1alpha1.GroupName,
+		Resource:  "sharedresources",
+		Name:      shareName,
+		Namespace: podNamespace,
 	}
 	sar := &authorizationv1.SubjectAccessReview{
 		Spec: authorizationv1.SubjectAccessReviewSpec{

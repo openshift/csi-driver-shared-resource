@@ -15,7 +15,7 @@ func TestBasicThenNoRBACThenRBAC(t *testing.T) {
 	}
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	basicShareSetupAndVerification(testArgs)
 
 	framework.DeleteShareRelatedRBAC(testArgs)

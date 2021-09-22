@@ -23,17 +23,17 @@ import (
 )
 
 type fakeShareLister struct {
-	share *sharev1alpha1.Share
+	share *sharev1alpha1.SharedResource
 }
 
-func (f *fakeShareLister) List(selector labels.Selector) (ret []*sharev1alpha1.Share, err error) {
+func (f *fakeShareLister) List(selector labels.Selector) (ret []*sharev1alpha1.SharedResource, err error) {
 	if f.share == nil {
-		return []*sharev1alpha1.Share{}, nil
+		return []*sharev1alpha1.SharedResource{}, nil
 	}
-	return []*sharev1alpha1.Share{f.share}, nil
+	return []*sharev1alpha1.SharedResource{f.share}, nil
 }
 
-func (f *fakeShareLister) Get(name string) (*sharev1alpha1.Share, error) {
+func (f *fakeShareLister) Get(name string) (*sharev1alpha1.SharedResource, error) {
 	if f.share == nil {
 		return nil, kerrors.NewNotFound(schema.GroupResource{}, name)
 	}
@@ -75,27 +75,28 @@ func TestNodePublishVolume(t *testing.T) {
 	denyReactorFunc = func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: false}}, nil
 	}
-	validShare := &sharev1alpha1.Share{
+	validShare := &sharev1alpha1.SharedResource{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "share1",
 		},
-		Spec: sharev1alpha1.ShareSpec{
-			BackingResource: sharev1alpha1.BackingResource{
-				Kind:       "Secret",
-				APIVersion: "v1",
-				Name:       "cool-secret",
-				Namespace:  "cool-secret-namespace",
+		Spec: sharev1alpha1.SharedResourceSpec{
+			Resource: sharev1alpha1.ResourceReference{
+				Type: sharev1alpha1.ResourceReferenceTypeSecret,
+				Secret: &sharev1alpha1.ResourceReferenceSecret{
+					Name:      "cool-secret",
+					Namespace: "cool-secret-namespace",
+				},
 			},
 			Description: "",
 		},
-		Status: sharev1alpha1.ShareStatus{},
+		Status: sharev1alpha1.SharedResourceStatus{},
 	}
 
 	tests := []struct {
 		name              string
 		nodePublishVolReq csi.NodePublishVolumeRequest
 		expectedMsg       string
-		share             *sharev1alpha1.Share
+		share             *sharev1alpha1.SharedResource
 		reactor           fakekubetesting.ReactionFunc
 	}{
 		{
@@ -216,17 +217,17 @@ func TestNodePublishVolume(t *testing.T) {
 		},
 		{
 			name: "bad backing resource kind",
-			share: &sharev1alpha1.Share{
+			share: &sharev1alpha1.SharedResource{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.ShareSpec{
-					BackingResource: sharev1alpha1.BackingResource{
-						Kind: "BadKind",
+				Spec: sharev1alpha1.SharedResourceSpec{
+					Resource: sharev1alpha1.ResourceReference{
+						Type: "BadKind",
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.ShareStatus{},
+				Status: sharev1alpha1.SharedResourceStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -250,18 +251,20 @@ func TestNodePublishVolume(t *testing.T) {
 		},
 		{
 			name: "bad backing resource namespace",
-			share: &sharev1alpha1.Share{
+			share: &sharev1alpha1.SharedResource{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.ShareSpec{
-					BackingResource: sharev1alpha1.BackingResource{
-						Kind: "ConfigMap",
-						Name: "configmap1",
+				Spec: sharev1alpha1.SharedResourceSpec{
+					Resource: sharev1alpha1.ResourceReference{
+						Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
+						ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
+							Name: "configmap1",
+						},
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.ShareStatus{},
+				Status: sharev1alpha1.SharedResourceStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -285,18 +288,20 @@ func TestNodePublishVolume(t *testing.T) {
 		},
 		{
 			name: "bad backing resource name",
-			share: &sharev1alpha1.Share{
+			share: &sharev1alpha1.SharedResource{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.ShareSpec{
-					BackingResource: sharev1alpha1.BackingResource{
-						Kind:      "ConfigMap",
-						Namespace: "namespace1",
+				Spec: sharev1alpha1.SharedResourceSpec{
+					Resource: sharev1alpha1.ResourceReference{
+						Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
+						ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
+							Namespace: "namespace1",
+						},
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.ShareStatus{},
+				Status: sharev1alpha1.SharedResourceStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
