@@ -44,7 +44,7 @@ resources:
 EOS
 
   for f in $(find "${DEPLOY_DIR}"/*.yaml |grep -v kustomization |sort); do
-    f=$(basename ${f})
+    f=$(basename "${f}")
     echo "## ${f}"
     echo "  - ${f}" >> ${KUSTOMIZATION_FILE}
   done
@@ -58,12 +58,24 @@ function kustomize_set_image () {
   local TARGET=${2}
 
   # splitting target image in URL and tag
-  IFS=':' read -a PARTS <<< ${TARGET}
+  local URL=${TARGET%:*}
+
+  # tag must be in the last part of the image url, after the hostname
+  # hostname might contain semicolon to describe port, splitting there would be wrong
+  local IMAGE=${TARGET##*/}
+  local TAG=${IMAGE##*:}
+
+  # means there was no semicolon in the image
+  # in this case we should hold original value in the URL, since there was nothing to split upon
+  if [ "$IMAGE" = "$TAG" ]; then
+    URL=$TARGET
+    TAG="latest"
+  fi
 
   cat <<EOS >> ${KUSTOMIZATION_FILE}
   - name: ${NAME}
-    newName: ${PARTS[0]}
-    newTag: ${PARTS[1]}
+    newName: ${URL}
+    newTag: ${TAG}
 EOS
 }
 
@@ -71,7 +83,7 @@ EOS
 function kustomize_add_arg () {
   local ARG=${1}
   local FILE="args-patch-${ARG}.json"
-  cat <<EOS > ${DEPLOY_DIR}/${FILE}
+  cat <<EOS > "${DEPLOY_DIR}/${FILE}"
 [
   {
     "op": "add",
@@ -112,18 +124,18 @@ echo "# Customizing resources..."
 # initializing kustomize and adding the all resource files it should use
 kustomize_init
 
-if [ ! -z "${NODE_REGISTRAR_IMAGE}" ] ; then
+if [ -n "${NODE_REGISTRAR_IMAGE}" ] ; then
   echo "# Patching node-registrar image to use '${NODE_REGISTRAR_IMAGE}'"
   kustomize_set_image "quay.io/openshift/origin-csi-node-driver-registrar" "${NODE_REGISTRAR_IMAGE}"
 fi
 
-if [ ! -z "${DRIVER_IMAGE}" ] ; then
+if [ -n "${DRIVER_IMAGE}" ] ; then
   echo "# Patching node-csi-driver image to use '${DRIVER_IMAGE}'"
   kustomize_set_image "quay.io/openshift/origin-csi-driver-shared-resource" "${DRIVER_IMAGE}"
 fi
 
 # adding to disable refresh-resources using kustomize-v3 approach (embedded on `oc`)
-if [ ! -z "${NO_REFRESH_RESOURCES}" ] ; then
+if [ -n "${NO_REFRESH_RESOURCES}" ] ; then
   echo "# Patching DaemonSet container to use '--refreshresources=false' flag"
   kustomize_add_arg "--refreshresources=false"
 fi
