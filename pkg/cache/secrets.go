@@ -44,14 +44,15 @@ var (
 	// a given secret; when possible we range over this list vs. secrets
 	secretsWithShare = sync.Map{}
 	// sharesWaitingOnSecrets conversely is for when a share has been created that references a secret, but that
-	// secret has not been recognized by the controller; quite possibly timing events on when we learn of shares
+	// secret has not been recognized by the controller; quite possibly timing events on when we learn of sharedSecrets
 	// and secret if they happen to be created at roughly the same time come into play; also, if a pod with a share
 	// pointing to a secret has been provisioned, but the the csi driver daemonset has been restarted, such timing
-	// of events where we learn of shares before their secrets can also occur, as we attempt to rebuild the CSI driver's
+	// of events where we learn of sharedSecrets before their secrets can also occur, as we attempt to rebuild the CSI driver's
 	// state
 	sharesWaitingOnSecrets = sync.Map{}
 )
 
+// GetSecret retrieves a secret from the list of secrets referenced by SharedSecrets
 func GetSecret(key interface{}) *corev1.Secret {
 	obj, loaded := secretsWithShare.Load(key)
 	if loaded {
@@ -62,7 +63,9 @@ func GetSecret(key interface{}) *corev1.Secret {
 }
 
 // SetSecret based on the shared-data-key, which contains the resource's namespace and name, this
-// method can fetch and store it on cache.
+// method can fetch and store it on cache.  This method is called when the controller is not watching
+// secrets, and the CSI driver must retrieve the secret when processing a NodePublishVolume call
+// from the kubelet.
 func SetSecret(kubeClient kubernetes.Interface, sharedDataKey string) error {
 	ns, name, err := SplitKey(sharedDataKey)
 	if err != nil {
@@ -78,21 +81,23 @@ func SetSecret(kubeClient kubernetes.Interface, sharedDataKey string) error {
 	return nil
 }
 
+// UpsertSecret adds or updates as needed the secret to our various maps for correlating with SharedSecrets and
+// calls registered upsert callbacks
 func UpsertSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
-	klog.V(4).Infof("UpsertSecret key %s", key)
+	klog.V(6).Infof("UpsertSecret key %s", key)
 	secrets.Store(key, secret)
 	// in case share arrived before secret
 	processedSharesWithoutSecrets := []string{}
 	sharesWaitingOnSecrets.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
-		share := value.(*sharev1alpha1.SharedResource)
-		br := share.Spec.Resource
+		share := value.(*sharev1alpha1.SharedSecret)
+		br := share.Spec.Secret
 		secretKey := BuildKey(br)
 		secretsWithShare.Store(secretKey, secret)
-		//NOTE: share update ranger will store share in shares sync.Map
+		//NOTE: share update ranger will store share in sharedSecrets sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.
-		shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+		shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 		processedSharesWithoutSecrets = append(processedSharesWithoutSecrets, shareKey)
 		return true
 	})
@@ -104,6 +109,7 @@ func UpsertSecret(secret *corev1.Secret) {
 	secretUpsertCallbacks.Range(buildRanger(buildCallbackMap(key, secret)))
 }
 
+// DelSecret deletes this secret from the various secret related maps
 func DelSecret(secret *corev1.Secret) {
 	key := GetKey(secret)
 	klog.V(4).Infof("DelSecret key %s", key)
@@ -117,7 +123,7 @@ func DelSecret(secret *corev1.Secret) {
 // storage
 func RegisterSecretUpsertCallback(volID string, f func(key, value interface{}) bool) {
 	secretUpsertCallbacks.Store(volID, f)
-	// cycle through the secrets with shares, where if the share associated with the volID CSI volume mount references
+	// cycle through the secrets with sharedSecrets, where if the share associated with the volID CSI volume mount references
 	// one of the secrets provided by the Range, the storage of the corresponding data on the pod will be completed using
 	// the supplied function
 	secretsWithShare.Range(f)

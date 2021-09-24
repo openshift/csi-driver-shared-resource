@@ -60,7 +60,8 @@ deploy-no-refreshresources: deploy
 
 crd:
 	# temporary creation of CRD until it lands in openshift/api, openshift/openshift-apiserver, etc.
-	oc apply -f ./deploy/0000_10_sharedresource.crd.yaml
+	oc apply -f ./deploy/0000_10_sharedsecret.crd.yaml
+	oc apply -f ./deploy/0000_10_sharedconfigmap.crd.yaml
 
 test-e2e-no-deploy: crd
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh

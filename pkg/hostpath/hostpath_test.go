@@ -40,6 +40,8 @@ import (
 const (
 	secretkey1      = "secretkey1"
 	secretvalue1    = "secretvalue1"
+	secretkey2      = "secretkey2"
+	secretvalue2    = "secretvalue2"
 	configmapkey1   = "configmapkey1"
 	configmapvalue1 = "configmapvalue1"
 )
@@ -75,7 +77,7 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
 	volCtx := seedVolumeContext()
-	_, err = hp.createHostpathVolume(t.Name(), "", false, volCtx, &sharev1alpha1.SharedResource{}, 0, mountAccess+1)
+	_, err = hp.createHostpathVolume(t.Name(), "", false, volCtx, &sharev1alpha1.SharedConfigMap{}, nil, 0, mountAccess+1)
 	if err == nil {
 		t.Fatalf("err nil unexpectedly")
 	}
@@ -201,22 +203,22 @@ func TestChangeKeys(t *testing.T) {
 		}
 
 		delete(secret.Data, secretkey1)
-		secretkey2 := "secretkey2"
-		secretvalue2 := "secretvalue2"
-		secret.Data[secretkey2] = []byte(secretvalue2)
+		secretkey3 := "secretkey3"
+		secretvalue3 := "secretvalue3"
+		secret.Data[secretkey3] = []byte(secretvalue3)
 		cache.UpsertSecret(secret)
 		foundSecret, _ = findSharedItems(t, searchPath)
 		if foundSecret {
 			t.Fatalf("found old key secretkey1")
 		}
 		filepath.Walk(searchPath, func(path string, info os.FileInfo, err error) error {
-			if err == nil && strings.Contains(info.Name(), secretkey2) {
+			if err == nil && strings.Contains(info.Name(), secretkey3) {
 				foundSecret = true
 			}
 			return nil
 		})
 		if !foundSecret {
-			t.Fatalf("did not find key secretkey2")
+			t.Fatalf("did not find key secretkey3")
 		}
 		// delete hpv for next run
 		hp.deleteHostpathVolume(t.Name())
@@ -282,26 +284,24 @@ func TestDeleteShare(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.SharedResource{
+		share := &sharev1alpha1.SharedSecret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "TestDeleteShare",
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeSecret,
-					Secret: &sharev1alpha1.ResourceReferenceSecret{
-						Name:      "secret1",
-						Namespace: "namespace",
-					},
+			Spec: sharev1alpha1.SharedSecretSpec{
+				Secret: sharev1alpha1.ResourceReference{
+					Name:      "secret1",
+					Namespace: "namespace",
 				},
+
 				Description: "",
 			},
 			Status: sharev1alpha1.SharedResourceStatus{},
 		}
-		shareLister := &fakeShareLister{
-			share: share,
+		shareLister := &fakeSharedSecretLister{
+			sShare: share,
 		}
-		client.SetSharesLister(shareLister)
+		client.SetSharedSecretsLister(shareLister)
 
 		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share)
 		foundSecret, _ := findSharedItems(t, searchPath)
@@ -309,7 +309,7 @@ func TestDeleteShare(t *testing.T) {
 			t.Fatalf("secret not found")
 		}
 
-		cache.DelShare(share)
+		cache.DelSharedSecret(share)
 		foundSecret, _ = findSharedItems(t, searchPath)
 
 		if foundSecret {
@@ -342,27 +342,24 @@ func TestDeleteReAddShare(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.SharedResource{
+		share := &sharev1alpha1.SharedSecret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "TestDeleteReAddShare",
 				ResourceVersion: "1",
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeSecret,
-					Secret: &sharev1alpha1.ResourceReferenceSecret{
-						Name:      "secret1",
-						Namespace: "namespace",
-					},
+			Spec: sharev1alpha1.SharedSecretSpec{
+				Secret: sharev1alpha1.ResourceReference{
+					Name:      "secret1",
+					Namespace: "namespace",
 				},
 				Description: "",
 			},
 			Status: sharev1alpha1.SharedResourceStatus{},
 		}
-		shareLister := &fakeShareLister{
-			share: share,
+		shareLister := &fakeSharedSecretLister{
+			sShare: share,
 		}
-		client.SetSharesLister(shareLister)
+		client.SetSharedSecretsLister(shareLister)
 
 		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share)
 		foundSecret, _ := findSharedItems(t, searchPath)
@@ -370,7 +367,7 @@ func TestDeleteReAddShare(t *testing.T) {
 			t.Fatalf("secret not found")
 		}
 
-		cache.DelShare(share)
+		cache.DelSharedSecret(share)
 		foundSecret, _ = findSharedItems(t, searchPath)
 
 		if foundSecret {
@@ -378,7 +375,7 @@ func TestDeleteReAddShare(t *testing.T) {
 		}
 
 		share.ResourceVersion = "2"
-		cache.AddShare(share)
+		cache.AddSharedSecret(share)
 		foundSecret, _ = findSharedItems(t, searchPath)
 		if !foundSecret {
 			t.Fatalf("secret not found after readd")
@@ -409,28 +406,25 @@ func TestUpdateShare(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.SharedResource{
+		share := &sharev1alpha1.SharedSecret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:            "TestUpdateShare",
 				ResourceVersion: "1",
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeSecret,
-					Secret: &sharev1alpha1.ResourceReferenceSecret{
-						Name:      "secret1",
-						Namespace: "namespace",
-					},
+			Spec: sharev1alpha1.SharedSecretSpec{
+				Secret: sharev1alpha1.ResourceReference{
+					Name:      "secret1",
+					Namespace: "namespace",
 				},
 				Description: "",
 			},
 			Status: sharev1alpha1.SharedResourceStatus{},
 		}
-		shareLister := &fakeShareLister{
-			share: share,
+		shareLister := &fakeSharedSecretLister{
+			sShare: share,
 		}
-		client.SetSharesLister(shareLister)
-		cache.AddShare(share)
+		client.SetSharedSecretsLister(shareLister)
+		cache.AddSharedSecret(share)
 
 		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share)
 		foundSecret, _ := findSharedItems(t, searchPath)
@@ -438,30 +432,25 @@ func TestUpdateShare(t *testing.T) {
 			t.Fatalf("secret not found")
 		}
 
-		cm := &corev1.ConfigMap{
+		// change share to a different secret (no longer support switch between secret and crd with now having different CRDs for each)
+		secret2 := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "configmap1",
+				Name:      "secret2",
 				Namespace: "namespace",
 			},
-			Data: map[string]string{configmapkey1: configmapvalue1},
+			Data: map[string][]byte{secretkey2: []byte(secretvalue2)},
 		}
-		cache.UpsertConfigMap(cm)
-
-		share.Spec.Resource.Type = sharev1alpha1.ResourceReferenceTypeConfigMap
-		share.Spec.Resource.ConfigMap = &sharev1alpha1.ResourceReferenceConfigMap{
-			Name:      "configmap1",
-			Namespace: "namespace",
-		}
-
+		cache.UpsertSecret(secret2)
+		share.Spec.Secret.Name = "secret2"
 		share.ResourceVersion = "2"
-		cache.UpdateShare(share)
-		foundSecret, foundConfigMap := findSharedItems(t, searchPath)
-		if foundSecret {
-			t.Fatalf("secret should have been removed")
+		cache.UpdateSharedSecret(share)
+
+		foundSecret, _ = findSharedItems(t, searchPath)
+
+		if !foundSecret {
+			t.Fatalf("secret still should have been found")
 		}
-		if !foundConfigMap {
-			t.Fatalf("configmap should have been found")
-		}
+
 		// clear out hpv for next run
 		hp.deleteHostpathVolume(t.Name())
 	}
@@ -488,27 +477,24 @@ func TestPermChanges(t *testing.T) {
 		sarClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
 		client.SetClient(sarClient)
 
-		share := &sharev1alpha1.SharedResource{
+		share := &sharev1alpha1.SharedSecret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "TestPermChanges",
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeSecret,
-					Secret: &sharev1alpha1.ResourceReferenceSecret{
-						Name:      "secret1",
-						Namespace: "namespace",
-					},
+			Spec: sharev1alpha1.SharedSecretSpec{
+				Secret: sharev1alpha1.ResourceReference{
+					Name:      "secret1",
+					Namespace: "namespace",
 				},
 				Description: "",
 			},
 			Status: sharev1alpha1.SharedResourceStatus{},
 		}
-		shareLister := &fakeShareLister{
-			share: share,
+		shareLister := &fakeSharedSecretLister{
+			sShare: share,
 		}
-		client.SetSharesLister(shareLister)
-		cache.AddShare(share)
+		client.SetSharedSecretsLister(shareLister)
+		cache.AddSharedSecret(share)
 
 		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share)
 		foundSecret, _ := findSharedItems(t, searchPath)
@@ -566,22 +552,20 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		share      *sharev1alpha1.SharedResource
+		sShare     *sharev1alpha1.SharedSecret
+		cmShare    *sharev1alpha1.SharedConfigMap
 		kubeClient kubernetes.Interface
 	}{{
 		name: "Secret",
-		share: &sharev1alpha1.SharedResource{
+		sShare: &sharev1alpha1.SharedSecret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-secret", t.Name()),
 				Namespace: metav1.NamespaceDefault,
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeSecret,
-					Secret: &sharev1alpha1.ResourceReferenceSecret{
-						Name:      secret.GetName(),
-						Namespace: secret.GetNamespace(),
-					},
+			Spec: sharev1alpha1.SharedSecretSpec{
+				Secret: sharev1alpha1.ResourceReference{
+					Name:      secret.GetName(),
+					Namespace: secret.GetNamespace(),
 				},
 				Description: "",
 			},
@@ -590,18 +574,15 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 		kubeClient: fakekubeclientset.NewSimpleClientset(&secret),
 	}, {
 		name: "ConfigMap",
-		share: &sharev1alpha1.SharedResource{
+		cmShare: &sharev1alpha1.SharedConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      fmt.Sprintf("%s-secret", t.Name()),
 				Namespace: metav1.NamespaceDefault,
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
-					ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
-						Name:      configMap.GetName(),
-						Namespace: configMap.GetNamespace(),
-					},
+			Spec: sharev1alpha1.SharedConfigMapSpec{
+				ConfigMap: sharev1alpha1.ResourceReference{
+					Name:      configMap.GetName(),
+					Namespace: configMap.GetNamespace(),
 				},
 				Description: "",
 			},
@@ -612,7 +593,12 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cache.AddShare(test.share)
+			if test.cmShare != nil {
+				cache.AddSharedConfigMap(test.cmShare)
+			}
+			if test.sShare != nil {
+				cache.AddSharedSecret(test.sShare)
+			}
 
 			// making sure the tests are running on temporary directories, those will be deleted at
 			// the end of each test pass
@@ -629,7 +615,7 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 			// creating hostPathVolume only for this test
 			volCtx := seedVolumeContext()
-			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, volCtx, test.share, 0, mountAccess)
+			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, volCtx, test.cmShare, test.sShare, 0, mountAccess)
 			if err != nil {
 				t.Fatalf("unexpected error on createHostpathVolume: '%s'", err.Error())
 			}
@@ -653,32 +639,30 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 	}
 }
 
-func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.SharedResource) (*corev1.Secret, string) {
+func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.SharedSecret) (*corev1.Secret, string) {
 	volCtx := seedVolumeContext()
 	if share == nil {
-		share = &sharev1alpha1.SharedResource{
+		share = &sharev1alpha1.SharedSecret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: t.Name(),
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeSecret,
-					Secret: &sharev1alpha1.ResourceReferenceSecret{
-						Name:      "secret1",
-						Namespace: "namespace",
-					},
+			Spec: sharev1alpha1.SharedSecretSpec{
+				Secret: sharev1alpha1.ResourceReference{
+					Name:      "secret1",
+					Namespace: "namespace",
 				},
+
 				Description: "",
 			},
 			Status: sharev1alpha1.SharedResourceStatus{},
 		}
-		shareLister := &fakeShareLister{
-			share: share,
+		shareLister := &fakeSharedSecretLister{
+			sShare: share,
 		}
-		client.SetSharesLister(shareLister)
-		cache.AddShare(share)
+		client.SetSharedSecretsLister(shareLister)
+		cache.AddSharedSecret(share)
 	}
-	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, volCtx, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, volCtx, nil, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -690,7 +674,7 @@ func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly b
 		Data: map[string][]byte{secretkey1: []byte(secretvalue1)},
 	}
 
-	cache.UpdateShare(share)
+	cache.UpdateSharedSecret(share)
 
 	cache.UpsertSecret(secret)
 	err = hp.mapVolumeToPod(hpv)
@@ -703,32 +687,29 @@ func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly b
 	return secret, targetPath
 }
 
-func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.SharedResource) (*corev1.ConfigMap, string) {
+func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, readOnly bool, share *sharev1alpha1.SharedConfigMap) (*corev1.ConfigMap, string) {
 	volCtx := seedVolumeContext()
 	if share == nil {
-		share = &sharev1alpha1.SharedResource{
+		share = &sharev1alpha1.SharedConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: t.Name(),
 			},
-			Spec: sharev1alpha1.SharedResourceSpec{
-				Resource: sharev1alpha1.ResourceReference{
-					Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
-					ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
-						Name:      "configmap1",
-						Namespace: "namespace",
-					},
+			Spec: sharev1alpha1.SharedConfigMapSpec{
+				ConfigMap: sharev1alpha1.ResourceReference{
+					Name:      "configmap1",
+					Namespace: "namespace",
 				},
 				Description: "",
 			},
 			Status: sharev1alpha1.SharedResourceStatus{},
 		}
-		shareLister := &fakeShareLister{
-			share: share,
+		shareLister := &fakeSharedConfigMapLister{
+			cmShare: share,
 		}
-		client.SetSharesLister(shareLister)
-		cache.AddShare(share)
+		client.SetSharedConfigMapsLister(shareLister)
+		cache.AddSharedConfigMap(share)
 	}
-	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, volCtx, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, volCtx, share, nil, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -740,7 +721,7 @@ func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, readOnl
 		Data: map[string]string{configmapkey1: configmapvalue1},
 	}
 
-	cache.UpdateShare(share)
+	cache.UpdateSharedConfigMap(share)
 
 	cache.UpsertConfigMap(cm)
 	err = hp.mapVolumeToPod(hpv)
@@ -762,6 +743,9 @@ func findSharedItems(t *testing.T, dir string) (bool, bool) {
 		}
 		t.Logf("found file %s dir flag %v", info.Name(), info.IsDir())
 		if err == nil && strings.Contains(info.Name(), secretkey1) {
+			foundSecret = true
+		}
+		if err == nil && strings.Contains(info.Name(), secretkey2) {
 			foundSecret = true
 		}
 		if err == nil && strings.Contains(info.Name(), configmapkey1) {

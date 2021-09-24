@@ -18,8 +18,8 @@ func createShareRole(t *TestArgs) {
 		Rules: []rbacv1.PolicyRule{
 			{
 				Verbs:         []string{"use"},
-				APIGroups:     []string{"storage.openshift.io"},
-				Resources:     []string{"sharedresources"},
+				APIGroups:     []string{"sharedresource.openshift.io"},
+				Resources:     []string{"sharedconfigmaps", "sharedsecrets"},
 				ResourceNames: []string{t.Name},
 			},
 		},

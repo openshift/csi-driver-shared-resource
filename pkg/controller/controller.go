@@ -31,16 +31,19 @@ type Controller struct {
 
 	kubeClient *kubernetes.Clientset
 
-	cfgMapWorkqueue workqueue.RateLimitingInterface
-	secretWorkqueue workqueue.RateLimitingInterface
-	shareWorkqueue  workqueue.RateLimitingInterface
+	cfgMapWorkqueue          workqueue.RateLimitingInterface
+	secretWorkqueue          workqueue.RateLimitingInterface
+	sharedConfigMapWorkqueue workqueue.RateLimitingInterface
+	sharedSecretWorkqueue    workqueue.RateLimitingInterface
 
-	cfgMapInformer cache.SharedIndexInformer
-	secInformer    cache.SharedIndexInformer
-	shareInformer  cache.SharedIndexInformer
+	cfgMapInformer          cache.SharedIndexInformer
+	secInformer             cache.SharedIndexInformer
+	sharedConfigMapInformer cache.SharedIndexInformer
+	sharedSecretInformer    cache.SharedIndexInformer
 
-	shareInformerFactory shareinformer.SharedInformerFactory
-	informerFactory      informers.SharedInformerFactory
+	sharedConfigMapInformerFactory shareinformer.SharedInformerFactory
+	sharedSecretInformerFactory    shareinformer.SharedInformerFactory
+	informerFactory                informers.SharedInformerFactory
 
 	listers *client.Listers
 }
@@ -92,12 +95,16 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 	c := &Controller{
 		kubeClient:     kubeClient,
 		kubeRestConfig: kubeRestConfig,
-		shareWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
-			"shared-resource-share-changes"),
-		informerFactory:      informerFactory,
-		shareInformerFactory: shareInformerFactory,
-		shareInformer:        shareInformerFactory.Storage().V1alpha1().SharedResources().Informer(),
-		listers:              client.GetListers(),
+		sharedConfigMapWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
+			"shared-configmap-changes"),
+		sharedSecretWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
+			"shared-secret-changes"),
+		informerFactory:                informerFactory,
+		sharedConfigMapInformerFactory: shareInformerFactory,
+		sharedSecretInformerFactory:    shareInformerFactory,
+		sharedConfigMapInformer:        shareInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Informer(),
+		sharedSecretInformer:           shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Informer(),
+		listers:                        client.GetListers(),
 	}
 
 	if refreshResources {
@@ -110,14 +117,14 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 
 		client.SetConfigMapsLister(c.informerFactory.Core().V1().ConfigMaps().Lister())
 		client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
-	}
-
-	client.SetSharesLister(c.shareInformerFactory.Storage().V1alpha1().SharedResources().Lister())
-	if refreshResources {
 		c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
 		c.secInformer.AddEventHandler(c.secretEventHandler())
 	}
-	c.shareInformer.AddEventHandler(c.shareEventHandler())
+
+	client.SetSharedConfigMapsLister(c.sharedConfigMapInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Lister())
+	client.SetSharedSecretsLister(c.sharedSecretInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Lister())
+	c.sharedConfigMapInformer.AddEventHandler(c.sharedConfigMapEventHandler())
+	c.sharedSecretInformer.AddEventHandler(c.sharedSecretEventHandler())
 
 	return c, nil
 }
@@ -127,10 +134,12 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 		defer c.cfgMapWorkqueue.ShutDown()
 		defer c.secretWorkqueue.ShutDown()
 	}
-	defer c.shareWorkqueue.ShutDown()
+	defer c.sharedConfigMapWorkqueue.ShutDown()
+	defer c.sharedSecretWorkqueue.ShutDown()
 
 	c.informerFactory.Start(stopCh)
-	c.shareInformerFactory.Start(stopCh)
+	c.sharedConfigMapInformerFactory.Start(stopCh)
+	c.sharedSecretInformerFactory.Start(stopCh)
 
 	if c.cfgMapInformer != nil && !cache.WaitForCacheSync(stopCh, c.cfgMapInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for ConfigMap informer cache to sync")
@@ -138,8 +147,11 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	if c.secInformer != nil && !cache.WaitForCacheSync(stopCh, c.secInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for Secrets informer cache to sync")
 	}
-	if !cache.WaitForCacheSync(stopCh, c.shareInformer.HasSynced) {
-		return fmt.Errorf("failed to wait for caches to sync")
+	if !cache.WaitForCacheSync(stopCh, c.sharedConfigMapInformer.HasSynced) {
+		return fmt.Errorf("failed to wait for sharedconfigmap caches to sync")
+	}
+	if !cache.WaitForCacheSync(stopCh, c.sharedSecretInformer.HasSynced) {
+		return fmt.Errorf("failed to wait for sharedsecret caches to sync")
 	}
 
 	if c.cfgMapWorkqueue != nil {
@@ -148,7 +160,8 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	if c.secretWorkqueue != nil {
 		go wait.Until(c.secretEventProcessor, time.Second, stopCh)
 	}
-	go wait.Until(c.shareEventProcessor, time.Second, stopCh)
+	go wait.Until(c.sharedConfigMapEventProcessor, time.Second, stopCh)
+	go wait.Until(c.sharedSecretEventProcessor, time.Second, stopCh)
 
 	<-stopCh
 
@@ -350,28 +363,36 @@ func (c *Controller) syncSecret(event client.Event) error {
 	return nil
 }
 
-func (c *Controller) addShareToQueue(s *sharev1alpha1.SharedResource, verb client.ObjectAction) {
+func (c *Controller) addSharedConfigMapToQueue(s *sharev1alpha1.SharedConfigMap, verb client.ObjectAction) {
 	event := client.Event{
 		Object: s,
 		Verb:   verb,
 	}
-	c.shareWorkqueue.Add(event)
+	c.sharedConfigMapWorkqueue.Add(event)
 }
 
-func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
+func (c *Controller) addSharedSecretToQueue(s *sharev1alpha1.SharedSecret, verb client.ObjectAction) {
+	event := client.Event{
+		Object: s,
+		Verb:   verb,
+	}
+	c.sharedSecretWorkqueue.Add(event)
+}
+
+func (c *Controller) sharedConfigMapEventHandler() cache.ResourceEventHandlerFuncs {
 	return cache.ResourceEventHandlerFuncs{
 		AddFunc: func(o interface{}) {
 			switch v := o.(type) {
-			case *sharev1alpha1.SharedResource:
-				c.addShareToQueue(v, client.AddObjectAction)
+			case *sharev1alpha1.SharedConfigMap:
+				c.addSharedConfigMapToQueue(v, client.AddObjectAction)
 			default:
 				//log unrecognized type
 			}
 		},
 		UpdateFunc: func(o, n interface{}) {
 			switch v := n.(type) {
-			case *sharev1alpha1.SharedResource:
-				c.addShareToQueue(v, client.UpdateObjectAction)
+			case *sharev1alpha1.SharedConfigMap:
+				c.addSharedConfigMapToQueue(v, client.UpdateObjectAction)
 			default:
 				//log unrecognized type
 			}
@@ -380,14 +401,14 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 			switch v := o.(type) {
 			case cache.DeletedFinalStateUnknown:
 				switch vv := v.Obj.(type) {
-				case *sharev1alpha1.SharedResource:
+				case *sharev1alpha1.SharedConfigMap:
 					// log recovered deleted obj from tombstone via vv.GetName()
-					c.addShareToQueue(vv, client.DeleteObjectAction)
+					c.addSharedConfigMapToQueue(vv, client.DeleteObjectAction)
 				default:
 					// log  error decoding obj tombstone
 				}
-			case *sharev1alpha1.SharedResource:
-				c.addShareToQueue(v, client.DeleteObjectAction)
+			case *sharev1alpha1.SharedConfigMap:
+				c.addSharedConfigMapToQueue(v, client.DeleteObjectAction)
 			default:
 				//log unrecognized type
 			}
@@ -395,45 +416,128 @@ func (c *Controller) shareEventHandler() cache.ResourceEventHandlerFuncs {
 	}
 }
 
-func (c *Controller) shareEventProcessor() {
+func (c *Controller) sharedSecretEventHandler() cache.ResourceEventHandlerFuncs {
+	return cache.ResourceEventHandlerFuncs{
+		AddFunc: func(o interface{}) {
+			switch v := o.(type) {
+			case *sharev1alpha1.SharedSecret:
+				c.addSharedSecretToQueue(v, client.AddObjectAction)
+			default:
+				//log unrecognized type
+			}
+		},
+		UpdateFunc: func(o, n interface{}) {
+			switch v := n.(type) {
+			case *sharev1alpha1.SharedSecret:
+				c.addSharedSecretToQueue(v, client.UpdateObjectAction)
+			default:
+				//log unrecognized type
+			}
+		},
+		DeleteFunc: func(o interface{}) {
+			switch v := o.(type) {
+			case cache.DeletedFinalStateUnknown:
+				switch vv := v.Obj.(type) {
+				case *sharev1alpha1.SharedSecret:
+					// log recovered deleted obj from tombstone via vv.GetName()
+					c.addSharedSecretToQueue(vv, client.DeleteObjectAction)
+				default:
+					// log  error decoding obj tombstone
+				}
+			case *sharev1alpha1.SharedSecret:
+				c.addSharedSecretToQueue(v, client.DeleteObjectAction)
+			default:
+				//log unrecognized type
+			}
+		},
+	}
+}
+
+func (c *Controller) sharedConfigMapEventProcessor() {
 	for {
-		obj, shutdown := c.shareWorkqueue.Get()
+		obj, shutdown := c.sharedConfigMapWorkqueue.Get()
 		if shutdown {
 			return
 		}
 
 		func() {
-			defer c.shareWorkqueue.Done(obj)
+			defer c.sharedConfigMapWorkqueue.Done(obj)
 
 			event, ok := obj.(client.Event)
 			if !ok {
-				c.shareWorkqueue.Forget(obj)
+				c.sharedConfigMapWorkqueue.Forget(obj)
 				return
 			}
 
-			if err := c.syncShare(event); err != nil {
-				c.shareWorkqueue.AddRateLimited(obj)
+			if err := c.syncSharedConfigMap(event); err != nil {
+				c.sharedConfigMapWorkqueue.AddRateLimited(obj)
 			} else {
-				c.shareWorkqueue.Forget(obj)
+				c.sharedConfigMapWorkqueue.Forget(obj)
 			}
 		}()
 	}
 }
 
-func (c *Controller) syncShare(event client.Event) error {
+func (c *Controller) sharedSecretEventProcessor() {
+	for {
+		obj, shutdown := c.sharedSecretWorkqueue.Get()
+		if shutdown {
+			return
+		}
+
+		func() {
+			defer c.sharedSecretWorkqueue.Done(obj)
+
+			event, ok := obj.(client.Event)
+			if !ok {
+				c.sharedSecretWorkqueue.Forget(obj)
+				return
+			}
+
+			if err := c.syncSharedSecret(event); err != nil {
+				c.sharedSecretWorkqueue.AddRateLimited(obj)
+			} else {
+				c.sharedSecretWorkqueue.Forget(obj)
+			}
+		}()
+	}
+}
+
+func (c *Controller) syncSharedConfigMap(event client.Event) error {
 	obj := event.Object.DeepCopyObject()
-	share, ok := obj.(*sharev1alpha1.SharedResource)
+	share, ok := obj.(*sharev1alpha1.SharedConfigMap)
 	if share == nil || !ok {
-		return fmt.Errorf("unexpected object vs. share: %v", event.Object.GetObjectKind().GroupVersionKind())
+		return fmt.Errorf("unexpected object vs. shared configmap: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
 	klog.V(4).Infof("verb %s share name %s", event.Verb, share.Name)
 	switch event.Verb {
 	case client.DeleteObjectAction:
-		objcache.DelShare(share)
+		objcache.DelSharedConfigMap(share)
 	case client.AddObjectAction:
-		objcache.AddShare(share)
+		objcache.AddSharedConfigMap(share)
 	case client.UpdateObjectAction:
-		objcache.UpdateShare(share)
+		objcache.UpdateSharedConfigMap(share)
+	default:
+		return fmt.Errorf("unexpected share event action: %s", event.Verb)
+	}
+
+	return nil
+}
+
+func (c *Controller) syncSharedSecret(event client.Event) error {
+	obj := event.Object.DeepCopyObject()
+	share, ok := obj.(*sharev1alpha1.SharedSecret)
+	if share == nil || !ok {
+		return fmt.Errorf("unexpected object vs. shared secret: %v", event.Object.GetObjectKind().GroupVersionKind())
+	}
+	klog.V(4).Infof("verb %s share name %s", event.Verb, share.Name)
+	switch event.Verb {
+	case client.DeleteObjectAction:
+		objcache.DelSharedSecret(share)
+	case client.AddObjectAction:
+		objcache.AddSharedSecret(share)
+	case client.UpdateObjectAction:
+		objcache.UpdateSharedSecret(share)
 	default:
 		return fmt.Errorf("unexpected share event action: %s", event.Verb)
 	}

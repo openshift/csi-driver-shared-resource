@@ -16,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubexec "k8s.io/kubectl/pkg/cmd/exec"
 
-	operatorv1 "github.com/openshift/api/operator/v1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
@@ -37,9 +36,11 @@ func CreateTestPod(t *TestArgs) {
 					Name: "my-csi-volume",
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
-							ReadOnly:         &t.ReadOnly,
-							Driver:           string(operatorv1.SharedResourcesCSIDriver),
-							VolumeAttributes: map[string]string{"share": t.Name},
+							ReadOnly: &t.ReadOnly,
+							//Driver:           string(operatorv1.SharedResourcesCSIDriver),
+							//TODO until openshift/api gets updated
+							Driver:           "csi.sharedresource.openshift.io",
+							VolumeAttributes: map[string]string{"sharedConfigMap": t.Name},
 						},
 					},
 				},
@@ -65,9 +66,11 @@ func CreateTestPod(t *TestArgs) {
 			Name: "my-csi-volume" + secondShareSuffix,
 			VolumeSource: corev1.VolumeSource{
 				CSI: &corev1.CSIVolumeSource{
-					ReadOnly:         &t.ReadOnly,
-					Driver:           string(operatorv1.SharedResourcesCSIDriver),
-					VolumeAttributes: map[string]string{"share": t.SecondName},
+					ReadOnly: &t.ReadOnly,
+					//Driver:           string(operatorv1.SharedResourcesCSIDriver),
+					//TODO until openshift/api gets updated
+					Driver:           "csi.sharedresource.openshift.io",
+					VolumeAttributes: map[string]string{"sharedSecret": t.SecondName},
 				},
 			},
 		})

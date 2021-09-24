@@ -26,6 +26,6 @@ func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
 
 	t.Logf("%s: now changing share", time.Now().String())
 	framework.ChangeShare(testArgs)
-	testArgs.SearchString = ".dockerconfigjson"
+	testArgs.SearchString = "ca.crt"
 	framework.ExecPod(testArgs)
 }

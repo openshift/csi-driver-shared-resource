@@ -66,7 +66,7 @@ spec:
           command:
             - csi-driver-shared-resource
           args:
-            - "--drivername=csi.shared-resources.openshift.io"
+            - "--drivername=csi.sharedresource.openshift.io"
             - "--v=4"
             - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"

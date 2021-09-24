@@ -43,14 +43,15 @@ var (
 	// a given configmap; when possible we range over this list vs. configsmaps
 	configmapsWithShares = sync.Map{}
 	// sharesWaitingOnConfigmaps conversely is for when a share has been created that references a configmap, but that
-	// configmap has not been recognized by the controller; quite possibly timing events on when we learn of shares
+	// configmap has not been recognized by the controller; quite possibly timing events on when we learn of sharedConfigMaps
 	// and configmaps if they happen to be created at roughly the same time come into play; also, if a pod with a share
 	// pointing to a configmap has been provisioned, but the the csi driver daemonset has been restarted, such timing
-	// of events where we learn of shares before their configmaps can also occur, as we attempt to rebuild the CSI driver's
+	// of events where we learn of sharesConfigMaps before their configmaps can also occur, as we attempt to rebuild the CSI driver's
 	// state
 	sharesWaitingOnConfigmaps = sync.Map{}
 )
 
+// GetConfigMap retrieves a config map from the list of config maps referenced by SharedConfigMaps
 func GetConfigMap(key interface{}) *corev1.ConfigMap {
 	obj, loaded := configmapsWithShares.Load(key)
 	if loaded {
@@ -61,7 +62,9 @@ func GetConfigMap(key interface{}) *corev1.ConfigMap {
 }
 
 // SetConfigMap based on the shared-data-key, which contains the resource's namespace and name, this
-// method can fetch and store it on cache.
+// method can fetch and store it on cache.  This method is called when the controller is not watching
+// config maps, and the CSI driver must retrieve the config map when processing a NodePublishVolume call
+// from the kubelet.
 func SetConfigMap(kubeClient kubernetes.Interface, sharedDataKey string) error {
 	ns, name, err := SplitKey(sharedDataKey)
 	if err != nil {
@@ -77,21 +80,23 @@ func SetConfigMap(kubeClient kubernetes.Interface, sharedDataKey string) error {
 	return nil
 }
 
+// UpsertConfigMap adds or updates as needed the config map to our various maps for correlating with SharedConfigMaps and
+// calls registered upsert callbacks
 func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	key := GetKey(configmap)
-	klog.V(0).Infof("UpsertConfigMap key %s", key)
+	klog.V(6).Infof("UpsertConfigMap key %s", key)
 	configmaps.Store(key, configmap)
 	// in case share arrived before configmap
 	processSharesWithoutConfigmaps := []string{}
 	sharesWaitingOnConfigmaps.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
-		share := value.(*sharev1alpha1.SharedResource)
-		br := share.Spec.Resource
+		share := value.(*sharev1alpha1.SharedConfigMap)
+		br := share.Spec.ConfigMap
 		configmapKey := BuildKey(br)
 		configmapsWithShares.Store(configmapKey, configmap)
-		//NOTE: share update ranger will store share in shares sync.Map
+		//NOTE: share update ranger will store share in sharedConfigMaps sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.
-		shareUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+		shareConfigMapsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 		processSharesWithoutConfigmaps = append(processSharesWithoutConfigmaps, shareKey)
 		return true
 	})
@@ -103,6 +108,7 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	configmapUpsertCallbacks.Range(buildRanger(buildCallbackMap(key, configmap)))
 }
 
+// DelConfigMap deletes this config map from the various configmap related maps
 func DelConfigMap(configmap *corev1.ConfigMap) {
 	key := GetKey(configmap)
 	klog.V(4).Infof("DelConfigMap key %s", key)
@@ -116,7 +122,7 @@ func DelConfigMap(configmap *corev1.ConfigMap) {
 // storage
 func RegisterConfigMapUpsertCallback(volID string, f func(key, value interface{}) bool) {
 	configmapUpsertCallbacks.Store(volID, f)
-	// cycle through the configmaps with shares, where if the share associated with the volID CSI volume mount references
+	// cycle through the configmaps with sharedConfigMaps, where if the share associated with the volID CSI volume mount references
 	// one of the configmaps provided by the Range, the storage of the corresponding data on the pod will be completed using
 	// the supplied function
 	configmapsWithShares.Range(f)
