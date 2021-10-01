@@ -3,9 +3,11 @@
 package e2e
 
 import (
-	"github.com/openshift/csi-driver-shared-resource/test/framework"
 	"testing"
 	"time"
+
+	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	"github.com/openshift/csi-driver-shared-resource/test/framework"
 )
 
 func TestNoRBAC(t *testing.T) {
@@ -38,6 +40,7 @@ func coreTestBasicThenNoShareThenShare(testArgs *framework.TestArgs) {
 
 	testArgs.T.Logf("%s: deleting share for %s", time.Now().String(), testArgs.Name)
 
+	testArgs.ShareToDeleteType = sharev1alpha1.ResourceReferenceTypeConfigMap
 	framework.DeleteShare(testArgs)
 	testArgs.TestDuration = 30 * time.Second
 	testArgs.SearchStringMissing = true
@@ -124,6 +127,7 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveSubPath(t *testing.T) {
 	doubleShareSetupAndVerification(testArgs)
 
 	testArgs.ShareToDelete = testArgs.SecondName
+	testArgs.ShareToDeleteType = sharev1alpha1.ResourceReferenceTypeSecret
 	framework.DeleteShare(testArgs)
 	testArgs.TestDuration = 30 * time.Second
 	testArgs.SearchString = "invoker"
@@ -144,6 +148,7 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveTopPath(t *testing.T) {
 	testArgs.SecondShareSubDir = true
 	doubleShareSetupAndVerification(testArgs)
 
+	testArgs.ShareToDeleteType = sharev1alpha1.ResourceReferenceTypeConfigMap
 	framework.DeleteShare(testArgs)
 	testArgs.TestDuration = 30 * time.Second
 	testArgs.SearchString = ".dockerconfigjson"

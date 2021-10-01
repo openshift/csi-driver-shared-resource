@@ -8,4 +8,6 @@ SPDX-License-Identifier: Apache-2.0
 
 package v1alpha1
 
-type SharedResourceExpansion interface{}
+type SharedConfigMapExpansion interface{}
+
+type SharedSecretExpansion interface{}

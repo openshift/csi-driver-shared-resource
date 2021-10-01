@@ -22,22 +22,40 @@ import (
 	"k8s.io/utils/mount"
 )
 
-type fakeShareLister struct {
-	share *sharev1alpha1.SharedResource
+type fakeSharedSecretLister struct {
+	sShare *sharev1alpha1.SharedSecret
 }
 
-func (f *fakeShareLister) List(selector labels.Selector) (ret []*sharev1alpha1.SharedResource, err error) {
-	if f.share == nil {
-		return []*sharev1alpha1.SharedResource{}, nil
+func (f *fakeSharedSecretLister) List(selector labels.Selector) (ret []*sharev1alpha1.SharedSecret, err error) {
+	if f.sShare == nil {
+		return []*sharev1alpha1.SharedSecret{}, nil
 	}
-	return []*sharev1alpha1.SharedResource{f.share}, nil
+	return []*sharev1alpha1.SharedSecret{f.sShare}, nil
 }
 
-func (f *fakeShareLister) Get(name string) (*sharev1alpha1.SharedResource, error) {
-	if f.share == nil {
+func (f *fakeSharedSecretLister) Get(name string) (*sharev1alpha1.SharedSecret, error) {
+	if f.sShare == nil {
 		return nil, kerrors.NewNotFound(schema.GroupResource{}, name)
 	}
-	return f.share, nil
+	return f.sShare, nil
+}
+
+type fakeSharedConfigMapLister struct {
+	cmShare *sharev1alpha1.SharedConfigMap
+}
+
+func (f *fakeSharedConfigMapLister) List(selector labels.Selector) (ret []*sharev1alpha1.SharedConfigMap, err error) {
+	if f.cmShare == nil {
+		return []*sharev1alpha1.SharedConfigMap{}, nil
+	}
+	return []*sharev1alpha1.SharedConfigMap{f.cmShare}, nil
+}
+
+func (f *fakeSharedConfigMapLister) Get(name string) (*sharev1alpha1.SharedConfigMap, error) {
+	if f.cmShare == nil {
+		return nil, kerrors.NewNotFound(schema.GroupResource{}, name)
+	}
+	return f.cmShare, nil
 }
 
 func testNodeServer(testName string) (*nodeServer, string, string, error) {
@@ -75,28 +93,37 @@ func TestNodePublishVolume(t *testing.T) {
 	denyReactorFunc = func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: false}}, nil
 	}
-	validShare := &sharev1alpha1.SharedResource{
+	validSharedSecret := &sharev1alpha1.SharedSecret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "share1",
 		},
-		Spec: sharev1alpha1.SharedResourceSpec{
-			Resource: sharev1alpha1.ResourceReference{
-				Type: sharev1alpha1.ResourceReferenceTypeSecret,
-				Secret: &sharev1alpha1.ResourceReferenceSecret{
-					Name:      "cool-secret",
-					Namespace: "cool-secret-namespace",
-				},
+		Spec: sharev1alpha1.SharedSecretSpec{
+			Secret: sharev1alpha1.ResourceReference{
+				Name:      "cool-secret",
+				Namespace: "cool-secret-namespace",
 			},
 			Description: "",
 		},
 		Status: sharev1alpha1.SharedResourceStatus{},
+	}
+	validSharedConfigMap := &sharev1alpha1.SharedConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "share1",
+		},
+		Spec: sharev1alpha1.SharedConfigMapSpec{
+			ConfigMap: sharev1alpha1.ResourceReference{
+				Name:      "cool-configmap",
+				Namespace: "cool-configmap-namespace",
+			},
+		},
 	}
 
 	tests := []struct {
 		name              string
 		nodePublishVolReq csi.NodePublishVolumeRequest
 		expectedMsg       string
-		share             *sharev1alpha1.SharedResource
+		secretShare       *sharev1alpha1.SharedSecret
+		cmShare           *sharev1alpha1.SharedConfigMap
 		reactor           fakekubetesting.ReactionFunc
 	}{
 		{
@@ -173,7 +200,7 @@ func TestNodePublishVolume(t *testing.T) {
 			expectedMsg: "only support mount access type",
 		},
 		{
-			name: "missing share key",
+			name: "missing sharedSecret/sharedConfigMap key",
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
 				Readonly:   true,
@@ -191,10 +218,10 @@ func TestNodePublishVolume(t *testing.T) {
 					CSIPodSA:        "sa1",
 				},
 			},
-			expectedMsg: "the csi driver reference is missing the volumeAttribute 'share'",
+			expectedMsg: "the csi driver reference is missing the volumeAttribute \"sharedSecret\" and \"sharedConfigMap\"",
 		},
 		{
-			name: "missing share",
+			name: "both sharedSecret and sharedConfigMap",
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
 				Readonly:   true,
@@ -205,25 +232,26 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				},
 				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
+					SharedSecretShareKey:    "share1",
 				},
 			},
-			expectedMsg: "the csi driver volumeAttribute 'share' reference had an error",
+			expectedMsg: "a single volume cannot support both a SharedConfigMap reference \"share1\" and SharedSecret reference \"share1\"",
 		},
 		{
-			name: "bad backing resource kind",
-			share: &sharev1alpha1.SharedResource{
+			name: "bad sharedSecret backing resource namespace",
+			secretShare: &sharev1alpha1.SharedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.SharedResourceSpec{
-					Resource: sharev1alpha1.ResourceReference{
-						Type: "BadKind",
+				Spec: sharev1alpha1.SharedSecretSpec{
+					Secret: sharev1alpha1.ResourceReference{
+						Name: "secret1",
 					},
 					Description: "",
 				},
@@ -239,28 +267,25 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				},
 				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
+					CSIEphemeral:         "true",
+					CSIPodName:           "name1",
+					CSIPodNamespace:      "namespace1",
+					CSIPodUID:            "uid1",
+					CSIPodSA:             "sa1",
+					SharedSecretShareKey: "share1",
 				},
 			},
-			expectedMsg: "has an invalid backing resource kind",
+			expectedMsg: "the SharedSecret \"share1\" backing resource namespace needs to be set",
 		},
 		{
-			name: "bad backing resource namespace",
-			share: &sharev1alpha1.SharedResource{
+			name: "bad sharedConfigMap backing resource namespace",
+			cmShare: &sharev1alpha1.SharedConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.SharedResourceSpec{
-					Resource: sharev1alpha1.ResourceReference{
-						Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
-						ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
-							Name: "configmap1",
-						},
+				Spec: sharev1alpha1.SharedConfigMapSpec{
+					ConfigMap: sharev1alpha1.ResourceReference{
+						Name: "cm1",
 					},
 					Description: "",
 				},
@@ -276,28 +301,25 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				},
 				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
 				},
 			},
-			expectedMsg: "backing resource namespace needs to be set",
+			expectedMsg: "the SharedConfigMap \"share1\" backing resource namespace needs to be set",
 		},
 		{
-			name: "bad backing resource name",
-			share: &sharev1alpha1.SharedResource{
+			name: "bad sharedSecret backing resource name",
+			secretShare: &sharev1alpha1.SharedSecret{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "share1",
 				},
-				Spec: sharev1alpha1.SharedResourceSpec{
-					Resource: sharev1alpha1.ResourceReference{
-						Type: sharev1alpha1.ResourceReferenceTypeConfigMap,
-						ConfigMap: &sharev1alpha1.ResourceReferenceConfigMap{
-							Namespace: "namespace1",
-						},
+				Spec: sharev1alpha1.SharedSecretSpec{
+					Secret: sharev1alpha1.ResourceReference{
+						Namespace: "secret1",
 					},
 					Description: "",
 				},
@@ -313,19 +335,77 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				},
 				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
+					CSIEphemeral:         "true",
+					CSIPodName:           "name1",
+					CSIPodNamespace:      "namespace1",
+					CSIPodUID:            "uid1",
+					CSIPodSA:             "sa1",
+					SharedSecretShareKey: "share1",
 				},
 			},
-			expectedMsg: "backing resource name needs to be set",
+			expectedMsg: "the SharedSecret \"share1\" backing resource name needs to be set",
 		},
 		{
-			name:    "sar fails",
-			share:   validShare,
+			name: "bad sharedConfigMap backing resource name",
+			cmShare: &sharev1alpha1.SharedConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "share1",
+				},
+				Spec: sharev1alpha1.SharedConfigMapSpec{
+					ConfigMap: sharev1alpha1.ResourceReference{
+						Namespace: "cm1",
+					},
+					Description: "",
+				},
+				Status: sharev1alpha1.SharedResourceStatus{},
+			},
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
+				},
+			},
+			expectedMsg: "the SharedConfigMap \"share1\" backing resource name needs to be set",
+		},
+		{
+			name:        "sar fails secret",
+			secretShare: validSharedSecret,
+			reactor:     denyReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:         "true",
+					CSIPodName:           "name1",
+					CSIPodNamespace:      "namespace1",
+					CSIPodUID:            "uid1",
+					CSIPodSA:             "sa1",
+					SharedSecretShareKey: "share1",
+				},
+			},
+			expectedMsg: "PermissionDenied",
+		},
+		{
+			name:    "sar fails configmap",
+			cmShare: validSharedConfigMap,
 			reactor: denyReactorFunc,
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -337,19 +417,19 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				},
 				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
 				},
 			},
 			expectedMsg: "PermissionDenied",
 		},
 		{
-			name:    "inputs are OK",
-			share:   validShare,
+			name:    "inputs are OK for configmap",
+			cmShare: validSharedConfigMap,
 			reactor: acceptReactorFunc,
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -361,12 +441,58 @@ func TestNodePublishVolume(t *testing.T) {
 					},
 				},
 				VolumeContext: map[string]string{
-					CSIEphemeral:           "true",
-					CSIPodName:             "name1",
-					CSIPodNamespace:        "namespace1",
-					CSIPodUID:              "uid1",
-					CSIPodSA:               "sa1",
-					SharedResourceShareKey: "share1",
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
+				},
+			},
+		},
+		{
+			name:        "inputs are OK for secret",
+			secretShare: validSharedSecret,
+			reactor:     acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:         "true",
+					CSIPodName:           "name1",
+					CSIPodNamespace:      "namespace1",
+					CSIPodUID:            "uid1",
+					CSIPodSA:             "sa1",
+					SharedSecretShareKey: "share1",
+				},
+			},
+		},
+		{
+			name:    "inputs are OK for configmap",
+			cmShare: validSharedConfigMap,
+			reactor: acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
 				},
 			},
 		},
@@ -383,10 +509,14 @@ func TestNodePublishVolume(t *testing.T) {
 			defer os.RemoveAll(tmpDir)
 			defer os.RemoveAll(volPath)
 
-			shareLister := &fakeShareLister{
-				share: test.share,
+			secretShareLister := &fakeSharedSecretLister{
+				sShare: test.secretShare,
 			}
-			client.SetSharesLister(shareLister)
+			client.SetSharedSecretsLister(secretShareLister)
+			cmShareLister := &fakeSharedConfigMapLister{
+				cmShare: test.cmShare,
+			}
+			client.SetSharedConfigMapsLister(cmShareLister)
 
 			if test.reactor != nil {
 				sarClient := fakekubeclientset.NewSimpleClientset()

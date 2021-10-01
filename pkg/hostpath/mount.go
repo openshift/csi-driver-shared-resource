@@ -29,7 +29,7 @@ type FileSystemMounter interface {
 //
 // Additional details:
 //
-// So so our intent here is to have a separate tmpfs per pod; through experimentation
+// So our intent here is to have a separate tmpfs per pod; through experimentation
 // and corroboration with OpenShift storage SMEs, a separate tmpfs per pod
 // - ensures the kubelet will handle SELinux for us. It will relabel the volume in "the right way" just for the pod
 // - otherwise, if pods share the same host dir, all sorts of warnings from the SMEs

@@ -18,7 +18,6 @@ package hostpath
 
 import (
 	"fmt"
-	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"os"
 	"strings"
 
@@ -68,43 +67,75 @@ func getPodDetails(volumeContext map[string]string) (string, string, string, str
 
 }
 
-func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.SharedResource, error) {
-	shareName, sok := req.GetVolumeContext()[SharedResourceShareKey]
-	if !sok || len(strings.TrimSpace(shareName)) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the csi driver reference is missing the volumeAttribute 'share'")
+func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1alpha1.SharedConfigMap, *sharev1alpha1.SharedSecret, error) {
+	configMapShareName, cmok := req.GetVolumeContext()[SharedConfigMapShareKey]
+	secretShareName, sok := req.GetVolumeContext()[SharedSecretShareKey]
+	if (!cmok && !sok) || (len(strings.TrimSpace(configMapShareName)) == 0 && len(strings.TrimSpace(secretShareName)) == 0) {
+		return nil, nil, status.Errorf(codes.InvalidArgument,
+			"the csi driver reference is missing the volumeAttribute %q and %q", SharedSecretShareKey, SharedConfigMapShareKey)
+	}
+	if (cmok && sok) || (len(strings.TrimSpace(configMapShareName)) > 0 && len(strings.TrimSpace(secretShareName)) > 0) {
+		return nil, nil, status.Errorf(codes.InvalidArgument,
+			"a single volume cannot support both a SharedConfigMap reference %q and SharedSecret reference %q",
+			configMapShareName, secretShareName)
 	}
 
-	share, err := client.GetListers().Shares.Get(shareName)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the csi driver volumeAttribute 'share' reference had an error: %s", err.Error())
+	var cmShare *sharev1alpha1.SharedConfigMap
+	var sShare *sharev1alpha1.SharedSecret
+	var err error
+	allowed := false
+	if len(configMapShareName) > 0 {
+		cmShare, err = client.GetListers().SharedConfigMaps.Get(configMapShareName)
+		if err != nil {
+			return nil, nil, status.Errorf(codes.InvalidArgument,
+				"the csi driver volumeAttribute %q reference had an error: %s", configMapShareName, err.Error())
+		}
+	}
+	if len(secretShareName) > 0 {
+		sShare, err = client.GetListers().SharedSecrets.Get(secretShareName)
+		if err != nil {
+			return nil, nil, status.Errorf(codes.InvalidArgument,
+				"the csi driver volumeAttribute %q reference had an error: %s", secretShareName, err.Error())
+		}
 	}
 
-	switch share.Spec.Resource.Type {
-	case sharev1alpha1.ResourceReferenceTypeSecret:
-	case sharev1alpha1.ResourceReferenceTypeConfigMap:
-	default:
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s has an invalid backing resource kind %s", shareName, share.Spec.Resource.Type)
-	}
-
-	if len(strings.TrimSpace(objcache.GetResourceNamespace(share.Spec.Resource))) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s backing resource namespace needs to be set", shareName)
-	}
-	if len(strings.TrimSpace(objcache.GetResourceName(share.Spec.Resource))) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument,
-			"the share %s backing resource name needs to be set", shareName)
+	if sShare == nil && cmShare == nil {
+		return nil, nil, status.Errorf(codes.InvalidArgument,
+			"volumeAttributes did not reference a valid SharedSecret or SharedConfigMap")
 	}
 
 	podNamespace, podName, _, podSA := getPodDetails(req.GetVolumeContext())
-
-	allowed, err := client.ExecuteSAR(shareName, podNamespace, podName, podSA)
-	if allowed {
-		return share, nil
+	shareName := ""
+	kind := sharev1alpha1.ResourceReferenceTypeConfigMap
+	if cmShare != nil {
+		if len(strings.TrimSpace(cmShare.Spec.ConfigMap.Namespace)) == 0 {
+			return nil, nil, status.Errorf(codes.InvalidArgument,
+				"the SharedConfigMap %q backing resource namespace needs to be set", configMapShareName)
+		}
+		if len(strings.TrimSpace(cmShare.Spec.ConfigMap.Name)) == 0 {
+			return nil, nil, status.Errorf(codes.InvalidArgument,
+				"the SharedConfigMap %q backing resource name needs to be set", configMapShareName)
+		}
+		shareName = configMapShareName
 	}
-	return nil, err
+	if sShare != nil {
+		kind = sharev1alpha1.ResourceReferenceTypeSecret
+		if len(strings.TrimSpace(sShare.Spec.Secret.Namespace)) == 0 {
+			return nil, nil, status.Errorf(codes.InvalidArgument,
+				"the SharedSecret %q backing resource namespace needs to be set", secretShareName)
+		}
+		if len(strings.TrimSpace(sShare.Spec.Secret.Name)) == 0 {
+			return nil, nil, status.Errorf(codes.InvalidArgument,
+				"the SharedSecret %q backing resource name needs to be set", secretShareName)
+		}
+		shareName = secretShareName
+	}
+
+	allowed, err = client.ExecuteSAR(shareName, podNamespace, podName, podSA, kind)
+	if allowed {
+		return cmShare, sShare, nil
+	}
+	return nil, nil, err
 }
 
 // validateVolumeContext return values:
@@ -157,7 +188,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return nil, err
 	}
 
-	share, err := ns.validateShare(req)
+	cmShare, sShare, err := ns.validateShare(req)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +197,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// when on always-read-only mode it will make sure the volume mounts won't be writable at all
 	readOnly := ns.alwaysReadOnly || req.GetReadonly()
 
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, req.GetVolumeContext(), share, maxStorageCapacity, mountAccess)
+	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())

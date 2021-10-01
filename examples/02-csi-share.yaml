@@ -1,10 +1,8 @@
-apiVersion: storage.openshift.io/v1alpha1
-kind: SharedResource
+apiVersion: sharedresource.openshift.io/v1alpha1
+kind: SharedConfigMap
 metadata:
   name: my-share
 spec:
-  resource:
-    type: ConfigMap
-    configMap:
-      name: openshift-install
-      namespace: openshift-config
+  configmap:
+    name: openshift-install
+    namespace: openshift-config

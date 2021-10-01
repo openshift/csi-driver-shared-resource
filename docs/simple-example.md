@@ -25,15 +25,12 @@ metadata:
   namespace: my-csi-app-namespace
 rules:
   - apiGroups:
-      - storage.openshift.io
+      - sharedresource.openshift.io
     resources:
-      - sharedresources
+      - sharedconfigmaps
     resourceNames:
       - my-share
     verbs:
-      - get
-      - list
-      - watch
       - use
 
 ---
@@ -54,14 +51,12 @@ subjects:
 
 ---
 
-apiVersion: storage.openshift.io/v1alpha1
-kind: SharedResource
+apiVersion: sharedresource.openshift.io/v1alpha1
+kind: SharedConfigMap
 metadata:
   name: my-share
 spec:
-  backingResource:
-    kind: ConfigMap
-    apiVersion: v1
+  configMap:
     name: openshift-install
     namespace: openshift-config
 
@@ -86,7 +81,7 @@ spec:
       csi:
         driver: csi-driver-shared-resource.openshift.io
         volumeAttributes:
-          share: my-share
+          sharedConfigMap: my-share
 
 ```
 
@@ -97,7 +92,7 @@ $ kubectl apply -f ./examples
 namespace/my-csi-app-namespace created
 role.rbac.authorization.k8s.io/shared-resource-my-share created
 rolebinding.rbac.authorization.k8s.io/shared-resource-my-share created
-share.sharedresource.storage.openshift.io/my-share created
+sharedconfigmap.sharedresource.openshift.io/my-share created
 pod/my-csi-app created
 ```
 

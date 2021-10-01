@@ -22,58 +22,58 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// SharedResourceInformer provides access to a shared informer and lister for
-// SharedResources.
-type SharedResourceInformer interface {
+// SharedConfigMapInformer provides access to a shared informer and lister for
+// SharedConfigMaps.
+type SharedConfigMapInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.SharedResourceLister
+	Lister() v1alpha1.SharedConfigMapLister
 }
 
-type sharedResourceInformer struct {
+type sharedConfigMapInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 }
 
-// NewSharedResourceInformer constructs a new informer for SharedResource type.
+// NewSharedConfigMapInformer constructs a new informer for SharedConfigMap type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewSharedResourceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredSharedResourceInformer(client, resyncPeriod, indexers, nil)
+func NewSharedConfigMapInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredSharedConfigMapInformer(client, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredSharedResourceInformer constructs a new informer for SharedResource type.
+// NewFilteredSharedConfigMapInformer constructs a new informer for SharedConfigMap type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredSharedResourceInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredSharedConfigMapInformer(client versioned.Interface, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StorageV1alpha1().SharedResources().List(context.TODO(), options)
+				return client.SharedresourceV1alpha1().SharedConfigMaps().List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.StorageV1alpha1().SharedResources().Watch(context.TODO(), options)
+				return client.SharedresourceV1alpha1().SharedConfigMaps().Watch(context.TODO(), options)
 			},
 		},
-		&sharedresourcev1alpha1.SharedResource{},
+		&sharedresourcev1alpha1.SharedConfigMap{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *sharedResourceInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredSharedResourceInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *sharedConfigMapInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredSharedConfigMapInformer(client, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *sharedResourceInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&sharedresourcev1alpha1.SharedResource{}, f.defaultInformer)
+func (f *sharedConfigMapInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&sharedresourcev1alpha1.SharedConfigMap{}, f.defaultInformer)
 }
 
-func (f *sharedResourceInformer) Lister() v1alpha1.SharedResourceLister {
-	return v1alpha1.NewSharedResourceLister(f.Informer().GetIndexer())
+func (f *sharedConfigMapInformer) Lister() v1alpha1.SharedConfigMapLister {
+	return v1alpha1.NewSharedConfigMapLister(f.Informer().GetIndexer())
 }

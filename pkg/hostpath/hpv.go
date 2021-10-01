@@ -27,7 +27,7 @@ type hostPathVolume struct {
 	PodSA               string     `json:"podSA"`
 	Allowed             bool       `json:"allowed"`
 	ReadOnly            bool       `json:"readOnly"`
-	// hpv's can be accessed/modified by both the share events and the configmap/secret events; to prevent data races
+	// hpv's can be accessed/modified by both the sharedSecret/SharedConfigMap events and the configmap/secret events; to prevent data races
 	// we serialize access to a given hpv with a per hpv mutex stored in this map; access to hpv fields should not
 	// be done directly, but only by each field's getter and setter.  Getters and setters then leverage the per hpv
 	// Lock objects stored in this map to prevent golang data races

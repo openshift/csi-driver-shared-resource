@@ -94,16 +94,23 @@ func initClient() error {
 	return nil
 }
 
-func ExecuteSAR(shareName, podNamespace, podName, podSA string) (bool, error) {
+func ExecuteSAR(shareName, podNamespace, podName, podSA string, kind sharev1alpha1.ResourceReferenceType) (bool, error) {
 	err := initClient()
 	if err != nil {
 		return false, err
 	}
 	sarClient := kubeClient.AuthorizationV1().SubjectAccessReviews()
+	resource := ""
+	switch kind {
+	case sharev1alpha1.ResourceReferenceTypeSecret:
+		resource = "sharedsecrets"
+	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+		resource = "sharedconfigmaps"
+	}
 	resourceAttributes := &authorizationv1.ResourceAttributes{
 		Verb:      "use",
 		Group:     sharev1alpha1.GroupName,
-		Resource:  "sharedresources",
+		Resource:  resource,
 		Name:      shareName,
 		Namespace: podNamespace,
 	}
