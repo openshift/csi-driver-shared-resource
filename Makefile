@@ -50,7 +50,7 @@ test: ## Run unit tests. Example: make test
 	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go test $(GOFLAGS) -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
-deploy:
+deploy: ## Deploy the local build of the shared resource csi driver into the current cluster
 	NODE_REGISTRAR_IMAGE=$(NODE_REGISTRAR_IMAGE) DRIVER_IMAGE=$(DRIVER_IMAGE) ./deploy/deploy.sh $(DEPLOY_MODE)
 .PHONY: deploy
 
