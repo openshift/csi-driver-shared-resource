@@ -35,7 +35,7 @@ spec:
       serviceAccountName: csi-driver-shared-resource-plugin
       containers:
         - name: node-driver-registrar
-          image: quay.io/openshift/origin-csi-node-driver-registrar:4.8.0
+          image: quay.io/openshift/origin-csi-node-driver-registrar:4.10.0
           args:
             - --v=5
             - --csi-address=/csi/csi.sock
@@ -60,7 +60,7 @@ spec:
               name: csi-data-dir
 
         - name: hostpath
-          image: quay.io/openshift/origin-csi-driver-shared-resource:4.9.0
+          image: quay.io/openshift/origin-csi-driver-shared-resource:4.10.0
           # for development purposes; eventually switch to IfNotPresent
           imagePullPolicy: Always
           command:

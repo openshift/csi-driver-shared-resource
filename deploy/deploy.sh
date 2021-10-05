@@ -10,8 +10,8 @@
 
 # The following environment variables can be used to swap the images that are deployed:
 #
-# - NODE_REGISTRAR_IMAGE - this is the node driver registrar. Defaults to quay.io/openshift/origin-csi-node-driver-registrar:4.8.0
-# - DRIVER_IMAGE - this is the CSI driver image. Defaults to quay.io/openshift/origin-csi-driver-projected-resource:4.8.0
+# - NODE_REGISTRAR_IMAGE - this is the node driver registrar. Defaults to quay.io/openshift/origin-csi-node-driver-registrar:4.10.0
+# - DRIVER_IMAGE - this is the CSI driver image. Defaults to quay.io/openshift/origin-csi-driver-projected-resource:4.10.0
 
 set -e
 set -o pipefail
