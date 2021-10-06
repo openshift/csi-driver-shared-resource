@@ -22,8 +22,9 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -106,25 +107,25 @@ func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1
 
 	podNamespace, podName, _, podSA := getPodDetails(req.GetVolumeContext())
 	shareName := ""
-	kind := sharev1alpha1.ResourceReferenceTypeConfigMap
+	kind := consts.ResourceReferenceTypeConfigMap
 	if cmShare != nil {
-		if len(strings.TrimSpace(cmShare.Spec.ConfigMap.Namespace)) == 0 {
+		if len(strings.TrimSpace(cmShare.Spec.ConfigMapRef.Namespace)) == 0 {
 			return nil, nil, status.Errorf(codes.InvalidArgument,
 				"the SharedConfigMap %q backing resource namespace needs to be set", configMapShareName)
 		}
-		if len(strings.TrimSpace(cmShare.Spec.ConfigMap.Name)) == 0 {
+		if len(strings.TrimSpace(cmShare.Spec.ConfigMapRef.Name)) == 0 {
 			return nil, nil, status.Errorf(codes.InvalidArgument,
 				"the SharedConfigMap %q backing resource name needs to be set", configMapShareName)
 		}
 		shareName = configMapShareName
 	}
 	if sShare != nil {
-		kind = sharev1alpha1.ResourceReferenceTypeSecret
-		if len(strings.TrimSpace(sShare.Spec.Secret.Namespace)) == 0 {
+		kind = consts.ResourceReferenceTypeSecret
+		if len(strings.TrimSpace(sShare.Spec.SecretRef.Namespace)) == 0 {
 			return nil, nil, status.Errorf(codes.InvalidArgument,
 				"the SharedSecret %q backing resource namespace needs to be set", secretShareName)
 		}
-		if len(strings.TrimSpace(sShare.Spec.Secret.Name)) == 0 {
+		if len(strings.TrimSpace(sShare.Spec.SecretRef.Name)) == 0 {
 			return nil, nil, status.Errorf(codes.InvalidArgument,
 				"the SharedSecret %q backing resource name needs to be set", secretShareName)
 		}

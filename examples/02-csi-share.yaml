@@ -3,6 +3,6 @@ kind: SharedConfigMap
 metadata:
   name: my-share
 spec:
-  configmap:
+  configMapRef:
     name: openshift-install
     namespace: openshift-config

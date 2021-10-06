@@ -8,7 +8,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -92,8 +92,8 @@ func UpsertSecret(secret *corev1.Secret) {
 	sharesWaitingOnSecrets.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
 		share := value.(*sharev1alpha1.SharedSecret)
-		br := share.Spec.Secret
-		secretKey := BuildKey(br)
+		br := share.Spec.SecretRef
+		secretKey := BuildKey(br.Namespace, br.Name)
 		secretsWithShare.Store(secretKey, secret)
 		//NOTE: share update ranger will store share in sharedSecrets sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.

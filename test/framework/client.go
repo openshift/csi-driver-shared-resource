@@ -7,8 +7,8 @@ import (
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 
+	shareset "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	shareset "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
 )
 
 var (

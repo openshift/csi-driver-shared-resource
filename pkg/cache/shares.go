@@ -7,7 +7,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 )
 
 /*
@@ -61,8 +61,8 @@ var (
 
 // AddSharedConfigMap adds the SharedConfigMap and its referenced config map to our various tracking maps
 func AddSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
-	br := share.Spec.ConfigMap
-	key := BuildKey(br)
+	br := share.Spec.ConfigMapRef
+	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("AddSharedConfigMap key %s", key)
 	obj, ok := configmaps.Load(key)
 	if obj != nil && ok {
@@ -81,8 +81,8 @@ func AddSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
 
 // AddSharedSecret adds the SharedSecret and its referenced secret to our various tracking maps
 func AddSharedSecret(share *sharev1alpha1.SharedSecret) {
-	br := share.Spec.Secret
-	key := BuildKey(br)
+	br := share.Spec.SecretRef
+	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("AddSharedSecret key %s", key)
 	obj, ok := secrets.Load(key)
 	if obj != nil && ok {
@@ -110,8 +110,8 @@ func UpdateSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
 	}
 	oldShare := old.(*sharev1alpha1.SharedConfigMap)
 	diffInstance := false
-	oldBr := oldShare.Spec.ConfigMap
-	newBr := share.Spec.ConfigMap
+	oldBr := oldShare.Spec.ConfigMapRef
+	newBr := share.Spec.ConfigMapRef
 	switch {
 	case oldBr.Namespace != newBr.Namespace:
 		diffInstance = true
@@ -125,8 +125,8 @@ func UpdateSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
 	}
 
 	shareConfigMaps.Store(share.Name, share)
-	br := share.Spec.ConfigMap
-	key := BuildKey(br)
+	br := share.Spec.ConfigMapRef
+	key := BuildKey(br.Namespace, br.Name)
 	configmapsWithShares.Delete(key)
 	AddSharedConfigMap(share)
 }
@@ -142,8 +142,8 @@ func UpdateSharedSecret(share *sharev1alpha1.SharedSecret) {
 	}
 	oldShare := old.(*sharev1alpha1.SharedSecret)
 	diffInstance := false
-	oldBr := oldShare.Spec.Secret
-	newBr := share.Spec.Secret
+	oldBr := oldShare.Spec.SecretRef
+	newBr := share.Spec.SecretRef
 	switch {
 	case oldBr.Namespace != newBr.Namespace:
 		diffInstance = true
@@ -157,8 +157,8 @@ func UpdateSharedSecret(share *sharev1alpha1.SharedSecret) {
 	}
 
 	shareSecrets.Store(share.Name, share)
-	br := share.Spec.Secret
-	key := BuildKey(br)
+	br := share.Spec.SecretRef
+	key := BuildKey(br.Namespace, br.Name)
 	secretsWithShare.Delete(key)
 	AddSharedSecret(share)
 }
@@ -166,8 +166,8 @@ func UpdateSharedSecret(share *sharev1alpha1.SharedSecret) {
 // DelSharedConfigMap removes the SharedConfigMap from our various tracking maps and calls the registered callbacks
 // to delete the config map content from any volumes using the SharedConfigMap
 func DelSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
-	br := share.Spec.ConfigMap
-	key := BuildKey(br)
+	br := share.Spec.ConfigMapRef
+	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("DelSharedConfigMap key %s", key)
 	configmapsWithShares.Delete(key)
 	shareConfigMaps.Delete(share.Name)
@@ -177,8 +177,8 @@ func DelSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
 // DelSharedSecret removes the SharedSecret from our various tracking maps and calls the registered callbacks
 // to delete the secret content from any volumes using the SharedSecret
 func DelSharedSecret(share *sharev1alpha1.SharedSecret) {
-	br := share.Spec.Secret
-	key := BuildKey(br)
+	br := share.Spec.SecretRef
+	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("DelSharedSecret key %s", key)
 	secretsWithShare.Delete(key)
 	shareSecrets.Delete(share.Name)

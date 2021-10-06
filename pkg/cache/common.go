@@ -6,8 +6,6 @@ import (
 	"sync"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 )
 
 func GetKey(o interface{}) string {
@@ -19,8 +17,8 @@ func GetKey(o interface{}) string {
 	return obj.GetNamespace() + ":" + obj.GetName()
 }
 
-func BuildKey(r sharev1alpha1.ResourceReference) string {
-	return r.Namespace + ":" + r.Name
+func BuildKey(namespace, name string) string {
+	return namespace + ":" + name
 }
 
 // SplitKey splits the shared-data-key into namespace and name.

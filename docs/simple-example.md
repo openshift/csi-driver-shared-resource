@@ -79,7 +79,7 @@ spec:
   volumes:
     - name: my-csi-volume
       csi:
-        driver: csi-driver-shared-resource.openshift.io
+        driver: csi.sharedresource.openshift.io
         volumeAttributes:
           sharedConfigMap: my-share
 
@@ -165,5 +165,5 @@ If you want to try other `ConfigMaps` or a `Secret`, first clear out the existin
 $ oc delete -f ./examples 
 ``` 
 
-And the edit `./examples/02-csi-share.yaml` and change the `backingResource` stanza to point to the item
+And the edit `./examples/02-csi-share.yaml` and change the `spec` stanza to point to the item
 you want to share, and then re-run `oc apply -f ./examples`.

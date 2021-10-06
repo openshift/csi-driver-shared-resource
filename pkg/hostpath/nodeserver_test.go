@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"golang.org/x/net/context"
 
@@ -98,20 +98,20 @@ func TestNodePublishVolume(t *testing.T) {
 			Name: "share1",
 		},
 		Spec: sharev1alpha1.SharedSecretSpec{
-			Secret: sharev1alpha1.ResourceReference{
+			SecretRef: sharev1alpha1.SharedSecretReference{
 				Name:      "cool-secret",
 				Namespace: "cool-secret-namespace",
 			},
 			Description: "",
 		},
-		Status: sharev1alpha1.SharedResourceStatus{},
+		Status: sharev1alpha1.SharedSecretStatus{},
 	}
 	validSharedConfigMap := &sharev1alpha1.SharedConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "share1",
 		},
 		Spec: sharev1alpha1.SharedConfigMapSpec{
-			ConfigMap: sharev1alpha1.ResourceReference{
+			ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
 				Name:      "cool-configmap",
 				Namespace: "cool-configmap-namespace",
 			},
@@ -250,12 +250,12 @@ func TestNodePublishVolume(t *testing.T) {
 					Name: "share1",
 				},
 				Spec: sharev1alpha1.SharedSecretSpec{
-					Secret: sharev1alpha1.ResourceReference{
+					SecretRef: sharev1alpha1.SharedSecretReference{
 						Name: "secret1",
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.SharedResourceStatus{},
+				Status: sharev1alpha1.SharedSecretStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -284,12 +284,12 @@ func TestNodePublishVolume(t *testing.T) {
 					Name: "share1",
 				},
 				Spec: sharev1alpha1.SharedConfigMapSpec{
-					ConfigMap: sharev1alpha1.ResourceReference{
+					ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
 						Name: "cm1",
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.SharedResourceStatus{},
+				Status: sharev1alpha1.SharedConfigMapStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -318,12 +318,12 @@ func TestNodePublishVolume(t *testing.T) {
 					Name: "share1",
 				},
 				Spec: sharev1alpha1.SharedSecretSpec{
-					Secret: sharev1alpha1.ResourceReference{
+					SecretRef: sharev1alpha1.SharedSecretReference{
 						Namespace: "secret1",
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.SharedResourceStatus{},
+				Status: sharev1alpha1.SharedSecretStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",
@@ -352,12 +352,12 @@ func TestNodePublishVolume(t *testing.T) {
 					Name: "share1",
 				},
 				Spec: sharev1alpha1.SharedConfigMapSpec{
-					ConfigMap: sharev1alpha1.ResourceReference{
+					ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
 						Namespace: "cm1",
 					},
 					Description: "",
 				},
-				Status: sharev1alpha1.SharedResourceStatus{},
+				Status: sharev1alpha1.SharedConfigMapStatus{},
 			},
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
 				VolumeId:   "testvolid1",

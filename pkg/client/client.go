@@ -8,7 +8,8 @@ import (
 	"path/filepath"
 	"sync"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -94,7 +95,7 @@ func initClient() error {
 	return nil
 }
 
-func ExecuteSAR(shareName, podNamespace, podName, podSA string, kind sharev1alpha1.ResourceReferenceType) (bool, error) {
+func ExecuteSAR(shareName, podNamespace, podName, podSA string, kind consts.ResourceReferenceType) (bool, error) {
 	err := initClient()
 	if err != nil {
 		return false, err
@@ -102,9 +103,9 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string, kind sharev1alph
 	sarClient := kubeClient.AuthorizationV1().SubjectAccessReviews()
 	resource := ""
 	switch kind {
-	case sharev1alpha1.ResourceReferenceTypeSecret:
+	case consts.ResourceReferenceTypeSecret:
 		resource = "sharedsecrets"
-	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+	case consts.ResourceReferenceTypeConfigMap:
 		resource = "sharedconfigmaps"
 	}
 	resourceAttributes := &authorizationv1.ResourceAttributes{
