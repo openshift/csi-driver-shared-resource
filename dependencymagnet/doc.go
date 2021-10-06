@@ -1,5 +1,0 @@
-package dependencymagnet
-
-import (
-	_ "k8s.io/code-generator"
-)
