@@ -15,11 +15,12 @@ import (
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	shareclientv1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/generated/clientset/versioned"
-	shareinformer "github.com/openshift/csi-driver-shared-resource/pkg/generated/informers/externalversions"
+
+	shareclientv1alpha1 "github.com/openshift/client-go/sharedresource/clientset/versioned"
+	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
 )
 
 const (

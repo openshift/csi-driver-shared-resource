@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 )
 
 /*
@@ -91,8 +91,8 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	sharesWaitingOnConfigmaps.Range(func(key, value interface{}) bool {
 		shareKey := key.(string)
 		share := value.(*sharev1alpha1.SharedConfigMap)
-		br := share.Spec.ConfigMap
-		configmapKey := BuildKey(br)
+		br := share.Spec.ConfigMapRef
+		configmapKey := BuildKey(br.Namespace, br.Name)
 		configmapsWithShares.Store(configmapKey, configmap)
 		//NOTE: share update ranger will store share in sharedConfigMaps sync.Map
 		// and we are supplying only this specific share to the csi driver update range callbacks.

@@ -17,6 +17,8 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
 	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
+
+	operatorv1 "github.com/openshift/api/operator/v1"
 )
 
 var (
@@ -78,9 +80,7 @@ func init() {
 
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 	rootCmd.Flags().StringVar(&endPoint, "endpoint", "unix://tmp/csi.sock", "CSI endpoint")
-	//rootCmd.Flags().StringVar(&driverName, "drivername", string(v1.SharedResourcesCSIDriver), "name of the driver")
-	//TODO short term bypassing openshift/api constant until it can be changed to the latest agreed upon name
-	rootCmd.Flags().StringVar(&driverName, "drivername", "csi.sharedresource.openshift.io", "name of the driver")
+	rootCmd.Flags().StringVar(&driverName, "drivername", string(operatorv1.SharedResourcesCSIDriver), "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
 	rootCmd.Flags().StringVar(&shareRelistInterval, "share-relist-interval", "",

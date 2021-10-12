@@ -47,12 +47,12 @@ Kubernetes resources:
 
 ```shell
 deploying hostpath components
-   ./deploy/0000_10_sharedconfigmap.crd.yaml
-oc apply -f ./deploy/0000_10_sharedconfigmap.crd.yaml
+   vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
+oc apply -f vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
 customresourcedefinition.apiextensions.k8s.io/sharedconfigmaps.sharedresource.openshift.io created
 deploying hostpath components
-   ./deploy/0000_10_sharedsecret.crd.yaml
-oc apply -f ./deploy/0000_10_sharedsecret.crd.yaml
+   vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
+oc apply -f vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
 customresourcedefinition.apiextensions.k8s.io/sharedsecrets.sharedresource.openshift.io created
    ./deploy/00-namespace.yaml
 oc apply -f ./deploy/00-namespace.yaml
@@ -83,8 +83,8 @@ daemonset.apps/csi-hostpathplugin created
 
 ```bash
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/00-namespace.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/0000_10_sharedconfigmap.crd.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/0000_10_sharedsecret.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/01-service-account.yaml 
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/02-cluster-role.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/master/deploy/03-cluster-role-binding.yaml
@@ -115,8 +115,8 @@ daemonset.apps/csi-hostpathplugin created
 
 ```bash
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/deploy/00-namespace.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/deploy/0000_10_sharedconfigmap.crd.yaml
-oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/deploy/0000_10_sharedsecret.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
+oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/deploy/01-service-account.yaml 
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/deploy/02-cluster-role.yaml
 oc apply -f --filename https://raw.githubusercontent.com/openshift/csi-driver-shared-resource/release-4.10/deploy/03-cluster-role-binding.yaml

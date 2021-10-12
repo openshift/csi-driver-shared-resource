@@ -1,9 +1,10 @@
 package framework
 
 import (
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
 	"testing"
 	"time"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
 
 var (
@@ -17,7 +18,7 @@ type TestArgs struct {
 	SearchString        string
 	MessageString       string
 	ShareToDelete       string
-	ShareToDeleteType   sharev1alpha1.ResourceReferenceType
+	ShareToDeleteType   consts.ResourceReferenceType
 	SearchStringMissing bool
 	SecondShare         bool
 	SecondShareSubDir   bool

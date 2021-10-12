@@ -7,7 +7,8 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	shareapi "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	shareapi "github.com/openshift/api/sharedresource/v1alpha1"
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
 
 func CreateShare(t *TestArgs) {
@@ -17,7 +18,7 @@ func CreateShare(t *TestArgs) {
 			Name: t.Name,
 		},
 		Spec: shareapi.SharedConfigMapSpec{
-			ConfigMap: shareapi.ResourceReference{
+			ConfigMapRef: shareapi.SharedConfigMapReference{
 				Name:      "openshift-install",
 				Namespace: "openshift-config",
 			},
@@ -35,7 +36,7 @@ func CreateShare(t *TestArgs) {
 				Name: t.SecondName,
 			},
 			Spec: shareapi.SharedSecretSpec{
-				Secret: shareapi.ResourceReference{
+				SecretRef: shareapi.SharedSecretReference{
 					Name:      "pull-secret",
 					Namespace: "openshift-config",
 				},
@@ -56,7 +57,7 @@ func ChangeShare(t *TestArgs) {
 	if err != nil {
 		t.T.Fatalf("error getting share %s: %s", name, err.Error())
 	}
-	share.Spec.ConfigMap.Name = "kube-root-ca.crt"
+	share.Spec.ConfigMapRef.Name = "kube-root-ca.crt"
 	_, err = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Update(context.TODO(), share, metav1.UpdateOptions{})
 	if err != nil {
 		t.T.Fatalf("error updating share %s: %s", name, err.Error())
@@ -72,9 +73,9 @@ func DeleteShare(t *TestArgs) {
 	t.T.Logf("%s: start delete share %s type %s", time.Now().String(), name, string(t.ShareToDeleteType))
 	var err error
 	switch {
-	case t.ShareToDeleteType == shareapi.ResourceReferenceTypeSecret:
+	case t.ShareToDeleteType == consts.ResourceReferenceTypeSecret:
 		err = shareClient.SharedresourceV1alpha1().SharedSecrets().Delete(context.TODO(), name, metav1.DeleteOptions{})
-	case t.ShareToDeleteType == shareapi.ResourceReferenceTypeConfigMap:
+	case t.ShareToDeleteType == consts.ResourceReferenceTypeConfigMap:
 		err = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Delete(context.TODO(), name, metav1.DeleteOptions{})
 	}
 	if err != nil && !kerrors.IsNotFound(err) {

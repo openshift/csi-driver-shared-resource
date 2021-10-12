@@ -2,7 +2,7 @@
 
 So let's take each part of the [CSIVolumeSource](https://github.com/kubernetes/api/blob/71efbb18d63cd30604981514ac623a6be1d413bb/core/v1/types.go#L1743-L1771):
 
-- for the `Driver` string field, it needs to be ["csi-driver-projected-resource.openshift.io"](https://github.com/openshift/csi-driver-shared-resource/blob/1fcc354faa31f624086265ea2228661a0fc2e7b1/pkg/client/client.go#L28).
+- for the `Driver` string field, it needs to be "csi.sharedresource.openshift.io".
 - for the `VolumeAttributes` map, this driver currently inspects the "sharedConfigMap" key or "sharedSecret" key (which map the `SharedConfigMap` OR `SharedSecret` instance your `Pod` wants to use) in addition to the
   elements of the `Pod` the kubelet stores when contacting the driver to provision the `Volume`.  See [this list](https://github.com/openshift/csi-driver-shared-resource/blob/c3f1c454f92203f4b406dabe8dd460782cac1d03/pkg/hostpath/nodeserver.go#L37-L42).
 - NOTE: you cannot specify both a "sharedConfigMap" and "sharedSecret" key.  An error will be flagged.  An error will also be flagged if neither is present, or if the value for one or the other does not equal the name of a `SharedConfigMap` or `SharedSecret`

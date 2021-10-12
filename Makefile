@@ -36,15 +36,8 @@ GOFLAGS ?= -a -mod=vendor $(RACE)
 
 .DEFAULT_GOAL := help
 
-all: clean generate verify build test
+all: clean verify build test
 .PHONY: all
-
-generate:
-	./hack/update-generated.sh
-.PHONY: generate
-
-generate-crd:
-	./hack/update-crd.sh
 
 test: ## Run unit tests. Example: make test
 	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go test $(GOFLAGS) -count 1 ./cmd/... ./pkg/...
@@ -60,8 +53,8 @@ deploy-no-refreshresources: deploy
 
 crd:
 	# temporary creation of CRD until it lands in openshift/api, openshift/openshift-apiserver, etc.
-	oc apply -f ./deploy/0000_10_sharedsecret.crd.yaml
-	oc apply -f ./deploy/0000_10_sharedconfigmap.crd.yaml
+	oc apply -f vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
+	oc apply -f vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
 
 test-e2e-no-deploy: crd
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh

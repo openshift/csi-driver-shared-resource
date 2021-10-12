@@ -31,9 +31,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
 
 type hostPath struct {
@@ -322,7 +323,7 @@ func shareUpdateRanger(key, value interface{}) bool {
 	shareKey := ""
 	shareRV := ""
 	shareName := ""
-	var shareType sharev1alpha1.ResourceReferenceType
+	var shareType consts.ResourceReferenceType
 	ranger := func(key, value interface{}) bool {
 		hpv, _ = value.(*hostPathVolume)
 		klog.V(4).Infof("shareUpdateRanger id %q hpv ranger", shareId)
@@ -346,13 +347,13 @@ func shareUpdateRanger(key, value interface{}) bool {
 			switch {
 			case sok:
 				shareRV = sharedSecret.ResourceVersion
-				shareKey = objcache.BuildKey(sharedSecret.Spec.Secret)
-				shareType = sharev1alpha1.ResourceReferenceTypeSecret
+				shareKey = objcache.BuildKey(sharedSecret.Spec.SecretRef.Namespace, sharedSecret.Spec.SecretRef.Name)
+				shareType = consts.ResourceReferenceTypeSecret
 				shareName = sharedSecret.Name
 			case cmok:
 				shareRV = sharedConfigMap.ResourceVersion
-				shareKey = objcache.BuildKey(sharedConfigMap.Spec.ConfigMap)
-				shareType = sharev1alpha1.ResourceReferenceTypeConfigMap
+				shareKey = objcache.BuildKey(sharedConfigMap.Spec.ConfigMapRef.Namespace, sharedConfigMap.Spec.ConfigMapRef.Name)
+				shareType = consts.ResourceReferenceTypeConfigMap
 				shareName = sharedConfigMap.Name
 			}
 
@@ -476,7 +477,7 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 		return err
 	}
 	switch hpv.GetSharedDataKind() {
-	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+	case consts.ResourceReferenceTypeConfigMap:
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s configmap", hpv.GetVolID())
 		podConfigMapsPath := hpv.GetTargetPath()
 		if readOnly {
@@ -520,7 +521,7 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 			return commonDeleteRanger(podConfigMapsPath, hpv.GetSharedDataKey(), key)
 		}
 		objcache.RegisterConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerCM)
-	case sharev1alpha1.ResourceReferenceTypeSecret:
+	case consts.ResourceReferenceTypeSecret:
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s secret", hpv.GetVolID())
 		podSecretsPath := hpv.GetTargetPath()
 		if readOnly {
@@ -573,9 +574,9 @@ func (hp *hostPath) updateObjCache(hpv *hostPathVolume) error {
 	key := hpv.GetSharedDataKey()
 	klog.V(4).Infof("populating object-cache with '%s' (key='%s') before mounting", kind, key)
 	switch kind {
-	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+	case consts.ResourceReferenceTypeConfigMap:
 		return objcache.SetConfigMap(hp.kubeClient, key)
-	case sharev1alpha1.ResourceReferenceTypeSecret:
+	case consts.ResourceReferenceTypeSecret:
 		return objcache.SetSecret(hp.kubeClient, key)
 	default:
 		return fmt.Errorf("invalid share backing resource kind %s", kind)
@@ -605,10 +606,10 @@ func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
 		return shareUpdateRanger(key, value)
 	}
 	switch hpv.GetSharedDataKind() {
-	case sharev1alpha1.ResourceReferenceTypeSecret:
+	case consts.ResourceReferenceTypeSecret:
 		objcache.RegisterSharedSecretUpdateCallback(hpv.GetVolID(), updateRangerShare)
 		objcache.RegisteredSharedSecretDeleteCallback(hpv.GetVolID(), deleteRangerShare)
-	case sharev1alpha1.ResourceReferenceTypeConfigMap:
+	case consts.ResourceReferenceTypeConfigMap:
 		objcache.RegisterSharedConfigMapUpdateCallback(hpv.GetVolID(), updateRangerShare)
 		objcache.RegisterSharedConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerShare)
 	}
@@ -662,13 +663,13 @@ func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool
 	hostpathVol.SetPodSA(podSA)
 	switch {
 	case cmShare != nil:
-		hostpathVol.SetSharedDataKind(string(sharev1alpha1.ResourceReferenceTypeConfigMap))
-		hostpathVol.SetSharedDataKey(objcache.BuildKey(cmShare.Spec.ConfigMap))
+		hostpathVol.SetSharedDataKind(string(consts.ResourceReferenceTypeConfigMap))
+		hostpathVol.SetSharedDataKey(objcache.BuildKey(cmShare.Spec.ConfigMapRef.Namespace, cmShare.Spec.ConfigMapRef.Name))
 		hostpathVol.SetSharedDataId(cmShare.Name)
 		hostpathVol.SetSharedDataVersion(cmShare.ResourceVersion)
 	case sShare != nil:
-		hostpathVol.SetSharedDataKind(string(sharev1alpha1.ResourceReferenceTypeSecret))
-		hostpathVol.SetSharedDataKey(objcache.BuildKey(sShare.Spec.Secret))
+		hostpathVol.SetSharedDataKind(string(consts.ResourceReferenceTypeSecret))
+		hostpathVol.SetSharedDataKey(objcache.BuildKey(sShare.Spec.SecretRef.Namespace, sShare.Spec.SecretRef.Name))
 		hostpathVol.SetSharedDataId(sShare.Name)
 		hostpathVol.SetSharedDataVersion(sShare.ResourceVersion)
 	}

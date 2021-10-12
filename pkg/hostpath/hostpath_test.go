@@ -32,7 +32,7 @@ import (
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	fakekubetesting "k8s.io/client-go/testing"
 
-	sharev1alpha1 "github.com/openshift/csi-driver-shared-resource/pkg/api/sharedresource/v1alpha1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
@@ -289,14 +289,14 @@ func TestDeleteShare(t *testing.T) {
 				Name: "TestDeleteShare",
 			},
 			Spec: sharev1alpha1.SharedSecretSpec{
-				Secret: sharev1alpha1.ResourceReference{
+				SecretRef: sharev1alpha1.SharedSecretReference{
 					Name:      "secret1",
 					Namespace: "namespace",
 				},
 
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedSecretStatus{},
 		}
 		shareLister := &fakeSharedSecretLister{
 			sShare: share,
@@ -348,13 +348,13 @@ func TestDeleteReAddShare(t *testing.T) {
 				ResourceVersion: "1",
 			},
 			Spec: sharev1alpha1.SharedSecretSpec{
-				Secret: sharev1alpha1.ResourceReference{
+				SecretRef: sharev1alpha1.SharedSecretReference{
 					Name:      "secret1",
 					Namespace: "namespace",
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedSecretStatus{},
 		}
 		shareLister := &fakeSharedSecretLister{
 			sShare: share,
@@ -412,13 +412,13 @@ func TestUpdateShare(t *testing.T) {
 				ResourceVersion: "1",
 			},
 			Spec: sharev1alpha1.SharedSecretSpec{
-				Secret: sharev1alpha1.ResourceReference{
+				SecretRef: sharev1alpha1.SharedSecretReference{
 					Name:      "secret1",
 					Namespace: "namespace",
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedSecretStatus{},
 		}
 		shareLister := &fakeSharedSecretLister{
 			sShare: share,
@@ -441,7 +441,7 @@ func TestUpdateShare(t *testing.T) {
 			Data: map[string][]byte{secretkey2: []byte(secretvalue2)},
 		}
 		cache.UpsertSecret(secret2)
-		share.Spec.Secret.Name = "secret2"
+		share.Spec.SecretRef.Name = "secret2"
 		share.ResourceVersion = "2"
 		cache.UpdateSharedSecret(share)
 
@@ -482,13 +482,13 @@ func TestPermChanges(t *testing.T) {
 				Name: "TestPermChanges",
 			},
 			Spec: sharev1alpha1.SharedSecretSpec{
-				Secret: sharev1alpha1.ResourceReference{
+				SecretRef: sharev1alpha1.SharedSecretReference{
 					Name:      "secret1",
 					Namespace: "namespace",
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedSecretStatus{},
 		}
 		shareLister := &fakeSharedSecretLister{
 			sShare: share,
@@ -563,13 +563,13 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 				Namespace: metav1.NamespaceDefault,
 			},
 			Spec: sharev1alpha1.SharedSecretSpec{
-				Secret: sharev1alpha1.ResourceReference{
+				SecretRef: sharev1alpha1.SharedSecretReference{
 					Name:      secret.GetName(),
 					Namespace: secret.GetNamespace(),
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedSecretStatus{},
 		},
 		kubeClient: fakekubeclientset.NewSimpleClientset(&secret),
 	}, {
@@ -580,13 +580,13 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 				Namespace: metav1.NamespaceDefault,
 			},
 			Spec: sharev1alpha1.SharedConfigMapSpec{
-				ConfigMap: sharev1alpha1.ResourceReference{
+				ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
 					Name:      configMap.GetName(),
 					Namespace: configMap.GetNamespace(),
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedConfigMapStatus{},
 		},
 		kubeClient: fakekubeclientset.NewSimpleClientset(&configMap),
 	}}
@@ -647,14 +647,14 @@ func primeSecretVolume(t *testing.T, hp *hostPath, targetPath string, readOnly b
 				Name: t.Name(),
 			},
 			Spec: sharev1alpha1.SharedSecretSpec{
-				Secret: sharev1alpha1.ResourceReference{
+				SecretRef: sharev1alpha1.SharedSecretReference{
 					Name:      "secret1",
 					Namespace: "namespace",
 				},
 
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedSecretStatus{},
 		}
 		shareLister := &fakeSharedSecretLister{
 			sShare: share,
@@ -695,13 +695,13 @@ func primeConfigMapVolume(t *testing.T, hp *hostPath, targetPath string, readOnl
 				Name: t.Name(),
 			},
 			Spec: sharev1alpha1.SharedConfigMapSpec{
-				ConfigMap: sharev1alpha1.ResourceReference{
+				ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
 					Name:      "configmap1",
 					Namespace: "namespace",
 				},
 				Description: "",
 			},
-			Status: sharev1alpha1.SharedResourceStatus{},
+			Status: sharev1alpha1.SharedConfigMapStatus{},
 		}
 		shareLister := &fakeSharedConfigMapLister{
 			cmShare: share,
