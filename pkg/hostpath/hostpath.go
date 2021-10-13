@@ -175,7 +175,7 @@ func (hp *hostPath) Run() {
 // getVolumePath returns the canonical paths for hostpath volume
 func (hp *hostPath) getVolumePath(volID string, volCtx map[string]string) (string, string) {
 	podNamespace, podName, podUID, podSA := getPodDetails(volCtx)
-	return filepath.Join(hp.root, anchorDir, volID, podNamespace, podName, podUID, podSA), filepath.Join(hp.root, bindDir, volID, podNamespace, podName, podUID, podSA)
+	return filepath.Join(hp.root, volID, podNamespace, podName, podUID, podSA), filepath.Join(hp.root, bindDir, volID, podNamespace, podName, podUID, podSA)
 }
 
 func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value interface{}) error {
