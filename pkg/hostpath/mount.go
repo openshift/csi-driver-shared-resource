@@ -52,15 +52,15 @@ type ReadWriteMany struct {
 
 func (m *ReadWriteMany) makeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
 	options := []string{}
-	if err := mounter.Mount(anchorDir, kubeletTargetDir, "tmpfs", options); err != nil {
+	if err := mounter.Mount("GGM", kubeletTargetDir, "tmpfs", options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
-		if rmErr := os.RemoveAll(anchorDir); rmErr != nil && !os.IsNotExist(rmErr) {
+		if rmErr := os.RemoveAll("GGM"); rmErr != nil && !os.IsNotExist(rmErr) {
 			errList.WriteString(fmt.Sprintf(" :%s", rmErr.Error()))
 		}
 
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			anchorDir,
+			"GGM",
 			kubeletTargetDir,
 			errList.String()))
 	}
@@ -94,15 +94,15 @@ type WriteOnceReadMany struct {
 func (m *WriteOnceReadMany) makeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
 	options := []string{}
 
-	if err := mounter.Mount(anchorDir, intermediateBindMountDir, "tmpfs", options); err != nil {
+	if err := mounter.Mount("GGM", intermediateBindMountDir, "tmpfs", options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
-		if rmErr := os.RemoveAll(anchorDir); rmErr != nil && !os.IsNotExist(rmErr) {
+		if rmErr := os.RemoveAll("GGM"); rmErr != nil && !os.IsNotExist(rmErr) {
 			errList.WriteString(fmt.Sprintf(" :%s", rmErr.Error()))
 		}
 
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			anchorDir,
+			"GGM",
 			intermediateBindMountDir,
 			errList.String()))
 	}
