@@ -83,6 +83,11 @@ class Openshift(object):
             return output
         return None
     
+    def get_pod_log(self, pod_name, data):
+        cmd = f'oc logs pod/{pod_name}'
+        matched, output, exit_code = self.cmd.run_wait_for_cmd_out(cmd, data)
+        return matched
+        
     def new_app(self, template_name, namespace):
         cmd = f'oc new-app {template_name} -n {namespace}'
         output, exit_status = self.cmd.run(cmd)
@@ -92,8 +97,12 @@ class Openshift(object):
         return None
 
     def oc_apply(self, yaml):
-        (output, exit_code) = self.cmd.run("oc apply -f -", yaml)
-        return output
+        cmd = f'oc apply -f {yaml}'
+        output, exit_status = self.cmd.run(cmd)
+        print(f"starting: {output}, {exit_status}")
+        if exit_status == 0:
+            return output
+        return None
     
     def oc_create_from_yaml(self, yaml):
         cmd = f'oc create -f {yaml}'
@@ -129,33 +138,8 @@ class Openshift(object):
             return output
         return None
 
-    def get_configmap(self, namespace):
-        output, exit_code = self.cmd.run(f'oc get cm -n {namespace}')
-        exit_code | should.be_equal_to(0)
-        return output
-
-    def get_deploymentconfig(self, namespace):
-        output, exit_code = self.cmd.run(f'oc get dc -n {namespace}')
-        exit_code | should.be_equal_to(0)
-        return output
-
-    def get_service(self, namespace):
-        output, exit_code = self.cmd.run(f'oc get svc -n {namespace}')
-        exit_code | should.be_equal_to(0)
-        return output
-
-    def get_service_account(self, namespace):
-        output, exit_code = self.cmd.run(f'oc get sa -n {namespace}')
-        exit_code | should.be_equal_to(0)
-        return output
-
-    def get_role_binding(self, namespace):
-        output, exit_code = self.cmd.run(f'oc get rolebinding -n {namespace}')
-        exit_code | should.be_equal_to(0)
-        return output
-
-    def get_route(self, route_name, namespace):
-        output, exit_code = self.cmd.run(f'oc get route {route_name} -n {namespace}')
+    def get_resource(self, namespace, resource):
+        output, exit_code = self.cmd.run(f'oc get {resource} -n {namespace}')
         exit_code | should.be_equal_to(0)
         return output
 
@@ -288,3 +272,19 @@ class Openshift(object):
         if exit_status == 0:
             return output
         return None
+    
+    def crd_permission(self, crd):
+        cmd = f'oc describe crd {crd} | grep Scope'
+        expOutput = "Cluster"
+        matched, output, exit_code = self.cmd.run_wait_for_cmd_out(cmd, expOutput)
+        return matched
+
+    def execute_command(self, cmd):
+        output, exit_status = self.cmd.run(f'oc {cmd}')
+        exit_status | should.be_equal_to(0)
+        return output
+    
+    def shell_cmd(self, cmd, param):
+        output, exit_status = self.cmd.run(f'sh {cmd} {param}')
+        exit_status | should.be_equal_to(0)
+        return output

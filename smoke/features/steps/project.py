@@ -1,4 +1,5 @@
 import re
+import os
 
 from smoke.features.steps.command import Command
 class Project():
@@ -21,6 +22,10 @@ class Project():
         output, exit_code = self.cmd.run('oc get ns {}'.format(self.name))
         return exit_code == 0
 
+    def current_project(self):
+        output, exit_code = self.cmd.run('oc project -q')
+        return output
+
     def switch_to(self):
         create_project_output, exit_code = self.cmd.run('oc project {}'.format(self.name))
         if re.search(r'Now using project \"%s\"\son\sserver' % self.name, create_project_output) is not None:
@@ -30,3 +35,12 @@ class Project():
         else:
             print(f"Unexpected project creating output: '{create_project_output}'")
         return False
+
+    def namespace_exist(self, namespace):
+        output, exit_status = self.cmd.run(f'oc get projects | grep {namespace}')
+        return exit_status == 0
+
+    def create_namespace(self, namespace):
+        output, exit_status = self.cmd.run(f'oc new-project {namespace}')
+        output.find(r'.*Now\susing\sproject\"%s\"\son\sserver.*' % {namespace})
+        return exit_status == 0
