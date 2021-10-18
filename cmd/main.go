@@ -15,6 +15,7 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
 	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 
@@ -22,15 +23,13 @@ import (
 )
 
 var (
-	cfgFile             string
-	endPoint            string
-	driverName          string
-	nodeID              string
-	maxVolumesPerNode   int64
-	version             string
-	shareRelistInterval string
-	refreshResources    bool
-	ignoredNamespaces   []string
+	version string // driver version
+
+	cfgFilePath       string // path to configuration file
+	endPoint          string // CSI driver API endpoint for Kubernetes kubelet
+	driverName        string // name of the CSI driver, registered in the cluster
+	nodeID            string // current Kubernetes node identifier
+	maxVolumesPerNode int64  // maximum amount of volumes per node, i.e. per driver instance
 
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
 	onlyOneSignalHandler = make(chan struct{})
@@ -45,7 +44,14 @@ var rootCmd = &cobra.Command{
 		var kubeClient kubernetes.Interface
 		var err error
 
-		if !refreshResources {
+		cfgManager := config.NewManager(cfgFilePath)
+		cfg, err := cfgManager.LoadConfig()
+		if err != nil {
+			fmt.Printf("Failed to load configuration file '%s': %s", cfgFilePath, err.Error())
+			os.Exit(1)
+		}
+
+		if !cfg.RefreshResources {
 			fmt.Println("Refresh-Resources disabled, loading a Kubernetes client for HostPathDriver")
 
 			if kubeClient, err = loadKubernetesClientset(); err != nil {
@@ -54,12 +60,23 @@ var rootCmd = &cobra.Command{
 			}
 		}
 
-		driver, err := hostpath.NewHostPathDriver(hostpath.DataRoot, hostpath.VolumeMapRoot, driverName, nodeID, endPoint, maxVolumesPerNode, version, kubeClient)
+		driver, err := hostpath.NewHostPathDriver(
+			hostpath.DataRoot,
+			hostpath.VolumeMapRoot,
+			driverName,
+			nodeID,
+			endPoint,
+			maxVolumesPerNode,
+			version,
+			kubeClient,
+		)
 		if err != nil {
 			fmt.Printf("Failed to initialize driver: %s", err.Error())
 			os.Exit(1)
 		}
-		go runOperator()
+
+		go runOperator(cfg)
+		go watchForConfigChanges(cfgManager)
 		driver.Run()
 	},
 }
@@ -73,20 +90,15 @@ func main() {
 
 func init() {
 	klog.InitFlags(nil)
-
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-
 	cobra.OnInitialize()
-
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
-	rootCmd.Flags().StringVar(&endPoint, "endpoint", "unix://tmp/csi.sock", "CSI endpoint")
+
+	rootCmd.Flags().StringVar(&cfgFilePath, "config", "/var/run/configmaps/config/config.yaml", "configuration file path")
+	rootCmd.Flags().StringVar(&endPoint, "endpoint", "unix:///csi/csi.sock", "CSI endpoint")
 	rootCmd.Flags().StringVar(&driverName, "drivername", string(operatorv1.SharedResourcesCSIDriver), "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
-	rootCmd.Flags().StringVar(&shareRelistInterval, "share-relist-interval", "",
-		"the time between controller relist on the share resource expressed with golang time.Duration syntax(default=10m")
-	rootCmd.Flags().BoolVar(&refreshResources, "refreshresources", true, "watch for resource updates")
-	rootCmd.Flags().StringSliceVar(&ignoredNamespaces, "ignorenamespace", []string{}, "Specify a namespace to be ignored by the controller")
 }
 
 // loadKubernetesClientset instantiate a clientset using local config.
@@ -98,18 +110,10 @@ func loadKubernetesClientset() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(kubeRestConfig)
 }
 
-func runOperator() {
-	shareRelist := controller.DefaultResyncDuration
-	var err error
-	// flag defaulting above did not work well with time.Duration
-	if len(shareRelistInterval) > 0 {
-		shareRelist, err = time.ParseDuration(shareRelistInterval)
-		if err != nil {
-			fmt.Printf("Error parsing share-relist-in-min flag, using default")
-			shareRelist = controller.DefaultResyncDuration
-		}
-	}
-	c, err := controller.NewController(shareRelist, refreshResources, ignoredNamespaces)
+// runOperator based on the informed configuration, it will spawn and run the Controller, until
+// trapping OS signals.
+func runOperator(cfg *config.Config) {
+	c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources, cfg.IgnoredNamespaces)
 	if err != nil {
 		fmt.Printf("Failed to set up controller: %s", err.Error())
 		os.Exit(1)
@@ -119,6 +123,18 @@ func runOperator() {
 	if err != nil {
 		fmt.Printf("Controller exited: %s", err.Error())
 		os.Exit(1)
+	}
+}
+
+// watchForConfigChanges keeps checking if the informed configuration has changed, and in this case
+// makes the operator exit. The new configuration should take place upon new instance started.
+func watchForConfigChanges(mgr *config.Manager) {
+	for {
+		if mgr.ConfigHasChanged() {
+			fmt.Println("Configuration has changed on disk, restarting the operator!")
+			os.Exit(0)
+		}
+		time.Sleep(3 * time.Second)
 	}
 }
 
