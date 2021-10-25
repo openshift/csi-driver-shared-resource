@@ -33,7 +33,7 @@ func init() {
 func WaitForDaemonSet(t *TestArgs) error {
 	dsClient := kubeClient.AppsV1().DaemonSets(client.DefaultNamespace)
 	err := wait.PollImmediate(1*time.Second, 10*time.Minute, func() (bool, error) {
-		_, err := dsClient.Get(context.TODO(), "csi-hostpathplugin", metav1.GetOptions{})
+		_, err := dsClient.Get(context.TODO(), "shared-resource-csi-driver-node", metav1.GetOptions{})
 		if err != nil {
 			t.T.Logf("%s: error waiting for driver daemonset to exist: %v", time.Now().String(), err)
 			return false, nil
@@ -56,7 +56,7 @@ func WaitForDaemonSet(t *TestArgs) error {
 			}
 			podCount := 0
 			for _, pod := range podList.Items {
-				if strings.HasPrefix(pod.Name, "csi-hostpathplugin") {
+				if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
 					podCount++
 				} else {
 					continue
@@ -66,7 +66,7 @@ func WaitForDaemonSet(t *TestArgs) error {
 					return false, nil
 				}
 				if podCount < daemonSetReplicas {
-					t.T.Logf("%s: number of csi-hostpathplugin pods not yet at %d", time.Now().String(), daemonSetReplicas)
+					t.T.Logf("%s: number of shared-resource-csi-driver-node pods not yet at %d", time.Now().String(), daemonSetReplicas)
 					continue
 				}
 			}
@@ -77,7 +77,7 @@ func WaitForDaemonSet(t *TestArgs) error {
 				return true, nil
 			}
 			for _, pod := range podList.Items {
-				if !strings.HasPrefix(pod.Name, "csi-hostpathplugin") {
+				if !strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
 					continue
 				}
 				t.T.Logf("%s: pod %s has status %s and delete timestamp %v\n", time.Now().String(), pod.Name, pod.Status.Phase, pod.DeletionTimestamp)
