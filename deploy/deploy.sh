@@ -100,7 +100,7 @@ patchesJson6902:
       version: v1
       kind: DaemonSet
       namespace: openshift-cluster-csi-drivers
-      name: csi-hostpathplugin
+      name: shared-resource-csi-driver-node
 EOS
 }
 
@@ -108,7 +108,7 @@ EOS
 function wait_for_pod () {
   oc --namespace="openshift-cluster-csi-drivers" wait pod \
     --for="condition=Ready=true" \
-    --selector="app=csi-hostpathplugin" \
+    --selector="app=shared-resource-csi-driver-node" \
     --timeout="5m"
 }
 

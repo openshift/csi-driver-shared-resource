@@ -29,8 +29,8 @@ clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-wat
 clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged created
 clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
 csidriver.storage.k8s.io/csi-driver-shared-resource.openshift.io created
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/shared-resource-csi-driver-node created
+daemonset.apps/shared-resource-csi-driver-node created
 ```
 
 ### Installing from a local clone of this repository
@@ -72,8 +72,8 @@ oc apply -f ./deploy/csi-hostpath-driverinfo.yaml
 csidriver.storage.k8s.io/csi.sharedresource.openshift.io created
    ./deploy/csi-hostpath-plugin.yaml
 oc apply -f ./deploy/csi-hostpath-plugin.yaml
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/shared-resource-csi-driver-node created
+daemonset.apps/shared-resource-csi-driver-node created
 16:21:25 waiting for hostpath deployment to complete, attempt #0
 ```
 
@@ -104,8 +104,8 @@ clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-wat
 clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged created
 clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
 csidriver.storage.k8s.io/csi.sharedresource.openshift.io created
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/shared-resource-csi-driver-node created
+daemonset.apps/shared-resource-csi-driver-node created
 ```
 
 
@@ -136,8 +136,8 @@ clusterrole.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-wat
 clusterrolebinding.rbac.authorization.k8s.io/shared-resource-privileged created
 clusterrolebinding.rbac.authorization.k8s.io/shared-resource-secret-configmap-share-watch-sar-create created
 csidriver.storage.k8s.io/csi.sharedresource.openshift.io created
-service/csi-hostpathplugin created
-daemonset.apps/csi-hostpathplugin created
+service/shared-resource-csi-driver-node created
+daemonset.apps/shared-resource-csi-driver-node created
 ```
 
 
@@ -149,7 +149,7 @@ On a 3 node OCP cluster, this will look something like:
 ```shell
 $ oc get pods -n openshift-cluster-csi-drivers
 NAME                       READY   STATUS    RESTARTS   AGE
-csi-hostpathplugin-c7bbk   2/2     Running   0          23m
-csi-hostpathplugin-m4smv   2/2     Running   0          23m
-csi-hostpathplugin-x9xjw   2/2     Running   0          23m
+shared-resource-csi-driver-node-c7bbk   2/2     Running   0          23m
+shared-resource-csi-driver-node-m4smv   2/2     Running   0          23m
+shared-resource-csi-driver-node-x9xjw   2/2     Running   0          23m
 ```
