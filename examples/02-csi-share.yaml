@@ -4,5 +4,5 @@ metadata:
   name: my-share
 spec:
   configMapRef:
-    name: openshift-install
-    namespace: openshift-config
+    name: my-other-share
+    namespace: my-csi-app-namespace

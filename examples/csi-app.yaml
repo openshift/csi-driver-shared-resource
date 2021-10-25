@@ -21,7 +21,7 @@ spec:
             touch /data/foo
             ls -laZ /data
             echo "calling sleep"
-            sleep 120
+            sleep 10
           done
   volumes:
     - name: my-csi-volume
