@@ -19,15 +19,14 @@ set -o pipefail
 # when not empty it will run CSI driver with "--refreshresources=false" flag.
 NO_REFRESH_RESOURCES="${1}"
 
-# customize images used by registrar and csi-driver containers
-NODE_REGISTRAR_IMAGE="${NODE_REGISTRAR_IMAGE:-}"
-DRIVER_IMAGE="${DRIVER_IMAGE:-}"
-
 # BASE_DIR will default to deploy
 BASE_DIR="deploy"
 DEPLOY_DIR="_output/deploy"
 
+# path to kutomize file, should be insite the temporary directory created for the rollout
 KUSTOMIZATION_FILE="${DEPLOY_DIR}/kustomization.yaml"
+# target namespace where resources are deployed
+NAMESPACE="openshift-cluster-csi-drivers"
 
 function run () {
     echo "$@" >&2
@@ -43,70 +42,37 @@ kind: Kustomization
 resources:
 EOS
 
-  for f in $(find "${DEPLOY_DIR}"/*.yaml |grep -v kustomization |sort); do
-    f=$(basename "${f}")
-    echo "## ${f}"
-    echo "  - ${f}" >> ${KUSTOMIZATION_FILE}
-  done
-
   echo "images:" >> ${KUSTOMIZATION_FILE}
 }
 
-# creates a new entry with informed name and target image. The target image is split on URL and tag.
-function kustomize_set_image () {
-  local NAME=${1}
-  local TARGET=${2}
-
-  # splitting target image in URL and tag
-  local URL=${TARGET%:*}
-
-  # tag must be in the last part of the image url, after the hostname
-  # hostname might contain semicolon to describe port, splitting there would be wrong
-  local IMAGE=${TARGET##*/}
-  local TAG=${IMAGE##*:}
-
-  # means there was no semicolon in the image
-  # in this case we should hold original value in the URL, since there was nothing to split upon
-  if [ "$IMAGE" = "$TAG" ]; then
-    URL=$TARGET
-    TAG="latest"
+# adds the settings to generate the configuration ConfigMap, taking in consideration extra flag for
+# refresh-resources mode.
+function kustomize_config () {
+  # when no-refresh-resources is enabled, it translates the setting back to the existing
+  # configuration file
+  if [ -n "${NO_REFRESH_RESOURCES}" ] ; then
+    echo "# Patching ConfigMap to have 'refreshResources: false' attribute"
+    echo -e "\nrefreshResources: false" >> "${DEPLOY_DIR}/config.yaml"
   fi
 
+  # adding extra generator options to kustomize file, so it can create a ConfigMap with embedded
+  # YAML configuration
   cat <<EOS >> ${KUSTOMIZATION_FILE}
-  - name: ${NAME}
-    newName: ${URL}
-    newTag: ${TAG}
-EOS
-}
+generatorOptions:
+  disableNameSuffixHash: true
+  labels:
+    app: shared-resource-csi-driver-node
 
-# patches the CSI DaemonSet primary container to include one more argument.
-function kustomize_add_arg () {
-  local ARG=${1}
-  local FILE="args-patch-${ARG}.json"
-  cat <<EOS > "${DEPLOY_DIR}/${FILE}"
-[
-  {
-    "op": "add",
-    "path": "/spec/template/spec/containers/1/args/-",
-    "value": "${ARG}"
-  }
-]
-EOS
-  cat <<EOS >> ${KUSTOMIZATION_FILE}
-patchesJson6902:
-  - path: ${FILE}
-    target:
-      group: apps
-      version: v1
-      kind: DaemonSet
-      namespace: openshift-cluster-csi-drivers
-      name: shared-resource-csi-driver-node
+configMapGenerator:
+  - name: csi-driver-shared-resource-config
+    files:
+      - config.yaml
 EOS
 }
 
 # uses `oc wait` to wait for CSI driver pod to reach condition ready.
 function wait_for_pod () {
-  oc --namespace="openshift-cluster-csi-drivers" wait pod \
+  oc --namespace="${NAMESPACE}" wait pod \
     --for="condition=Ready=true" \
     --selector="app=shared-resource-csi-driver-node" \
     --timeout="5m"
@@ -124,25 +90,12 @@ echo "# Customizing resources..."
 # initializing kustomize and adding the all resource files it should use
 kustomize_init
 
-if [ -n "${NODE_REGISTRAR_IMAGE}" ] ; then
-  echo "# Patching node-registrar image to use '${NODE_REGISTRAR_IMAGE}'"
-  kustomize_set_image "quay.io/openshift/origin-csi-node-driver-registrar" "${NODE_REGISTRAR_IMAGE}"
-fi
-
-if [ -n "${DRIVER_IMAGE}" ] ; then
-  echo "# Patching node-csi-driver image to use '${DRIVER_IMAGE}'"
-  kustomize_set_image "quay.io/openshift/origin-csi-driver-shared-resource" "${DRIVER_IMAGE}"
-fi
-
-# adding to disable refresh-resources using kustomize-v3 approach (embedded on `oc`)
-if [ -n "${NO_REFRESH_RESOURCES}" ] ; then
-  echo "# Patching DaemonSet container to use '--refreshresources=false' flag"
-  kustomize_add_arg "--refreshresources=false"
-fi
+# preparing configuraiton to become a ConfigMap
+kustomize_config
 
 # deploy hostpath plugin and registrar sidecar
-echo "# Deploying csi driver components"
-run oc apply --kustomize ${DEPLOY_DIR}/
+echo "# Deploying the shared resource driver config.yaml config map on namespace '${NAMESPACE}'"
+run oc apply --namespace="${NAMESPACE}" --kustomize ${DEPLOY_DIR}/
 
 # waiting for all pods to reach condition ready
 echo "# Waiting for pods to be ready..."

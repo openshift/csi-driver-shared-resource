@@ -7,12 +7,8 @@ REPOSITORY ?= openshift
 # Allows overriding of the tag to generate for the image
 TAG ?= latest
 
-# allows overwrite of node registrar image
-NODE_REGISTRAR_IMAGE ?=
-# allows overwite of CSI driver image
-DRIVER_IMAGE ?=
-# when non-empty it enables "--refreshresource=false" deployment
-DEPLOY_MODE ?=
+# when non-empty it enables "--refreshresource=false"
+CONFIG_MODE ?=
 
 # amount of pods the daemonset will produce before starting end-to-end tests
 DAEMONSET_PODS ?= 3
@@ -43,27 +39,27 @@ test: ## Run unit tests. Example: make test
 	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go test $(GOFLAGS) -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
-deploy: ## Deploy the local build of the shared resource csi driver into the current cluster
-	NODE_REGISTRAR_IMAGE=$(NODE_REGISTRAR_IMAGE) DRIVER_IMAGE=$(DRIVER_IMAGE) ./deploy/deploy.sh $(DEPLOY_MODE)
-.PHONY: deploy
+config: ## update the config map / config.yaml for the driver
+	./deploy/deploy.sh $(CONFIG_MODE)
+.PHONY: config
 
-# overwrites the deployment mode variable to disable refresh-resources
-deploy-no-refreshresources: DEPLOY_MODE = "no-refreshresources"
-deploy-no-refreshresources: deploy
+# overwrites the config mode variable to disable refresh-resources
+config-no-refreshresources: CONFIG_MODE = "no-refreshresources"
+config-no-refreshresources: config
 
 test-e2e-no-deploy:
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh
 .PHONY: test-e2e-no-deploy
 
-test-e2e: deploy test-e2e-no-deploy
+test-e2e: test-e2e-no-deploy
 
-test-e2e-no-refreshresources: deploy-no-refreshresources test-e2e-no-deploy
+test-e2e-no-refreshresources: config-no-refreshresources test-e2e-no-deploy
 
 test-e2e-slow: TEST_SUITE = "slow"
-test-e2e-slow: deploy test-e2e
+test-e2e-slow: test-e2e
 
 test-e2e-disruptive: TEST_SUITE = "disruptive" 
-test-e2e-disruptive: deploy test-e2e
+test-e2e-disruptive: test-e2e
 
 verify: ## Run verifications. Example: make verify
 	go vet ./cmd/... ./pkg/... ./test/...
