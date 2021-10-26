@@ -43,7 +43,7 @@ test: ## Run unit tests. Example: make test
 	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go test $(GOFLAGS) -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
-deploy: crd ## Deploy the local build of the shared resource csi driver into the current cluster
+deploy: ## Deploy the local build of the shared resource csi driver into the current cluster
 	NODE_REGISTRAR_IMAGE=$(NODE_REGISTRAR_IMAGE) DRIVER_IMAGE=$(DRIVER_IMAGE) ./deploy/deploy.sh $(DEPLOY_MODE)
 .PHONY: deploy
 
@@ -51,18 +51,13 @@ deploy: crd ## Deploy the local build of the shared resource csi driver into the
 deploy-no-refreshresources: DEPLOY_MODE = "no-refreshresources"
 deploy-no-refreshresources: deploy
 
-crd:
-	# temporary creation of CRD until it lands in openshift/api, openshift/openshift-apiserver, etc.
-	oc apply -f vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedsecret.crd.yaml
-	oc apply -f vendor/github.com/openshift/api/sharedresource/v1alpha1/0000_10_sharedconfigmap.crd.yaml
-
-test-e2e-no-deploy: crd
+test-e2e-no-deploy:
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh
 .PHONY: test-e2e-no-deploy
 
-test-e2e: crd deploy test-e2e-no-deploy
+test-e2e: deploy test-e2e-no-deploy
 
-test-e2e-no-refreshresources: crd deploy-no-refreshresources test-e2e-no-deploy
+test-e2e-no-refreshresources: deploy-no-refreshresources test-e2e-no-deploy
 
 test-e2e-slow: TEST_SUITE = "slow"
 test-e2e-slow: deploy test-e2e
