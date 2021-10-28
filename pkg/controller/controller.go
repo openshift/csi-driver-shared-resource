@@ -18,6 +18,7 @@ import (
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 
 	shareclientv1alpha1 "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
@@ -118,6 +119,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 
 		client.SetConfigMapsLister(c.informerFactory.Core().V1().ConfigMaps().Lister())
 		client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
+
 		c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
 		c.secInformer.AddEventHandler(c.secretEventHandler())
 	}
@@ -163,6 +165,14 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	}
 	go wait.Until(c.sharedConfigMapEventProcessor, time.Second, stopCh)
 	go wait.Until(c.sharedSecretEventProcessor, time.Second, stopCh)
+
+	// start the Prometheus metrics serner
+	klog.Info("Starting the metrics server")
+	server, err := metrics.BuildServer(metrics.MetricsPort)
+	if err != nil {
+		return err
+	}
+	go metrics.RunServer(server, stopCh)
 
 	<-stopCh
 

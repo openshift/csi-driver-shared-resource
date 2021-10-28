@@ -25,6 +25,7 @@ import (
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
+	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -252,6 +253,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	// here is what initiates that necessary copy now with *NOT* using bind on the mount so each pod gets its own tmpfs
 	if err := ns.hp.mapVolumeToPod(vol); err != nil {
+		metrics.IncMountCounter(false)
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to populate mount device: %s at %s: %s",
 			bindDir,
 			kubeletTargetPath,
@@ -259,9 +261,12 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	if err := storeVolMapToDisk(); err != nil {
+		metrics.IncMountCounter(false)
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+
+	metrics.IncMountCounter(true)
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

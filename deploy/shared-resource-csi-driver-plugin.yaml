@@ -16,6 +16,20 @@ spec:
     - name: dummy
       port: 12345
 ---
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-hostpathplugin-metrics
+  namespace: openshift-cluster-csi-drivers
+  labels:
+    app: csi-hostpathplugin
+spec:
+  selector:
+    app: csi-hostpathplugin
+  ports:
+    - name: metrics
+      port: 6000
+---
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -107,6 +121,9 @@ spec:
           ports:
           - containerPort: 9898
             name: healthz
+            protocol: TCP
+          - containerPort: 6000
+            name: metrics
             protocol: TCP
           volumeMounts:
             - mountPath: /csi
