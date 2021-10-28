@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -69,23 +70,13 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 		return nil, err
 	}
 
-	// NOTE, not specifying a namespace defaults to metav1.NamespaceAll in
-	// informers.NewSharedInformerFactoryWithOptions, but we restrict OpenShift
-	// "system" namespaces with chatty configmaps like the leaderelection related ones
-	// that are updated every few seconds
 	tweakListOptions := internalinterfaces.TweakListOptionsFunc(func(options *metav1.ListOptions) {
-		fsString := ""
-		namespaceFieldSelector := "metadata.namespace!=%s"
+		ignored := []string{}
 		for _, ns := range ignoredNamespaces {
 			klog.V(4).Infof("namespace '%s' is being ignored", ns)
-			nsfs := fmt.Sprintf(namespaceFieldSelector, ns)
-			if len(fsString) == 0 {
-				fsString = nsfs
-			} else {
-				fsString = fsString + "," + nsfs
-			}
+			ignored = append(ignored, fmt.Sprintf("metadata.namespace!=%s", ns))
 		}
-		options.FieldSelector = fsString
+		options.FieldSelector = strings.Join(ignored, ",")
 	})
 	informerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient,
 		DefaultResyncDuration, informers.WithTweakListOptions(tweakListOptions))

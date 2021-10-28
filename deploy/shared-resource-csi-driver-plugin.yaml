@@ -80,37 +80,11 @@ spec:
           command:
             - csi-driver-shared-resource
           args:
+            - --config=/var/run/configmaps/config/config.yaml
             - "--drivername=csi.sharedresource.openshift.io"
             - "--v=4"
-            - "--endpoint=$(CSI_ENDPOINT)"
             - "--nodeid=$(KUBE_NODE_NAME)"
-            - --ignorenamespace=openshift-machine-api
-            - --ignorenamespace=openshift-kube-apiserver
-            - --ignorenamespace=openshift-kube-apiserver-operator
-            - --ignorenamespace=openshift-kube-scheduler
-            - --ignorenamespace=openshift-kube-controller-manager
-            - --ignorenamespace=openshift-kube-controller-manager-operator
-            - --ignorenamespace=openshift-kube-scheduler-operator
-            - --ignorenamespace=openshift-console-operator
-            - --ignorenamespace=openshift-controller-manager
-            - --ignorenamespace=openshift-controller-manager-operator
-            - --ignorenamespace=openshift-cloud-credential-operator
-            - --ignorenamespace=openshift-authentication-operator
-            - --ignorenamespace=openshift-service-ca
-            - --ignorenamespace=openshift-kube-storage-version-migrator-operator
-            - --ignorenamespace=openshift-config-operator
-            - --ignorenamespace=openshift-etcd-operator
-            - --ignorenamespace=openshift-apiserver-operator
-            - --ignorenamespace=openshift-cluster-csi-drivers
-            - --ignorenamespace=openshift-cluster-storage-operator
-            - --ignorenamespace=openshift-cluster-version
-            - --ignorenamespace=openshift-image-registry
-            - --ignorenamespace=openshift-machine-config-operator
-            - --ignorenamespace=openshift-sdn
-            - --ignorenamespace=openshift-service-ca-operator
           env:
-            - name: CSI_ENDPOINT
-              value: unix:///csi/csi.sock
             - name: KUBE_NODE_NAME
               valueFrom:
                 fieldRef:
@@ -126,6 +100,8 @@ spec:
             name: metrics
             protocol: TCP
           volumeMounts:
+            - mountPath: /var/run/configmaps/config
+              name: config
             - mountPath: /csi
               name: socket-dir
             - mountPath: /var/lib/kubelet/pods
@@ -142,6 +118,10 @@ spec:
               name: dev-dir
 
       volumes:
+        - configMap:
+            optional: true
+            name: csi-driver-shared-resource-config
+          name: config
         - hostPath:
             path: /var/lib/kubelet/plugins/csi-hostpath
             type: DirectoryOrCreate

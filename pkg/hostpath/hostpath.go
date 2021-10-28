@@ -133,8 +133,8 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 		return nil, fmt.Errorf("failed to create VolMapRoot: %v", err)
 	}
 
-	klog.Infof("Driver: %v ", driverName)
-	klog.Infof("Version: %s", vendorVersion)
+	klog.Infof("Driver: '%v', Version: '%s'", driverName, vendorVersion)
+	klog.Infof("EndPoint: '%s', NodeID: '%s'", endpoint, nodeID)
 
 	if kubeClient != nil {
 		klog.Info("HostPathDriver will directly read Kubernetes resources!")

@@ -43,8 +43,14 @@ test: ## Run unit tests. Example: make test
 	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go test $(GOFLAGS) -count 1 ./cmd/... ./pkg/...
 .PHONY: test
 
-deploy: ## Deploy the local build of the shared resource csi driver into the current cluster
-	NODE_REGISTRAR_IMAGE=$(NODE_REGISTRAR_IMAGE) DRIVER_IMAGE=$(DRIVER_IMAGE) ./deploy/deploy.sh $(DEPLOY_MODE)
+config: ## Overwrites the configuration ConfigMap with local settings
+	./hack/configmap.sh $(DEPLOY_MODE)
+.PHONY: config
+
+# TODO: update the CI steps to either rely on the operator, instead of using the configuration
+# ovewrite approach
+deploy: config ## Deploy the local build of the shared resource csi driver into the current cluster
+	NODE_REGISTRAR_IMAGE=$(NODE_REGISTRAR_IMAGE) DRIVER_IMAGE=$(DRIVER_IMAGE) ./deploy/deploy.sh
 .PHONY: deploy
 
 # overwrites the deployment mode variable to disable refresh-resources
