@@ -82,6 +82,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 		DefaultResyncDuration, informers.WithTweakListOptions(tweakListOptions))
 
 	klog.V(5).Infof("configured share relist %v", shareRelist)
+	klog.V(0).Info("GGM")
 	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient,
 		shareRelist)
 
