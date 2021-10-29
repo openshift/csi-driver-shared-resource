@@ -43,17 +43,14 @@ config: ## Overwrites the configuration ConfigMap with local settings
 	./hack/configmap.sh $(DEPLOY_MODE)
 .PHONY: config
 
-# overwrites the deployment mode variable to disable refresh-resources
-deploy-no-refreshresources: DEPLOY_MODE = "no-refreshresources"
-deploy-no-refreshresources: config
-
 test-e2e-no-deploy:
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh
 .PHONY: test-e2e-no-deploy
 
 test-e2e: test-e2e-no-deploy
 
-test-e2e-no-refreshresources: deploy-no-refreshresources test-e2e-no-deploy
+test-e2e-no-refreshresources: TEST_SUITE = "norefresh"
+test-e2e-no-refreshresources: test-e2e
 
 test-e2e-slow: TEST_SUITE = "slow"
 test-e2e-slow: test-e2e
