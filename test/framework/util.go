@@ -12,20 +12,22 @@ var (
 )
 
 type TestArgs struct {
-	T                   *testing.T
-	Name                string
-	SecondName          string
-	SearchString        string
-	MessageString       string
-	ShareToDelete       string
-	ShareToDeleteType   consts.ResourceReferenceType
-	SearchStringMissing bool
-	SecondShare         bool
-	SecondShareSubDir   bool
-	DaemonSetUp         bool
-	TestPodUp           bool
-	ReadOnly            bool
-	TestDuration        time.Duration
+	T                                  *testing.T
+	Name                               string
+	SecondName                         string
+	SearchString                       string
+	MessageString                      string
+	ShareToDelete                      string
+	LogContent                         string
+	CurrentDriverContainerRestartCount map[string]int32
+	ShareToDeleteType                  consts.ResourceReferenceType
+	SearchStringMissing                bool
+	SecondShare                        bool
+	SecondShareSubDir                  bool
+	DaemonSetUp                        bool
+	TestPodUp                          bool
+	ReadOnly                           bool
+	TestDuration                       time.Duration
 }
 
 // LogAndDebugTestError is not intended as a replacement for the use of t.Fatalf through this e2e suite,
