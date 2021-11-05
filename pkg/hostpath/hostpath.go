@@ -69,7 +69,7 @@ const (
 	// Directory where data for volumes are persisted.
 	// This is ephemeral to facilitate our per-pod, tmpfs,
 	// no bind mount, approach.
-	DataRoot = "/csi-data-dir"
+	DataRoot = "/run/csi-data-dir"
 
 	// Directory where we persist `hostPathVolumes`
 	// This is a hostpath volume on the local node
