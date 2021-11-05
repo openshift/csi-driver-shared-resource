@@ -168,38 +168,39 @@ func (ns *nodeServer) validateVolumeContext(req *csi.NodePublishVolumeRequest) e
 	return nil
 }
 
-func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+func (ns *nodeServer) NodePublishVolume(ctx context.Context, volumeRequest *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
 	var kubeletTargetPath string
 
 	// Check arguments
-	if req.GetVolumeCapability() == nil {
+	if volumeRequest.GetVolumeCapability() == nil {
 		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}
-	if len(req.GetVolumeId()) == 0 {
+	if len(volumeRequest.GetVolumeId()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Volume ID missing in request")
 	}
-	if len(req.GetTargetPath()) == 0 {
+	if len(volumeRequest.GetTargetPath()) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
-	if req.VolumeContext == nil || len(req.GetVolumeContext()) == 0 {
+	volumeContext := volumeRequest.GetVolumeContext()
+	if volumeRequest.VolumeContext == nil || len(volumeContext) == 0 {
 		return nil, status.Error(codes.InvalidArgument, "Volume attributes missing in request")
 	}
 
-	err := ns.validateVolumeContext(req)
+	err := ns.validateVolumeContext(volumeRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	cmShare, sShare, err := ns.validateShare(req)
+	cmShare, sShare, err := ns.validateShare(volumeRequest)
 	if err != nil {
 		return nil, err
 	}
 
-	kubeletTargetPath = req.GetTargetPath()
+	kubeletTargetPath = volumeRequest.GetTargetPath()
 	// when on always-read-only mode it will make sure the volume mounts won't be writable at all
-	readOnly := ns.alwaysReadOnly || req.GetReadonly()
+	readOnly := ns.alwaysReadOnly || volumeRequest.GetReadonly()
 
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
+	vol, err := ns.hp.createHostpathVolume(volumeRequest.GetVolumeId(), kubeletTargetPath, readOnly, volumeContext, cmShare, sShare, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -224,28 +225,30 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		return &csi.NodePublishVolumeResponse{}, nil
 	}
 
-	fsType := req.GetVolumeCapability().GetMount().GetFsType()
+	fsType := volumeRequest.GetVolumeCapability().GetMount().GetFsType()
 
 	deviceId := ""
-	if req.GetPublishContext() != nil {
-		deviceId = req.GetPublishContext()[deviceID]
+	if volumeRequest.GetPublishContext() != nil {
+		deviceId = volumeRequest.GetPublishContext()[deviceID]
 	}
 
-	volumeId := req.GetVolumeId()
-	attrib := req.GetVolumeContext()
-	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
+	volumeId := volumeRequest.GetVolumeId()
+	attrib := volumeContext
+	mountFlags := volumeRequest.GetVolumeCapability().GetMount().GetMountFlags()
 
 	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		kubeletTargetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
-	anchorDir, bindDir := ns.hp.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
+	anchorDir, bindDir := ns.hp.getVolumePath(volumeRequest.GetVolumeId(), volumeContext)
+	klog.V(9).Infof("Using hostPath: %s/%s", anchorDir, bindDir)
+
 	switch {
 	case readOnly:
-		if err := ns.readOnlyMounter.makeFSMounts(anchorDir, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+		if err := ns.readOnlyMounter.makeFSMounts(volumeRequest, ns.hp, ns.mounter); err != nil {
 			return nil, err
 		}
 	default:
-		if err := ns.readWriteMounter.makeFSMounts(anchorDir, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+		if err := ns.readWriteMounter.makeFSMounts(volumeRequest, ns.hp, ns.mounter); err != nil {
 			return nil, err
 		}
 
@@ -282,16 +285,16 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	hpv := ns.hp.getHostpathVolume(volumeID)
+	hpv := ns.hp.getHostPathVolume(volumeID)
 	if hpv == nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unpublish volume %s already gone", volumeID))
 	}
 	var err error
 	switch {
 	case hpv.IsReadOnly():
-		err = ns.readOnlyMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
+		err = ns.readOnlyMounter.removeFSMounts(hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
 	default:
-		err = ns.readWriteMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
+		err = ns.readWriteMounter.removeFSMounts(hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
 	}
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("error removing %s: %s", targetPath, err.Error()))

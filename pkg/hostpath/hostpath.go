@@ -78,7 +78,7 @@ const (
 	VolumeMapFile = "volumemap.json"
 )
 
-func (hp *hostPath) getHostpathVolume(name string) *hostPathVolume {
+func (hp *hostPath) getHostPathVolume(name string) *hostPathVolume {
 	obj, loaded := hostPathVolumes.Load(name)
 	if loaded {
 		hpv, _ := obj.(*hostPathVolume)
@@ -87,20 +87,20 @@ func (hp *hostPath) getHostpathVolume(name string) *hostPathVolume {
 	return nil
 }
 
-func setHPV(name string, hpv *hostPathVolume) {
+func setHostPathVolume(name string, hpv *hostPathVolume) {
 	if hpv.Lock == nil {
 		hpv.Lock = &sync.Mutex{}
 	}
 	hostPathVolumes.Store(name, hpv)
 }
 
-func remHPV(name string) {
+func deleteHostPathVolume(name string) {
 	hostPathVolumes.Delete(name)
 }
 
 type HostPathDriver interface {
 	createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error)
-	getHostpathVolume(volID string) *hostPathVolume
+	getHostPathVolume(volID string) *hostPathVolume
 	deleteHostpathVolume(volID string) error
 	getVolumePath(volID string, volCtx map[string]string) (string, string)
 	mapVolumeToPod(hpv *hostPathVolume) error
@@ -175,7 +175,7 @@ func (hp *hostPath) Run() {
 // getVolumePath returns the canonical paths for hostpath volume
 func (hp *hostPath) getVolumePath(volID string, volCtx map[string]string) (string, string) {
 	podNamespace, podName, podUID, podSA := getPodDetails(volCtx)
-	return filepath.Join(hp.root, volID, podNamespace, podName, podUID, podSA), filepath.Join(hp.root, bindDir, volID, podNamespace, podName, podUID, podSA)
+	return filepath.Join(hp.root, AnchorDir, podNamespace, podName, podUID, volID), filepath.Join(hp.root, BindDir, podNamespace, podName, podUID, volID, podSA)
 }
 
 func commonUpsertRanger(obj runtime.Object, podPath, filter string, key, value interface{}) error {
@@ -628,7 +628,7 @@ func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool
 	if cmShare == nil && sShare == nil {
 		return nil, fmt.Errorf("have to provide either a SharedConfigMap or SharedSecret to a volume")
 	}
-	hpv := hp.getHostpathVolume(volID)
+	hpv := hp.getHostPathVolume(volID)
 	if hpv != nil {
 		klog.V(0).Infof("createHostpathVolume: create call came in for volume %s that we have already created; returning previously created instance", volID)
 		return hpv, nil
@@ -723,12 +723,12 @@ func (hp *hostPath) innerDeleteHostpathVolume(top string) {
 func (hp *hostPath) deleteHostpathVolume(volID string) error {
 	klog.V(4).Infof("deleting hostpath volume: %s", volID)
 
-	if hpv := hp.getHostpathVolume(volID); hpv != nil {
+	if hpv := hp.getHostPathVolume(volID); hpv != nil {
 		klog.V(4).Infof("deleting hostpath volume: %s", volID)
 		os.RemoveAll(hpv.GetTargetPath())
 		hp.innerDeleteHostpathVolume(hpv.GetVolPathBindMountDir())
 		hp.innerDeleteHostpathVolume(hpv.GetVolPathAnchorDir())
-		remHPV(volID)
+		deleteHostPathVolume(volID)
 		storeVolMapToDisk()
 	}
 	objcache.UnregisterSecretUpsertCallback(volID)
@@ -787,18 +787,18 @@ func (hp *hostPath) loadVolMapFromDisk() error {
 	for k, v := range mapCopy {
 		klog.V(4).Infof("loadVolMapFromDisk looking at volume %s hpv %#v", k, v)
 		// call this first to establish locking
-		setHPV(k, &v)
+		setHostPathVolume(k, &v)
 		pod, err := client.GetPod(v.GetPodNamespace(), v.GetPodName())
 		if err != nil {
 			klog.V(2).Infof("loadVolMapFromDisk could not find pod %s:%s so dropping: %s",
 				v.GetPodNamespace(), v.GetPodName(), err.Error())
-			remHPV(k)
+			deleteHostPathVolume(k)
 			continue
 		}
 		if string(pod.UID) != v.GetPodUID() {
 			klog.V(2).Infof("loadVolMapFromDisk found pod %s:%s but UIDs do no match so dropping: %s vs %s",
 				v.GetPodNamespace(), v.GetPodName(), string(pod.UID), v.GetPodUID())
-			remHPV(k)
+			deleteHostPathVolume(k)
 			continue
 		}
 		err = hp.mapVolumeToPod(&v)

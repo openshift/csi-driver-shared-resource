@@ -37,7 +37,7 @@ type hostPathVolume struct {
 
 func CreateHPV(volID string) *hostPathVolume {
 	hpv := &hostPathVolume{VolID: volID, Lock: &sync.Mutex{}}
-	setHPV(volID, hpv)
+	setHostPathVolume(volID, hpv)
 	return hpv
 }
 

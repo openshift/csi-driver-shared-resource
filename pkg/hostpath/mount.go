@@ -2,6 +2,7 @@ package hostpath
 
 import (
 	"fmt"
+	"github.com/container-storage-interface/spec/lib/go/csi"
 	"os"
 	"strings"
 
@@ -12,8 +13,8 @@ import (
 )
 
 type FileSystemMounter interface {
-	makeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error
-	removeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mount mount.Interface) error
+	makeFSMounts(volumeRequest *csi.NodePublishVolumeRequest, hostPathDriver HostPathDriver, mounter mount.Interface) error
+	removeFSMounts(intermediateBindMountDir, kubeletTargetDir string, mount mount.Interface) error
 }
 
 // ReadWriteMany high level details:
@@ -22,7 +23,7 @@ type FileSystemMounter interface {
 // to where the location the kubelet has allocated for the CSI volume in question.
 //
 // We go straight from our tmpfs anchor to kubelet's target directory.  No bind mounts.
-// But this approach only works if the K8s CSIVolumenSource set readOnly to false.  If readOnly
+// But this approach only works if the K8s CSIVolumeSource set readOnly to false.  If readOnly
 // is set to true, the underlying mount mechanics between our call to m.mounter.Mount and what
 // the kubelet does for the Pod results in the use of xfs for the filesystem and an inability for the
 // Pod to read what we have mounted.
@@ -50,28 +51,30 @@ type FileSystemMounter interface {
 type ReadWriteMany struct {
 }
 
-func (m *ReadWriteMany) makeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
+func (m *ReadWriteMany) makeFSMounts(volumeRequest *csi.NodePublishVolumeRequest, hostPathDriver HostPathDriver, mounter mount.Interface) error {
 	options := []string{}
-	if err := mounter.Mount("GGM", kubeletTargetDir, "tmpfs", options); err != nil {
+	kubeletTargetDir := volumeRequest.GetTargetPath()
+	anchorDir, _ := hostPathDriver.getVolumePath(volumeRequest.GetVolumeId(), volumeRequest.GetVolumeContext())
+	if err := mounter.Mount(anchorDir, kubeletTargetDir, TmpFsType, options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
-		if rmErr := os.RemoveAll("GGM"); rmErr != nil && !os.IsNotExist(rmErr) {
+		if rmErr := os.RemoveAll(anchorDir); rmErr != nil && !os.IsNotExist(rmErr) {
 			errList.WriteString(fmt.Sprintf(" :%s", rmErr.Error()))
 		}
 
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			"GGM",
+			AnchorDir,
 			kubeletTargetDir,
 			errList.String()))
 	}
 	return nil
 }
 
-func (m *ReadWriteMany) removeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
+func (m *ReadWriteMany) removeFSMounts(intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
 	if err := mount.CleanupMountPoint(kubeletTargetDir, mounter, true); err != nil {
 		return err
 	}
-	if err := os.RemoveAll(anchorDir); err != nil && !os.IsNotExist(err) {
+	if err := os.RemoveAll(AnchorDir); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
@@ -91,34 +94,35 @@ func (m *ReadWriteMany) removeFSMounts(anchorDir, intermediateBindMountDir, kube
 type WriteOnceReadMany struct {
 }
 
-func (m *WriteOnceReadMany) makeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
+func (m *WriteOnceReadMany) makeFSMounts(volumeRequest *csi.NodePublishVolumeRequest, hostPathDriver HostPathDriver, mounter mount.Interface) error {
 	options := []string{}
-
-	if err := mounter.Mount("GGM", intermediateBindMountDir, "tmpfs", options); err != nil {
+	kubeletTargetDir := volumeRequest.GetTargetPath()
+	anchorDir, bindDir := hostPathDriver.getVolumePath(volumeRequest.GetVolumeId(), volumeRequest.GetVolumeContext())
+	if err := mounter.Mount(anchorDir, bindDir, "tmpfs", options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
-		if rmErr := os.RemoveAll("GGM"); rmErr != nil && !os.IsNotExist(rmErr) {
+		if rmErr := os.RemoveAll(anchorDir); rmErr != nil && !os.IsNotExist(rmErr) {
 			errList.WriteString(fmt.Sprintf(" :%s", rmErr.Error()))
 		}
 
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			"GGM",
-			intermediateBindMountDir,
+			anchorDir,
+			bindDir,
 			errList.String()))
 	}
 
 	// now add bind and ro options
 	options = append(options, "bind", "ro")
 
-	if err := mounter.Mount(intermediateBindMountDir, kubeletTargetDir, "tmpfs", options); err != nil {
+	if err := mounter.Mount(bindDir, kubeletTargetDir, TmpFsType, options); err != nil {
 		var errList strings.Builder
 		errList.WriteString(err.Error())
-		if rmErr := os.RemoveAll(intermediateBindMountDir); rmErr != nil && !os.IsNotExist(rmErr) {
+		if rmErr := os.RemoveAll(bindDir); rmErr != nil && !os.IsNotExist(rmErr) {
 			errList.WriteString(fmt.Sprintf(" :%s", rmErr.Error()))
 		}
 
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			intermediateBindMountDir,
+			bindDir,
 			kubeletTargetDir,
 			errList.String()))
 	}
@@ -126,7 +130,7 @@ func (m *WriteOnceReadMany) makeFSMounts(anchorDir, intermediateBindMountDir, ku
 	return nil
 }
 
-func (m *WriteOnceReadMany) removeFSMounts(anchorDir, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
+func (m *WriteOnceReadMany) removeFSMounts(intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
 	if err := mount.CleanupMountPoint(kubeletTargetDir, mounter, true); err != nil {
 		return err
 	}
@@ -136,7 +140,7 @@ func (m *WriteOnceReadMany) removeFSMounts(anchorDir, intermediateBindMountDir, 
 	if err := os.RemoveAll(intermediateBindMountDir); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	if err := os.RemoveAll(anchorDir); err != nil && !os.IsNotExist(err) {
+	if err := os.RemoveAll(AnchorDir); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
