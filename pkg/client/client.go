@@ -27,7 +27,9 @@ import (
 )
 
 const (
-	DefaultNamespace = "openshift-cluster-csi-drivers"
+	DefaultNamespace             = "openshift-cluster-csi-drivers"
+	DriverConfigurationConfigMap = "csi-driver-shared-resource-config"
+	DriverConfigurationDataKey   = "config.yaml"
 )
 
 var (

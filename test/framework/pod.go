@@ -203,6 +203,95 @@ func ExecPod(t *TestArgs) {
 	LogAndDebugTestError(t)
 }
 
+func GetPodContainerRestartCount(t *TestArgs) map[string]int32 {
+	podClient := kubeClient.CoreV1().Pods(client.DefaultNamespace)
+	podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		t.T.Fatalf("error list pods %v", err)
+	}
+	rc := map[string]int32{}
+	t.T.Logf("%s: GetPodContainerRestartCount have %d items in list, old restart count %v", time.Now().String(), len(podList.Items), t.CurrentDriverContainerRestartCount)
+	for _, pod := range podList.Items {
+		if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
+			for _, cs := range pod.Status.ContainerStatuses {
+				if strings.TrimSpace(cs.Name) == "hostpath" {
+					t.T.Logf("%s: GetPodContainerRestartCount pod %s hostpath container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
+					rc[pod.Name] = cs.RestartCount
+				}
+			}
+		}
+	}
+	return rc
+}
+
+func WaitForPodContainerRestart(t *TestArgs) error {
+	podClient := kubeClient.CoreV1().Pods(client.DefaultNamespace)
+	pollInterval := 1 * time.Second
+	if t.TestDuration != 30*time.Second {
+		pollInterval = 1 * time.Minute
+	}
+	t.T.Logf("%s: WaitForPodContainerRestart CurrentDriverContainerRestartCount %v", time.Now().String(), t.CurrentDriverContainerRestartCount)
+	err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
+		podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
+		if err != nil {
+			t.T.Fatalf("error list pods %v", err)
+		}
+		t.T.Logf("%s: WaitForPodContainerRestart have %d items in list", time.Now().String(), len(podList.Items))
+		if len(podList.Items) < 3 {
+			return false, nil
+		}
+		for _, pod := range podList.Items {
+			if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
+				if pod.Status.Phase != corev1.PodRunning {
+					t.T.Logf("%s: WaitForPodContainerRestart pod %s not in running phase: %s", time.Now().String(), pod.Name, pod.Status.Phase)
+				}
+				for _, cs := range pod.Status.ContainerStatuses {
+					if strings.TrimSpace(cs.Name) == "hostpath" {
+						t.T.Logf("%s: WaitForPodContainerRestart pod %s hostpath container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
+						countBeforeConfigChange, ok := t.CurrentDriverContainerRestartCount[pod.Name]
+						if !ok {
+							t.T.Logf("%s: WaitForPodContainerRestart pod %s did not have a prior restart count?", time.Now().String(), pod.Name)
+							return false, fmt.Errorf("no prior restart count for %s", pod.Name)
+						}
+						if cs.RestartCount <= countBeforeConfigChange {
+							return false, nil
+						}
+					}
+				}
+			}
+
+		}
+		return true, nil
+	})
+	return err
+}
+
+func SearchCSIPods(t *TestArgs) {
+	pollInterval := 1 * time.Second
+	if t.TestDuration != 30*time.Second {
+		pollInterval = 1 * time.Minute
+	}
+	err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
+		dumpCSIPods(t)
+
+		if !t.SearchStringMissing && !strings.Contains(t.LogContent, t.SearchString) {
+			t.T.Logf("%s: csi pod listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
+			return false, nil
+		}
+		if t.SearchStringMissing && strings.Contains(t.LogContent, t.SearchString) {
+			t.T.Logf("%s: directory listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
+			return false, nil
+		}
+		t.T.Logf("%s: shared resource driver pods are good with search string criteria: missing: %v\n, string: %s\n", time.Now().String(), t.SearchStringMissing, t.SearchString)
+		return true, nil
+	})
+	if err == nil {
+		return
+	}
+	t.MessageString = fmt.Sprintf("%s: csi pod bad missing: %v\n, string: %s\n", time.Now().String(), t.SearchStringMissing, t.SearchString)
+	LogAndDebugTestError(t)
+}
+
 func dumpCSIPods(t *TestArgs) {
 	podClient := kubeClient.CoreV1().Pods(client.DefaultNamespace)
 	podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
@@ -212,7 +301,7 @@ func dumpCSIPods(t *TestArgs) {
 	t.T.Logf("%s: dumpCSIPods have %d items in list", time.Now().String(), len(podList.Items))
 	for _, pod := range podList.Items {
 		t.T.Logf("%s: dumpCSIPods looking at pod %s in phase %s", time.Now().String(), pod.Name, pod.Status.Phase)
-		if strings.HasPrefix(pod.Name, "csi-hostpath") &&
+		if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") &&
 			pod.Status.Phase == corev1.PodRunning {
 			podJsonBytes, _ := json.MarshalIndent(pod, "", "    ")
 			t.T.Logf("%s: dumpCSIPods pod json:\n:%s", time.Now().String(), string(podJsonBytes))
@@ -227,6 +316,9 @@ func dumpCSIPods(t *TestArgs) {
 					t.T.Fatalf("error reading pod stream %s", err.Error())
 				}
 				podLog := string(b)
+				if len(t.SearchString) > 0 {
+					t.LogContent = t.LogContent + podLog
+				}
 				t.T.Logf("%s: pod logs for container %s:  %s", time.Now().String(), container.Name, podLog)
 			}
 		}
