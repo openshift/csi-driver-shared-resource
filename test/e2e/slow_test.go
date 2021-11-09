@@ -20,14 +20,14 @@ func TestBasicThenNoRBACThenRBAC(t *testing.T) {
 
 	framework.DeleteShareRelatedRBAC(testArgs)
 	t.Logf("%s: wait up to 10 minutes for examining pod %s since the controller does not currently watch all clusterroles and clusterrolebindings and reverse engineer which ones satisfied the SAR calls, so we wait for relist on shares", time.Now().String(), testArgs.Name)
-	testArgs.SearchStringMissing = true
+	testArgs.EnsureStringIsAbsent = true
 	testArgs.TestDuration = 10 * time.Minute
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 
 	framework.CreateShareRelatedRBAC(testArgs)
 	t.Logf("%s: wait up to 10 minutes for examining pod %s since the controller does not currently watch all clusterroles and clusterrolebindings and reverse engineer which ones satisfied the SAR calls, so we wait for relist on shares", time.Now().String(), testArgs.Name)
-	testArgs.SearchStringMissing = false
+	testArgs.EnsureStringIsAbsent = false
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 }

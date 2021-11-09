@@ -63,7 +63,7 @@ func (m *ReadWriteMany) makeFSMounts(volumeRequest *csi.NodePublishVolumeRequest
 		}
 
 		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			AnchorDir,
+			anchorDir,
 			kubeletTargetDir,
 			errList.String()))
 	}
@@ -74,7 +74,7 @@ func (m *ReadWriteMany) removeFSMounts(intermediateBindMountDir, kubeletTargetDi
 	if err := mount.CleanupMountPoint(kubeletTargetDir, mounter, true); err != nil {
 		return err
 	}
-	if err := os.RemoveAll(AnchorDir); err != nil && !os.IsNotExist(err) {
+	if err := os.RemoveAll(intermediateBindMountDir); err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil

@@ -13,7 +13,7 @@ func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
 	testArgs := &framework.TestArgs{
 		T: t,
 	}
-	prep(testArgs)
+	TestBasicThenDriverRestartThenChangeShareWithReadOnlyMount(t)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	basicShareSetupAndVerification(testArgs)

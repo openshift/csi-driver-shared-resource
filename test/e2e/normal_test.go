@@ -43,14 +43,14 @@ func coreTestBasicThenNoShareThenShare(testArgs *framework.TestArgs) {
 	testArgs.ShareToDeleteType = consts.ResourceReferenceTypeConfigMap
 	framework.DeleteShare(testArgs)
 	testArgs.TestDuration = 30 * time.Second
-	testArgs.SearchStringMissing = true
+	testArgs.EnsureStringIsAbsent = true
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 
 	testArgs.T.Logf("%s: adding share back for %s", time.Now().String(), testArgs.Name)
 
 	framework.CreateShare(testArgs)
-	testArgs.SearchStringMissing = false
+	testArgs.EnsureStringIsAbsent = false
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 }
@@ -133,7 +133,7 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveSubPath(t *testing.T) {
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 
-	testArgs.SearchStringMissing = true
+	testArgs.EnsureStringIsAbsent = true
 	testArgs.SearchString = ".dockerconfigjson"
 	framework.ExecPod(testArgs)
 }
@@ -154,7 +154,7 @@ func TestTwoSharesSeparateButInheritedMountPathsRemoveTopPath(t *testing.T) {
 	testArgs.SearchString = ".dockerconfigjson"
 	framework.ExecPod(testArgs)
 
-	testArgs.SearchStringMissing = true
+	testArgs.EnsureStringIsAbsent = true
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 }

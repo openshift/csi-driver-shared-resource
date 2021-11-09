@@ -183,12 +183,12 @@ func ExecPod(t *TestArgs) {
 				t.T.Logf("%s: error with remote exec: %s, errOut: %s", time.Now().String(), err.Error(), errOut)
 				return false, nil
 			}
-			if !t.SearchStringMissing && !strings.Contains(out.String(), t.SearchString) {
-				t.T.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), t.SearchStringMissing, out.String(), errOut.String())
+			if !t.EnsureStringIsAbsent && !strings.Contains(out.String(), t.SearchString) {
+				t.T.Logf("%s: directory listing must contain: '%v' but it doesn't\nout: %s\nerr: %s\n", time.Now().String(), t.SearchString, out.String(), errOut.String())
 				return false, nil
 			}
-			if t.SearchStringMissing && strings.Contains(out.String(), t.SearchString) {
-				t.T.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), t.SearchStringMissing, out.String(), errOut.String())
+			if t.EnsureStringIsAbsent && strings.Contains(out.String(), t.SearchString) {
+				t.T.Logf("%s: directory listing should not contain: '%v' but it does\nout: %s\nerr: %s\n", time.Now().String(), t.SearchString, out.String(), errOut.String())
 				return false, nil
 			}
 			t.T.Logf("%s: final directory listing:\n%s", time.Now().String(), out.String())
@@ -199,7 +199,7 @@ func ExecPod(t *TestArgs) {
 		}
 	}
 
-	t.MessageString = fmt.Sprintf("directory listing search for %s with missing %v failed", t.SearchString, t.SearchStringMissing)
+	t.MessageString = fmt.Sprintf("directory listing search for %s with missing %v failed", t.SearchString, t.EnsureStringIsAbsent)
 	LogAndDebugTestError(t)
 }
 
@@ -273,22 +273,21 @@ func SearchCSIPods(t *TestArgs) {
 	}
 	err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
 		dumpCSIPods(t)
-
-		if !t.SearchStringMissing && !strings.Contains(t.LogContent, t.SearchString) {
-			t.T.Logf("%s: csi pod listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
+		if !t.EnsureStringIsAbsent && !strings.Contains(t.LogContent, t.SearchString) {
+			t.T.Logf("%s: directory listing must contain: '%v' but it doesn't\nout: %s\nerr: %s\n", time.Now().String(), t.SearchString, t.LogContent)
 			return false, nil
 		}
-		if t.SearchStringMissing && strings.Contains(t.LogContent, t.SearchString) {
-			t.T.Logf("%s: directory listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
+		if t.EnsureStringIsAbsent && strings.Contains(t.LogContent, t.SearchString) {
+			t.T.Logf("%s: directory listing should not contain: '%v' but it does\nout: %s\nerr: %s\n", time.Now().String(), t.SearchString, t.LogContent)
 			return false, nil
 		}
-		t.T.Logf("%s: shared resource driver pods are good with search string criteria: missing: %v\n, string: %s\n", time.Now().String(), t.SearchStringMissing, t.SearchString)
+		t.T.Logf("%s: shared resource driver pods are good with search string criteria: must be absent: %v\n, string: %s\n", time.Now().String(), t.EnsureStringIsAbsent, t.SearchString)
 		return true, nil
 	})
 	if err == nil {
 		return
 	}
-	t.MessageString = fmt.Sprintf("%s: csi pod bad missing: %v\n, string: %s\n", time.Now().String(), t.SearchStringMissing, t.SearchString)
+	t.MessageString = fmt.Sprintf("%s: csi pod does not satisfy search criteria: string must be absent: %v\n, string: %s\n", time.Now().String(), t.EnsureStringIsAbsent, t.SearchString)
 	LogAndDebugTestError(t)
 }
 

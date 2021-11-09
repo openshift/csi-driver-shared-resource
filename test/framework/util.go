@@ -21,7 +21,7 @@ type TestArgs struct {
 	LogContent                         string
 	CurrentDriverContainerRestartCount map[string]int32
 	ShareToDeleteType                  consts.ResourceReferenceType
-	SearchStringMissing                bool
+	EnsureStringIsAbsent               bool
 	SecondShare                        bool
 	SecondShareSubDir                  bool
 	DaemonSetUp                        bool
