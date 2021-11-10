@@ -4,29 +4,64 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+
+	utilnet "k8s.io/apimachinery/pkg/util/net"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func runMetricsServer(t *testing.T) chan<- struct{} {
+var (
+	portOffset uint32 = 0
+)
+
+func blockUntilServerStarted(port int) error {
+	return wait.PollImmediate(100*time.Millisecond, 5*time.Second, func() (bool, error) {
+		if _, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", port)); err != nil {
+			// in case error is "connection refused", server is not up (yet)
+			// it is possible that it is still being started
+			// in that case we need to try more
+			if utilnet.IsConnectionRefused(err) {
+				return false, nil
+			}
+
+			// in case of a different error, return immediately
+			return true, err
+		}
+
+		// no error, stop polling the server, continue with the test logic
+		return true, nil
+	})
+}
+
+func runMetricsServer(t *testing.T) (int, chan<- struct{}) {
+	var port int = MetricsPort + int(atomic.AddUint32(&portOffset, 1))
+
 	ch := make(chan struct{})
-	server, err := BuildServer(MetricsPort)
+	server, err := BuildServer(port)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
 
 	go RunServer(server, ch)
-	return ch
+
+	if err := blockUntilServerStarted(port); err != nil {
+		t.Fatalf("error while waiting for metrics server: %v", err)
+	}
+
+	return port, ch
 }
 
 func TestRunServer(t *testing.T) {
-	ch := runMetricsServer(t)
+	port, ch := runMetricsServer(t)
 	defer close(ch)
 
-	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", MetricsPort))
+	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", port))
 	if err != nil {
 		t.Fatalf("error while querying metrics server: %v", err)
 	}
@@ -137,9 +172,9 @@ func TestMetricQueries(t *testing.T) {
 			}
 		}
 
-		ch := runMetricsServer(t)
+		port, ch := runMetricsServer(t)
 		for _, l := range test.expected.labelAmounts {
-			testQueryCounterMetric(t, test.name, MetricsPort, l.amount, test.expected.name, l.labelName, l.labelValue)
+			testQueryCounterMetric(t, test.name, port, l.amount, test.expected.name, l.labelName, l.labelValue)
 		}
 		close(ch)
 	}
