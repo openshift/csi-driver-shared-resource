@@ -1,2 +1,5 @@
 _output
 release.yaml
+test/functional/features/steps/__pycache__
+.mypy_cache
+test/kubeconfig
