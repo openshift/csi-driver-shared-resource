@@ -116,8 +116,10 @@ github.com/openshift/api/sharedresource/v1alpha1
 # github.com/openshift/client-go v0.0.0-20211007143529-7ab6242249ff
 ## explicit
 github.com/openshift/client-go/sharedresource/clientset/versioned
+github.com/openshift/client-go/sharedresource/clientset/versioned/fake
 github.com/openshift/client-go/sharedresource/clientset/versioned/scheme
 github.com/openshift/client-go/sharedresource/clientset/versioned/typed/sharedresource/v1alpha1
+github.com/openshift/client-go/sharedresource/clientset/versioned/typed/sharedresource/v1alpha1/fake
 github.com/openshift/client-go/sharedresource/informers/externalversions
 github.com/openshift/client-go/sharedresource/informers/externalversions/internalinterfaces
 github.com/openshift/client-go/sharedresource/informers/externalversions/sharedresource
