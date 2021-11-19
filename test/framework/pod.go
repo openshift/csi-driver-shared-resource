@@ -158,7 +158,7 @@ func mountFailed(t *TestArgs) {
 func ExecPod(t *TestArgs) {
 	pollInterval := 1 * time.Second
 	if t.TestDuration != 30*time.Second {
-		pollInterval = 1 * time.Minute
+		pollInterval = 2 * time.Minute
 	}
 	dirs := []string{"/data"}
 	switch {

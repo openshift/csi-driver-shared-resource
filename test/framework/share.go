@@ -57,7 +57,7 @@ func ChangeShare(t *TestArgs) {
 	if err != nil {
 		t.T.Fatalf("error getting share %s: %s", name, err.Error())
 	}
-	share.Spec.ConfigMapRef.Name = "kube-root-ca.crt"
+	share.Spec.ConfigMapRef.Name = t.ChangeName
 	_, err = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Update(context.TODO(), share, metav1.UpdateOptions{})
 	if err != nil {
 		t.T.Fatalf("error updating share %s: %s", name, err.Error())
