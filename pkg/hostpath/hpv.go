@@ -1,8 +1,12 @@
 package hostpath
 
 import (
-	"strconv"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"sync"
+
+	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
@@ -18,15 +22,12 @@ type hostPathVolume struct {
 	VolPathBindMountDir string     `json:"volPathBindMountDir"`
 	VolAccessType       accessType `json:"volAccessType"`
 	TargetPath          string     `json:"targetPath"`
-	SharedDataKey       string     `json:"sharedDataKey"`
 	SharedDataKind      string     `json:"sharedDataKind"`
 	SharedDataId        string     `json:"sharedDataId"`
-	ShareDataVersion    string     `json:"sharedDataVersion"`
 	PodNamespace        string     `json:"podNamespace"`
 	PodName             string     `json:"podName"`
 	PodUID              string     `json:"podUID"`
 	PodSA               string     `json:"podSA"`
-	Allowed             bool       `json:"allowed"`
 	ReadOnly            bool       `json:"readOnly"`
 	// hpv's can be accessed/modified by both the sharedSecret/SharedConfigMap events and the configmap/secret events; to prevent data races
 	// we serialize access to a given hpv with a per hpv mutex stored in this map; access to hpv fields should not
@@ -78,11 +79,6 @@ func (hpv *hostPathVolume) GetTargetPath() string {
 	defer hpv.Lock.Unlock()
 	return hpv.TargetPath
 }
-func (hpv *hostPathVolume) GetSharedDataKey() string {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	return hpv.SharedDataKey
-}
 func (hpv *hostPathVolume) GetSharedDataKind() consts.ResourceReferenceType {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
@@ -92,11 +88,6 @@ func (hpv *hostPathVolume) GetSharedDataId() string {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	return hpv.SharedDataId
-}
-func (hpv *hostPathVolume) GetSharedDataVersion() string {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	return hpv.ShareDataVersion
 }
 func (hpv *hostPathVolume) GetPodNamespace() string {
 	hpv.Lock.Lock()
@@ -117,11 +108,6 @@ func (hpv *hostPathVolume) GetPodSA() string {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	return hpv.PodSA
-}
-func (hpv *hostPathVolume) IsAllowed() bool {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	return hpv.Allowed
 }
 func (hpv *hostPathVolume) IsReadOnly() bool {
 	hpv.Lock.Lock()
@@ -160,11 +146,6 @@ func (hpv *hostPathVolume) SetTargetPath(path string) {
 	defer hpv.Lock.Unlock()
 	hpv.TargetPath = path
 }
-func (hpv *hostPathVolume) SetSharedDataKey(key string) {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	hpv.SharedDataKey = key
-}
 func (hpv *hostPathVolume) SetSharedDataKind(kind string) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
@@ -174,29 +155,6 @@ func (hpv *hostPathVolume) SetSharedDataId(id string) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	hpv.SharedDataId = id
-}
-func (hpv *hostPathVolume) SetSharedDataVersion(version string) {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	hpv.ShareDataVersion = version
-}
-func (hpv *hostPathVolume) CheckBeforeSetSharedDataVersion(version string) bool {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	newVersionInt, err := strconv.Atoi(version)
-	if err != nil {
-		return false
-	}
-	if len(hpv.ShareDataVersion) == 0 {
-		hpv.ShareDataVersion = version
-		return true
-	}
-	oldVersionInt, _ := strconv.Atoi(hpv.ShareDataVersion)
-	if oldVersionInt >= newVersionInt {
-		return false
-	}
-	hpv.ShareDataVersion = version
-	return true
 }
 func (hpv *hostPathVolume) SetPodNamespace(namespace string) {
 	hpv.Lock.Lock()
@@ -218,13 +176,32 @@ func (hpv *hostPathVolume) SetPodSA(sa string) {
 	defer hpv.Lock.Unlock()
 	hpv.PodSA = sa
 }
-func (hpv *hostPathVolume) SetAllowed(allowed bool) {
-	hpv.Lock.Lock()
-	defer hpv.Lock.Unlock()
-	hpv.Allowed = allowed
-}
 func (hpv *hostPathVolume) SetReadOnly(readOnly bool) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	hpv.ReadOnly = readOnly
+}
+
+func (hpv *hostPathVolume) StoreToDisk() error {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	klog.V(4).Infof("storeVolToDisk %s", hpv.VolID)
+	defer klog.V(4).Infof("storeVolToDisk exit %s", hpv.VolID)
+
+	f, terr := os.Open(VolumeMapRoot)
+	if terr != nil {
+		// catch for unit tests
+		return nil
+	}
+	defer f.Close()
+
+	filePath := filepath.Join(VolumeMapRoot, hpv.VolID)
+	dataFile, err := os.Create(filePath)
+	if err != nil {
+		return err
+	}
+	defer dataFile.Close()
+
+	dataEncoder := json.NewEncoder(dataFile)
+	return dataEncoder.Encode(hpv)
 }

@@ -19,6 +19,7 @@ package hostpath
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -238,14 +239,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		kubeletTargetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
-	anchorDir, bindDir := ns.hp.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
+	mountIDString, bindDir := ns.hp.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
 	switch {
 	case readOnly:
-		if err := ns.readOnlyMounter.makeFSMounts(anchorDir, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+		if err := ns.readOnlyMounter.makeFSMounts(mountIDString, bindDir, kubeletTargetPath, ns.mounter); err != nil {
 			return nil, err
 		}
 	default:
-		if err := ns.readWriteMounter.makeFSMounts(anchorDir, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+		if err := ns.readWriteMounter.makeFSMounts(mountIDString, bindDir, kubeletTargetPath, ns.mounter); err != nil {
 			return nil, err
 		}
 
@@ -260,7 +261,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			err.Error()))
 	}
 
-	if err := storeVolMapToDisk(); err != nil {
+	if err := vol.StoreToDisk(); err != nil {
 		metrics.IncMountCounter(false)
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
@@ -304,6 +305,11 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete volume: %s", err))
 	}
 
+	filePath := filepath.Join(VolumeMapRoot, hpv.GetVolID())
+	if err := os.Remove(filePath); err != nil {
+		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
+		return nil, status.Error(codes.Internal, err.Error())
+	}
 	return &csi.NodeUnpublishVolumeResponse{}, nil
 }
 
