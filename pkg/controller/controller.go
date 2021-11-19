@@ -11,7 +11,6 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/informers/internalinterfaces"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
@@ -19,9 +18,9 @@ import (
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 
-	shareclientv1alpha1 "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
 )
 
@@ -30,9 +29,7 @@ const (
 )
 
 type Controller struct {
-	kubeRestConfig *rest.Config
-
-	kubeClient *kubernetes.Clientset
+	kubeClient kubernetes.Interface
 
 	cfgMapWorkqueue          workqueue.RateLimitingInterface
 	secretWorkqueue          workqueue.RateLimitingInterface
@@ -54,21 +51,9 @@ type Controller struct {
 // NewController instantiate a new controller with relisting interval, and optional refresh-resources
 // mode. Refresh-resources mode means the controller will keep watching for ConfigMaps and Secrets
 // for future changes, when disabled it only loads the resource contents before mounting the volume.
-func NewController(shareRelist time.Duration, refreshResources bool, ignoredNamespaces []string) (*Controller, error) {
-	kubeRestConfig, err := client.GetConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	kubeClient, err := kubernetes.NewForConfig(kubeRestConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	shareClient, err := shareclientv1alpha1.NewForConfig(kubeRestConfig)
-	if err != nil {
-		return nil, err
-	}
+func NewController(shareRelist time.Duration, refreshResources bool, ignoredNamespaces []string, hp hostpath.HostPathDriver) (*Controller, error) {
+	kubeClient := client.GetClient()
+	shareClient := client.GetShareClient()
 
 	tweakListOptions := internalinterfaces.TweakListOptionsFunc(func(options *metav1.ListOptions) {
 		ignored := []string{}
@@ -86,8 +71,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 		shareRelist)
 
 	c := &Controller{
-		kubeClient:     kubeClient,
-		kubeRestConfig: kubeRestConfig,
+		kubeClient: kubeClient,
 		sharedConfigMapWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
 			"shared-configmap-changes"),
 		sharedSecretWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),

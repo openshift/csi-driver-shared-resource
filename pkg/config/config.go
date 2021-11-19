@@ -19,6 +19,8 @@ type Config struct {
 	RefreshResources bool `yaml:"refreshResources,omitempty"`
 }
 
+var LoadedConfig Config
+
 // GetShareRelistInterval returns the ShareRelistInterval value as duration. On error, default value
 // is employed instead.
 func (c *Config) GetShareRelistInterval() time.Duration {

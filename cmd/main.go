@@ -14,6 +14,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
+	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
@@ -41,7 +42,6 @@ var rootCmd = &cobra.Command{
 	Short:   "",
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		var kubeClient kubernetes.Interface
 		var err error
 
 		cfgManager := config.NewManager(cfgFilePath)
@@ -52,12 +52,20 @@ var rootCmd = &cobra.Command{
 		}
 
 		if !cfg.RefreshResources {
-			fmt.Println("Refresh-Resources disabled, loading a Kubernetes client for HostPathDriver")
+			fmt.Println("Refresh-Resources disabled")
 
-			if kubeClient, err = loadKubernetesClientset(); err != nil {
-				fmt.Printf("Failed to load Kubernetes API client: %s", err.Error())
-				os.Exit(1)
-			}
+		}
+		if kubeClient, err := loadKubernetesClientset(); err != nil {
+			fmt.Printf("Failed to load Kubernetes API client: %s", err.Error())
+			os.Exit(1)
+		} else {
+			client.SetClient(kubeClient)
+		}
+		if shareClient, err := loadSharedresourceClientset(); err != nil {
+			fmt.Printf("Failed to load SharedResource API client: %s", err.Error())
+			os.Exit(1)
+		} else {
+			client.SetShareClient(shareClient)
 		}
 
 		driver, err := hostpath.NewHostPathDriver(
@@ -68,14 +76,13 @@ var rootCmd = &cobra.Command{
 			endPoint,
 			maxVolumesPerNode,
 			version,
-			kubeClient,
 		)
 		if err != nil {
 			fmt.Printf("Failed to initialize driver: %s", err.Error())
 			os.Exit(1)
 		}
 
-		go runOperator(cfg)
+		go runOperator(cfg, driver)
 		go watchForConfigChanges(cfgManager)
 		driver.Run()
 	},
@@ -110,10 +117,18 @@ func loadKubernetesClientset() (kubernetes.Interface, error) {
 	return kubernetes.NewForConfig(kubeRestConfig)
 }
 
+func loadSharedresourceClientset() (sharev1clientset.Interface, error) {
+	kubeRestConfig, err := client.GetConfig()
+	if err != nil {
+		return nil, err
+	}
+	return sharev1clientset.NewForConfig(kubeRestConfig)
+}
+
 // runOperator based on the informed configuration, it will spawn and run the Controller, until
 // trapping OS signals.
-func runOperator(cfg *config.Config) {
-	c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources, cfg.IgnoredNamespaces)
+func runOperator(cfg *config.Config, hp hostpath.HostPathDriver) {
+	c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources, cfg.IgnoredNamespaces, hp)
 	if err != nil {
 		fmt.Printf("Failed to set up controller: %s", err.Error())
 		os.Exit(1)
@@ -152,6 +167,7 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 		close(stop)
 		<-c
 		os.Exit(1) // second signal. Exit directly.
+		klog.Info("exiting")
 	}()
 
 	return stop

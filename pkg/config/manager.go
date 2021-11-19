@@ -60,6 +60,7 @@ func (m *Manager) LoadConfig() (*Config, error) {
 	if err = yaml.Unmarshal(payload, &cfg); err != nil {
 		return nil, err
 	}
+	LoadedConfig = cfg
 	return &cfg, nil
 }
 
