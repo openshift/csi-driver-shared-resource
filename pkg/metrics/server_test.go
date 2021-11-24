@@ -2,7 +2,6 @@ package metrics
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"sync/atomic"
 	"testing"
@@ -83,99 +82,96 @@ func findMetricByLabel(metrics []*io_prometheus_client.Metric, label, value stri
 	return nil
 }
 
-func testQueryCounterMetric(t *testing.T, testName string, port, amount int, query, label, value string) {
+func testServerForExpected(t *testing.T, testName string, port int, expected []metric) {
 	resp, err := http.Get(fmt.Sprintf("http://localhost:%d/metrics", port))
 	if err != nil {
 		t.Fatalf("error requesting metrics server: %v in test %q", err, testName)
 	}
-	metrics := findMetricsByCounter(resp.Body, query)
-	metric := findMetricByLabel(metrics, label, value)
-	if metric == nil {
-		t.Fatalf("unable to locate metric %q in test %q", query, testName)
+	var p expfmt.TextParser
+	mf, err := p.TextToMetricFamilies(resp.Body)
+	if err != nil {
+		t.Fatalf("error parsing server response: %v in test %q", err, testName)
 	}
-	if metric.Counter.Value == nil {
-		t.Fatalf("metric did not have value %q in test %q", query, testName)
-	}
-	if *metric.Counter.Value != float64(amount) {
-		t.Fatalf("incorrect metric value %v for query %q in test %q", *metric.Counter.Value, query, testName)
-	}
-}
 
-func findMetricsByCounter(buf io.ReadCloser, name string) []*io_prometheus_client.Metric {
-	defer buf.Close()
-	mf := io_prometheus_client.MetricFamily{}
-	decoder := expfmt.NewDecoder(buf, "text/plain")
-	for err := decoder.Decode(&mf); err == nil; err = decoder.Decode(&mf) {
-		if *mf.Name == name {
-			return mf.Metric
+	for _, e := range expected {
+		if mf[e.name] == nil {
+			t.Fatalf("expected metric %v not found in server response: in test %q", e.name, testName)
+		}
+		v := *(mf[e.name].GetMetric()[0].GetCounter().Value)
+		if v != e.value {
+			t.Fatalf("metric value %v differs from expected %v: in test %q", v, e.value, testName)
 		}
 	}
-	return nil
 }
 
-type metricNameLabel struct {
-	name         string
-	labelAmounts []labelNameValueAmount
-}
-
-type labelNameValueAmount struct {
-	labelName  string
-	labelValue string
-	amount     int
+type metric struct {
+	name  string
+	value float64
 }
 
 func TestMetricQueries(t *testing.T) {
 	for _, test := range []struct {
 		name     string
-		expected metricNameLabel
+		expected []metric
 		mounts   map[bool]int
 	}{
 		{
 			name: "One true, two false",
-			expected: metricNameLabel{
-				name: mountCountName,
-				labelAmounts: []labelNameValueAmount{
-					labelNameValueAmount{labelName: "succeeded", labelValue: "true", amount: 1},
-					labelNameValueAmount{labelName: "succeeded", labelValue: "false", amount: 2},
+			expected: []metric{
+				{
+					name:  mountCountName,
+					value: 3,
+				},
+				{
+					name:  mountFailureCountName,
+					value: 2,
 				},
 			},
 			mounts: map[bool]int{true: 1, false: 2},
 		},
 		{
 			name: "Zero true, two false",
-			expected: metricNameLabel{
-				name: mountCountName,
-				labelAmounts: []labelNameValueAmount{
-					labelNameValueAmount{labelName: "succeeded", labelValue: "false", amount: 2},
+			expected: []metric{
+				{
+					name:  mountCountName,
+					value: 2,
+				},
+				{
+					name:  mountFailureCountName,
+					value: 2,
 				},
 			},
 			mounts: map[bool]int{false: 2},
 		},
 		{
 			name: "Three true, zero false",
-			expected: metricNameLabel{
-				name: mountCountName,
-				labelAmounts: []labelNameValueAmount{
-					labelNameValueAmount{labelName: "succeeded", labelValue: "true", amount: 3},
+			expected: []metric{
+				{
+					name:  mountCountName,
+					value: 3,
+				},
+				{
+					name:  mountFailureCountName,
+					value: 0,
 				},
 			},
 			mounts: map[bool]int{true: 3},
 		},
 	} {
 		prometheus.Unregister(mountCounter)
-		mountCounter = createMountCounter()
+		prometheus.Unregister(failedMountCounter)
+		mountCounter, failedMountCounter = createMountCounters()
 		prometheus.MustRegister(mountCounter)
+		prometheus.MustRegister(failedMountCounter)
 
 		for k, v := range test.mounts {
 			for i := 0; i < v; i += 1 {
-				IncMountCounter(k)
+				IncMountCounters(k)
 			}
 		}
 
 		port, ch := runMetricsServer(t)
-		for _, l := range test.expected.labelAmounts {
-			testQueryCounterMetric(t, test.name, port, l.amount, test.expected.name, l.labelName, l.labelValue)
-		}
+		testServerForExpected(t, test.name, port, test.expected)
 		close(ch)
 	}
 }
