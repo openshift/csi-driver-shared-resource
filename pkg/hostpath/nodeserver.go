@@ -251,9 +251,11 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	}
 
+	metrics.IncMountCounter()
+
 	// here is what initiates that necessary copy now with *NOT* using bind on the mount so each pod gets its own tmpfs
 	if err := ns.hp.mapVolumeToPod(vol); err != nil {
-		metrics.IncMountCounter(false)
+		metrics.IncMountFailedCounter()
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to populate mount device: %s at %s: %s",
 			bindDir,
 			kubeletTargetPath,
@@ -261,12 +263,11 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	if err := storeVolMapToDisk(); err != nil {
-		metrics.IncMountCounter(false)
+		metrics.IncMountFailedCounter()
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	metrics.IncMountCounter(true)
 	return &csi.NodePublishVolumeResponse{}, nil
 }
 

@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"strconv"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -11,28 +9,44 @@ const (
 
 	sharesSubsystem = "openshift_csi_share"
 
-	mount          = "mount"
-	mountCountName = sharesSubsystem + separator + mount + separator + "total"
+	mount    = "mount"
+	requests = "requests"
+	failed   = "failures"
+
+	mountCountName  = sharesSubsystem + separator + mount + separator + requests + separator + "total"
+	mountFailedName = sharesSubsystem + separator + mount + separator + failed + separator + "total"
 
 	MetricsPort = 6000
 )
 
 var (
-	mountCounter = createMountCounter()
+	mountCounter       = createMountCounter()
+	mountFailedCounter = createMountFailedCounter()
 )
 
-func createMountCounter() *prometheus.CounterVec {
-	return prometheus.NewCounterVec(prometheus.CounterOpts{
+func createMountCounter() prometheus.Counter {
+	return prometheus.NewCounter(prometheus.CounterOpts{
 		Name: mountCountName,
-		Help: "Counts share volume mount attempts by success. " +
-			"'succeeded' label will hold 'true' in case of succeeded mount, and 'false' otherwise.",
-	}, []string{"succeeded"})
+		Help: "Counts all attempts for csi driver volume mounts.",
+	})
+}
+
+func createMountFailedCounter() prometheus.Counter {
+	return prometheus.NewCounter(prometheus.CounterOpts{
+		Name: mountFailedName,
+		Help: "Counts failed mount attempts for csi driver volume mounts.",
+	})
 }
 
 func init() {
 	prometheus.MustRegister(mountCounter)
+	prometheus.MustRegister(mountFailedCounter)
 }
 
-func IncMountCounter(succeeded bool) {
-	mountCounter.With(prometheus.Labels{"succeeded": strconv.FormatBool(succeeded)}).Inc()
+func IncMountCounter() {
+	mountCounter.Inc()
+}
+
+func IncMountFailedCounter() {
+	mountFailedCounter.Inc()
 }

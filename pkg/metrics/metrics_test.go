@@ -34,9 +34,10 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "One true, two false",
 			expected: []string{
-				`# TYPE openshift_csi_share_mount_total counter`,
-				`openshift_csi_share_mount_total{succeeded="false"} 2`,
-				`openshift_csi_share_mount_total{succeeded="true"} 1`,
+				`# TYPE openshift_csi_share_mount_requests_total counter`,
+				`# TYPE openshift_csi_share_mount_failures_total counter`,
+				`openshift_csi_share_mount_requests_total 3`,
+				`openshift_csi_share_mount_failures_total 2`,
 			},
 			mounts:      map[bool]int{true: 1, false: 2},
 			notExpected: []string{},
@@ -44,8 +45,10 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "Two true, no false",
 			expected: []string{
-				`# TYPE openshift_csi_share_mount_total counter`,
-				`openshift_csi_share_mount_total{succeeded="true"} 2`,
+				`# TYPE openshift_csi_share_mount_requests_total counter`,
+				`# TYPE openshift_csi_share_mount_failures_total counter`,
+				`openshift_csi_share_mount_requests_total 2`,
+				`openshift_csi_share_mount_failures_total 0`,
 			},
 			notExpected: []string{
 				`openshift_csi_share_mount_total{succeeded="false"}`,
@@ -55,8 +58,10 @@ func TestMetrics(t *testing.T) {
 		{
 			name: "No true, three false",
 			expected: []string{
-				`# TYPE openshift_csi_share_mount_total counter`,
-				`openshift_csi_share_mount_total{succeeded="false"} 3`,
+				`# TYPE openshift_csi_share_mount_requests_total counter`,
+				`# TYPE openshift_csi_share_mount_failures_total counter`,
+				`openshift_csi_share_mount_requests_total 3`,
+				`openshift_csi_share_mount_failures_total 3`,
 			},
 			notExpected: []string{
 				`openshift_csi_share_mount_total{succeeded="true"}`,
@@ -66,11 +71,16 @@ func TestMetrics(t *testing.T) {
 	} {
 		registry := prometheus.NewRegistry()
 		mountCounter = createMountCounter()
+		mountFailedCounter = createMountFailedCounter()
 		registry.MustRegister(mountCounter)
+		registry.MustRegister(mountFailedCounter)
 
 		for k, v := range test.mounts {
 			for i := 0; i < v; i += 1 {
-				IncMountCounter(k)
+				IncMountCounter()
+				if !k {
+					IncMountFailedCounter()
+				}
 			}
 		}
 
