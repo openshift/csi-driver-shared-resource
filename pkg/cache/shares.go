@@ -64,9 +64,7 @@ func AddSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
 		// so this line build a map with a single entry, the share from this event, and then
 		// applies the function(s) supplied by the CSI volume code in order to make changes based
 		// on this event
-		klog.V(4).Infof("AddSharedConfigMap share %s key %s start range", share.Name, key)
 		shareConfigMapsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
-		klog.V(4).Infof("AddSharedConfigMap share %s key %s end range", share.Name, key)
 	}
 }
 
@@ -75,7 +73,6 @@ func AddSharedSecret(share *sharev1alpha1.SharedSecret) {
 	br := share.Spec.SecretRef
 	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("AddSharedSecret key %s", key)
-	//obj, ok := secrets.Load(key)
 	s := client.GetSecret(br.Namespace, br.Name)
 	if s != nil {
 		// so this line build a map with a single entry, the share from this event, and then

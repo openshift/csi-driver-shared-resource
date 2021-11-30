@@ -167,7 +167,6 @@ func setupSignalHandler() (stopCh <-chan struct{}) {
 		close(stop)
 		<-c
 		os.Exit(1) // second signal. Exit directly.
-		klog.Info("exiting")
 	}()
 
 	return stop

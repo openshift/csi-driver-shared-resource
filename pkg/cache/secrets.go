@@ -45,14 +45,13 @@ func UpsertSecret(secret *corev1.Secret) {
 	// have had their permissions revoked; this will also handle if we had share events arrive before
 	// the corresponding secret
 	sharedSecretsList, err := client.GetListers().SharedSecrets.List(labels.Everything())
-	if err == nil {
-		for _, share := range sharedSecretsList {
-			if share.Spec.SecretRef.Namespace == secret.Namespace && share.Spec.SecretRef.Name == secret.Name {
-				shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
-			}
-		}
-	} else {
+	if err != nil {
 		klog.Warningf("error during UpsertSecret on shared secrets lister list: %s", err.Error())
+	}
+	for _, share := range sharedSecretsList {
+		if share.Spec.SecretRef.Namespace == secret.Namespace && share.Spec.SecretRef.Name == secret.Name {
+			shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+		}
 	}
 
 	// otherwise process any share that arrived after the secret

@@ -619,32 +619,8 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 	return nil
 }
 
-// updateObjCache fetches the resources and populates the object-cache just before mounting.
-/*func (hp *hostPath) updateObjCache(hpv *hostPathVolume) error {
-	kind := hpv.GetSharedDataKind()
-	key := hpv.GetSharedDataKey()
-	klog.V(4).Infof("populating object-cache with '%s' (key='%s') before mounting", kind, key)
-	switch kind {
-	case consts.ResourceReferenceTypeConfigMap:
-		return objcache.SetConfigMap(hp.kubeClient, key)
-	case consts.ResourceReferenceTypeSecret:
-		return objcache.SetSecret(hp.kubeClient, key)
-	default:
-		return fmt.Errorf("invalid share backing resource kind %s", kind)
-	}
-}*/
-
 func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
 	klog.V(4).Infof("mapVolumeToPod calling mapBackingResourceToPod")
-
-	// given the kubeclient is instantiated, it will use it to fetch the resources just before
-	// mounting the volume on the pod, otherwise, it's exected the object-cache already contains the
-	// resource in question
-	/*if hp.kubeClient != nil {
-		if err := hp.updateObjCache(hpv); err != nil {
-			return err
-		}
-	}*/
 
 	err := mapBackingResourceToPod(hpv)
 	if err != nil {

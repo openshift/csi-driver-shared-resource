@@ -5,6 +5,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	corelistersv1 "k8s.io/client-go/listers/core/v1"
+	"k8s.io/klog/v2"
 
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	sharelisterv1alpha1 "github.com/openshift/client-go/sharedresource/listers/sharedresource/v1alpha1"
@@ -49,12 +50,14 @@ func GetSecret(namespace, name string) *corev1.Secret {
 		if err == nil {
 			return s
 		}
+		klog.V(4).Infof("GetSecret lister for %s/%s got error: %s", namespace, name, err.Error())
 	}
 	if kubeClient != nil {
 		s, err := kubeClient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 		if err == nil {
 			return s
 		}
+		klog.V(4).Infof("GetSecret client for %s/%s got error: %s", namespace, name, err.Error())
 	}
 	return nil
 }
@@ -65,12 +68,14 @@ func GetConfigMap(namespace, name string) *corev1.ConfigMap {
 		if err == nil {
 			return cm
 		}
+		klog.V(4).Infof("GetConfigMap lister for %s/%s got error: %s", namespace, name, err.Error())
 	}
 	if kubeClient != nil {
 		cm, err := kubeClient.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
 		if err == nil {
 			return cm
 		}
+		klog.V(4).Infof("GetConfigMap client for %s/%s got error: %s", namespace, name, err.Error())
 	}
 	return nil
 }

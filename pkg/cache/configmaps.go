@@ -44,17 +44,15 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	// have had their permissions revoked; this will also handle if we had share events arrive before
 	// the corresponding configmap
 	sharecConfigMapList, err := client.GetListers().SharedConfigMaps.List(labels.Everything())
-	if err == nil {
-		for _, share := range sharecConfigMapList {
-			if share.Spec.ConfigMapRef.Namespace == configmap.Namespace && share.Spec.ConfigMapRef.Name == configmap.Name {
-				shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
-			}
-		}
-	} else {
+	if err != nil {
 		klog.Warningf("error during UpsertConfigMap on shared configmaps lister list: %s", err.Error())
 	}
+	for _, share := range sharecConfigMapList {
+		if share.Spec.ConfigMapRef.Namespace == configmap.Namespace && share.Spec.ConfigMapRef.Name == configmap.Name {
+			shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+		}
+	}
 	// otherwise process any share that arrived after the configmap
-	//configmapsWithShares.Store(key, configmap)
 	configmapUpsertCallbacks.Range(buildRanger(buildCallbackMap(key, configmap)))
 }
 
