@@ -15,6 +15,7 @@ type TestArgs struct {
 	T                                  *testing.T
 	Name                               string
 	SecondName                         string
+	ChangeName                         string
 	SearchString                       string
 	MessageString                      string
 	ShareToDelete                      string

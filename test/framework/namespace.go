@@ -60,6 +60,15 @@ func CleanupTestNamespaceAndClusterScopedResources(t *TestArgs) {
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
 	}
+	// try to clean up pods in test namespace individually to avoid weird k8s timing issues
+	podList, _ := kubeClient.CoreV1().Pods(t.Name).List(context.TODO(), metav1.ListOptions{})
+	for _, pod := range podList.Items {
+		err = kubeClient.CoreV1().Pods(t.Name).Delete(context.TODO(), pod.Name, metav1.DeleteOptions{})
+		if err != nil {
+			// don't error out
+			t.T.Logf("error deleting test pod %s: %s", pod.Name, err.Error())
+		}
+	}
 	err = namespaceClient.Delete(context.TODO(), t.Name, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
 		t.T.Fatalf("error deleting test namespace %s: %s", t.Name, err.Error())

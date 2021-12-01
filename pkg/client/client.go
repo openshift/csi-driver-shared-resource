@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 
 	"google.golang.org/grpc/codes"
@@ -33,14 +34,27 @@ const (
 )
 
 var (
-	initLock   = sync.Mutex{}
-	kubeClient kubernetes.Interface
-	recorder   record.EventRecorder
+	initLock    = sync.Mutex{}
+	kubeClient  kubernetes.Interface
+	shareClient sharev1clientset.Interface
+	recorder    record.EventRecorder
 )
 
 // SetClient sets the internal kubernetes client interface. Useful for testing.
 func SetClient(client kubernetes.Interface) {
 	kubeClient = client
+}
+
+func GetClient() kubernetes.Interface {
+	return kubeClient
+}
+
+func SetShareClient(client sharev1clientset.Interface) {
+	shareClient = client
+}
+
+func GetShareClient() sharev1clientset.Interface {
+	return shareClient
 }
 
 func GetRecorder() record.EventRecorder {

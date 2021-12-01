@@ -48,7 +48,7 @@ func CreateTestPod(t *TestArgs) {
 			Containers: []corev1.Container{
 				{
 					Name:    containerName,
-					Image:   "quay.io/quay/busybox",
+					Image:   "registry.access.redhat.com/ubi8/ubi",
 					Command: []string{"sleep", "1000000"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -158,7 +158,7 @@ func mountFailed(t *TestArgs) {
 func ExecPod(t *TestArgs) {
 	pollInterval := 1 * time.Second
 	if t.TestDuration != 30*time.Second {
-		pollInterval = 1 * time.Minute
+		pollInterval = 2 * time.Minute
 	}
 	dirs := []string{"/data"}
 	switch {
@@ -172,7 +172,7 @@ func ExecPod(t *TestArgs) {
 		err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
 			req := restClient.Post().Resource("pods").Namespace(t.Name).Name(t.Name).SubResource("exec").
 				Param("container", containerName).Param("stdout", "true").Param("stderr", "true").
-				Param("command", "ls").Param("command", "-laR").Param("command", startingPoint)
+				Param("command", "ls").Param("command", "-laRZ").Param("command", startingPoint)
 
 			out := &bytes.Buffer{}
 			errOut := &bytes.Buffer{}

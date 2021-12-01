@@ -9,11 +9,7 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/test/framework"
 )
 
-func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T: t,
-	}
-	prep(testArgs)
+func inner(testArgs *framework.TestArgs, t *testing.T) {
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
 	basicShareSetupAndVerification(testArgs)
@@ -25,8 +21,28 @@ func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
 
-	t.Logf("%s: now changing share", time.Now().String())
+	testArgs.ChangeName = "kube-root-ca.crt"
+	t.Logf("%s: now changing share to %s", time.Now().String(), testArgs.ChangeName)
 	framework.ChangeShare(testArgs)
 	testArgs.SearchString = "ca.crt"
 	framework.ExecPod(testArgs)
+}
+
+func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
+	testArgs := &framework.TestArgs{
+		T: t,
+	}
+	prep(testArgs)
+	for i := 0; i < 3; i++ {
+		inner(testArgs, t)
+	}
+}
+
+func TestBasicThenDriverRestartThenChangeShareWithReadOnlyMount(t *testing.T) {
+	testArgs := &framework.TestArgs{
+		T: t,
+	}
+	testArgs.ReadOnly = true
+	prep(testArgs)
+	inner(testArgs, t)
 }
