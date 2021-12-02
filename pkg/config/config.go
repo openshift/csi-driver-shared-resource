@@ -12,8 +12,6 @@ const DefaultResyncDuration = 10 * time.Minute
 type Config struct {
 	// ShareRelistInterval interval to relist all "Share" object instances.
 	ShareRelistInterval string `yaml:"shareRelistInterval,omitempty"`
-	// IgnoredNamespaces namespace names ignored by this controller.
-	IgnoredNamespaces []string `yaml:"ignoredNamespaces,omitempty"`
 	// RefreshResources toggles actively watching for resources, when disabled it will only read
 	// resources before mount.
 	RefreshResources bool `yaml:"refreshResources,omitempty"`
@@ -36,7 +34,6 @@ func (c *Config) GetShareRelistInterval() time.Duration {
 func NewConfig() Config {
 	return Config{
 		ShareRelistInterval: DefaultResyncDuration.String(),
-		IgnoredNamespaces:   []string{},
 		RefreshResources:    true,
 	}
 }

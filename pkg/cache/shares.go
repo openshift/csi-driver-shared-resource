@@ -1,12 +1,13 @@
 package cache
 
 import (
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"sync"
 
-	"k8s.io/klog/v2"
-
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/klog/v2"
 )
 
 /*
@@ -94,6 +95,28 @@ func UpdateSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
 func UpdateSharedSecret(share *sharev1alpha1.SharedSecret) {
 	klog.V(4).Infof("UpdateSharedSecret key %s", share.Name)
 	AddSharedSecret(share)
+}
+
+func NamespacesWithSharedConfigMaps() map[string]struct{} {
+	namespacesMap := map[string]struct{}{}
+	list, err := client.GetListers().SharedConfigMaps.List(labels.Everything())
+	if err == nil {
+		for _, scm := range list {
+			namespacesMap[scm.Spec.ConfigMapRef.Namespace] = struct{}{}
+		}
+	}
+	return namespacesMap
+}
+
+func NamespacesWithSharedSecrets() map[string]struct{} {
+	namespacesMap := map[string]struct{}{}
+	list, err := client.GetListers().SharedSecrets.List(labels.Everything())
+	if err == nil {
+		for _, ss := range list {
+			namespacesMap[ss.Spec.SecretRef.Namespace] = struct{}{}
+		}
+	}
+	return namespacesMap
 }
 
 // DelSharedConfigMap removes the SharedConfigMap from our various tracking maps and calls the registered callbacks

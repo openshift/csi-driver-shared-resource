@@ -474,7 +474,31 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 		},
 		{
-			name:    "inputs are OK for configmap",
+			name:        "inputs are OK for secret, no refresh",
+			secretShare: validSharedSecret,
+			reactor:     acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:         "true",
+					CSIPodName:           "name1",
+					CSIPodNamespace:      "namespace1",
+					CSIPodUID:            "uid1",
+					CSIPodSA:             "sa1",
+					SharedSecretShareKey: "share1",
+					RefreshResource:      "false",
+				},
+			},
+		},
+		{
+			name:    "inputs are OK for configmap, no refresh",
 			cmShare: validSharedConfigMap,
 			reactor: acceptReactorFunc,
 			nodePublishVolReq: csi.NodePublishVolumeRequest{
@@ -493,6 +517,55 @@ func TestNodePublishVolume(t *testing.T) {
 					CSIPodUID:               "uid1",
 					CSIPodSA:                "sa1",
 					SharedConfigMapShareKey: "share1",
+					RefreshResource:         "false",
+				},
+			},
+		},
+		{
+			name:        "inputs are OK for secret, no refresh",
+			secretShare: validSharedSecret,
+			reactor:     acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:         "true",
+					CSIPodName:           "name1",
+					CSIPodNamespace:      "namespace1",
+					CSIPodUID:            "uid1",
+					CSIPodSA:             "sa1",
+					SharedSecretShareKey: "share1",
+					RefreshResource:      "false",
+				},
+			},
+		},
+		{
+			name:    "inputs are OK for configmap, no refresh",
+			cmShare: validSharedConfigMap,
+			reactor: acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				Readonly:   true,
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
+					RefreshResource:         "false",
 				},
 			},
 		},

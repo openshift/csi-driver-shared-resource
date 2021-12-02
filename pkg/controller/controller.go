@@ -2,14 +2,12 @@ package controller
 
 import (
 	"fmt"
-	"strings"
+	"sync"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/informers/internalinterfaces"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
@@ -18,7 +16,6 @@ import (
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 
 	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
@@ -28,6 +25,12 @@ const (
 	DefaultResyncDuration = 10 * time.Minute
 )
 
+type sharedObjectInformer struct {
+	stopCh          chan struct{}
+	informerFactory informers.SharedInformerFactory
+	informer        cache.SharedIndexInformer
+}
+
 type Controller struct {
 	kubeClient kubernetes.Interface
 
@@ -36,35 +39,26 @@ type Controller struct {
 	sharedConfigMapWorkqueue workqueue.RateLimitingInterface
 	sharedSecretWorkqueue    workqueue.RateLimitingInterface
 
-	cfgMapInformer          cache.SharedIndexInformer
-	secInformer             cache.SharedIndexInformer
+	secretWatchObjs    sync.Map
+	configMapWatchObjs sync.Map
+
 	sharedConfigMapInformer cache.SharedIndexInformer
 	sharedSecretInformer    cache.SharedIndexInformer
 
 	sharedConfigMapInformerFactory shareinformer.SharedInformerFactory
 	sharedSecretInformerFactory    shareinformer.SharedInformerFactory
-	informerFactory                informers.SharedInformerFactory
 
 	listers *client.Listers
+
+	refreshResources bool
 }
 
 // NewController instantiate a new controller with relisting interval, and optional refresh-resources
 // mode. Refresh-resources mode means the controller will keep watching for ConfigMaps and Secrets
 // for future changes, when disabled it only loads the resource contents before mounting the volume.
-func NewController(shareRelist time.Duration, refreshResources bool, ignoredNamespaces []string, hp hostpath.HostPathDriver) (*Controller, error) {
+func NewController(shareRelist time.Duration, refreshResources bool) (*Controller, error) {
 	kubeClient := client.GetClient()
 	shareClient := client.GetShareClient()
-
-	tweakListOptions := internalinterfaces.TweakListOptionsFunc(func(options *metav1.ListOptions) {
-		ignored := []string{}
-		for _, ns := range ignoredNamespaces {
-			klog.V(4).Infof("namespace '%s' is being ignored", ns)
-			ignored = append(ignored, fmt.Sprintf("metadata.namespace!=%s", ns))
-		}
-		options.FieldSelector = strings.Join(ignored, ",")
-	})
-	informerFactory := informers.NewSharedInformerFactoryWithOptions(kubeClient,
-		DefaultResyncDuration, informers.WithTweakListOptions(tweakListOptions))
 
 	klog.V(5).Infof("configured share relist %v", shareRelist)
 	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient,
@@ -76,28 +70,20 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 			"shared-configmap-changes"),
 		sharedSecretWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
 			"shared-secret-changes"),
-		informerFactory:                informerFactory,
+		secretWatchObjs:                sync.Map{},
+		configMapWatchObjs:             sync.Map{},
 		sharedConfigMapInformerFactory: shareInformerFactory,
 		sharedSecretInformerFactory:    shareInformerFactory,
 		sharedConfigMapInformer:        shareInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Informer(),
 		sharedSecretInformer:           shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Informer(),
 		listers:                        client.GetListers(),
+		refreshResources:               refreshResources,
 	}
 
-	if refreshResources {
-		c.cfgMapWorkqueue = workqueue.NewNamedRateLimitingQueue(
-			workqueue.DefaultControllerRateLimiter(), "shared-resource-configmap-changes")
-		c.secretWorkqueue = workqueue.NewNamedRateLimitingQueue(
-			workqueue.DefaultControllerRateLimiter(), "shared-resource-secret-changes")
-		c.cfgMapInformer = informerFactory.Core().V1().ConfigMaps().Informer()
-		c.secInformer = informerFactory.Core().V1().Secrets().Informer()
-
-		client.SetConfigMapsLister(c.informerFactory.Core().V1().ConfigMaps().Lister())
-		client.SetSecretsLister(c.informerFactory.Core().V1().Secrets().Lister())
-
-		c.cfgMapInformer.AddEventHandler(c.configMapEventHandler())
-		c.secInformer.AddEventHandler(c.secretEventHandler())
-	}
+	c.cfgMapWorkqueue = workqueue.NewNamedRateLimitingQueue(
+		workqueue.DefaultControllerRateLimiter(), "shared-resource-configmap-changes")
+	c.secretWorkqueue = workqueue.NewNamedRateLimitingQueue(
+		workqueue.DefaultControllerRateLimiter(), "shared-resource-secret-changes")
 
 	client.SetSharedConfigMapsLister(c.sharedConfigMapInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Lister())
 	client.SetSharedSecretsLister(c.sharedSecretInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Lister())
@@ -108,23 +94,14 @@ func NewController(shareRelist time.Duration, refreshResources bool, ignoredName
 }
 
 func (c *Controller) Run(stopCh <-chan struct{}) error {
-	if c.cfgMapWorkqueue != nil && c.secretWorkqueue != nil {
-		defer c.cfgMapWorkqueue.ShutDown()
-		defer c.secretWorkqueue.ShutDown()
-	}
+	defer c.cfgMapWorkqueue.ShutDown()
+	defer c.secretWorkqueue.ShutDown()
 	defer c.sharedConfigMapWorkqueue.ShutDown()
 	defer c.sharedSecretWorkqueue.ShutDown()
 
-	c.informerFactory.Start(stopCh)
 	c.sharedConfigMapInformerFactory.Start(stopCh)
 	c.sharedSecretInformerFactory.Start(stopCh)
 
-	if c.cfgMapInformer != nil && !cache.WaitForCacheSync(stopCh, c.cfgMapInformer.HasSynced) {
-		return fmt.Errorf("failed to wait for ConfigMap informer cache to sync")
-	}
-	if c.secInformer != nil && !cache.WaitForCacheSync(stopCh, c.secInformer.HasSynced) {
-		return fmt.Errorf("failed to wait for Secrets informer cache to sync")
-	}
 	if !cache.WaitForCacheSync(stopCh, c.sharedConfigMapInformer.HasSynced) {
 		return fmt.Errorf("failed to wait for sharedconfigmap caches to sync")
 	}
@@ -132,12 +109,8 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 		return fmt.Errorf("failed to wait for sharedsecret caches to sync")
 	}
 
-	if c.cfgMapWorkqueue != nil {
-		go wait.Until(c.configMapEventProcessor, time.Second, stopCh)
-	}
-	if c.secretWorkqueue != nil {
-		go wait.Until(c.secretEventProcessor, time.Second, stopCh)
-	}
+	go wait.Until(c.configMapEventProcessor, time.Second, stopCh)
+	go wait.Until(c.secretEventProcessor, time.Second, stopCh)
 	go wait.Until(c.sharedConfigMapEventProcessor, time.Second, stopCh)
 	go wait.Until(c.sharedSecretEventProcessor, time.Second, stopCh)
 
@@ -151,7 +124,93 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 
 	<-stopCh
 
+	c.secretWatchObjs.Range(func(key, value interface{}) bool {
+		informerObj := value.(sharedObjectInformer)
+		close(informerObj.stopCh)
+		return true
+	})
+	c.configMapWatchObjs.Range(func(key, value interface{}) bool {
+		informerObj := value.(sharedObjectInformer)
+		close(informerObj.stopCh)
+		return true
+	})
+
 	return nil
+}
+
+func (c *Controller) RegisterSecretInformer(namespace string) error {
+	val, ok := c.secretWatchObjs.LoadOrStore(namespace, sharedObjectInformer{})
+	if !ok {
+		informerObj := val.(sharedObjectInformer)
+		informerObj.informerFactory = informers.NewSharedInformerFactoryWithOptions(c.kubeClient, DefaultResyncDuration, informers.WithNamespace(namespace))
+		informerObj.informer = informerObj.informerFactory.Core().V1().Secrets().Informer()
+		informerObj.informer.AddEventHandler(c.secretEventHandler())
+		client.SetSecretsLister(namespace, informerObj.informerFactory.Core().V1().Secrets().Lister())
+		informerObj.stopCh = make(chan struct{})
+		informerObj.informerFactory.Start(informerObj.stopCh)
+		if !cache.WaitForCacheSync(informerObj.stopCh, informerObj.informer.HasSynced) {
+			return fmt.Errorf("failed to wait for Secrets informer cache for namespace %s to sync", namespace)
+		}
+		c.secretWatchObjs.Store(namespace, informerObj)
+	}
+	return nil
+}
+
+func (c *Controller) UnregisterSecretInformer(namespace string) {
+	val, ok := c.secretWatchObjs.Load(namespace)
+	if ok {
+		informerObj := val.(sharedObjectInformer)
+		close(informerObj.stopCh)
+		c.secretWatchObjs.Delete(namespace)
+	}
+}
+
+func (c *Controller) PruneSecretInformers(namespaces map[string]struct{}) {
+	c.secretWatchObjs.Range(func(key, value interface{}) bool {
+		ns := key.(string)
+		if _, ok := namespaces[ns]; !ok {
+			c.UnregisterSecretInformer(ns)
+		}
+		return true
+	})
+}
+
+func (c *Controller) RegisterConfigMapInformer(namespace string) error {
+	val, ok := c.configMapWatchObjs.LoadOrStore(namespace, sharedObjectInformer{})
+	if !ok {
+		informerObj := val.(sharedObjectInformer)
+		informerObj.informerFactory = informers.NewSharedInformerFactoryWithOptions(c.kubeClient, DefaultResyncDuration, informers.WithNamespace(namespace))
+		informerObj.informer = informerObj.informerFactory.Core().V1().ConfigMaps().Informer()
+		informerObj.informer.AddEventHandler(c.configMapEventHandler())
+		client.SetConfigMapsLister(namespace, informerObj.informerFactory.Core().V1().ConfigMaps().Lister())
+		informerObj.stopCh = make(chan struct{})
+		informerObj.informerFactory.Start(informerObj.stopCh)
+		if !cache.WaitForCacheSync(informerObj.stopCh, informerObj.informer.HasSynced) {
+			return fmt.Errorf("failed to wait for ConfigMaps informer cache for namespace %s to sync", namespace)
+		}
+		c.configMapWatchObjs.Store(namespace, informerObj)
+	}
+	return nil
+}
+
+func (c *Controller) UnregisterConfigMapInformer(namespace string) {
+	val, ok := c.configMapWatchObjs.Load(namespace)
+	if ok {
+		informerObj := val.(sharedObjectInformer)
+		close(informerObj.stopCh)
+		c.configMapWatchObjs.Delete(namespace)
+	}
+}
+
+func (c *Controller) PruneConfigMapInformers(namespaces map[string]struct{}) {
+	c.configMapWatchObjs.Range(func(key, value interface{}) bool {
+		ns := key.(string)
+		if _, ok := namespaces[ns]; !ok {
+			c.UnregisterConfigMapInformer(ns)
+		}
+		return true
+	})
+
 }
 
 func (c *Controller) addConfigMapToQueue(cm *corev1.ConfigMap, verb client.ObjectAction) {
@@ -496,18 +555,37 @@ func (c *Controller) syncSharedConfigMap(event client.Event) error {
 		return fmt.Errorf("unexpected object vs. shared configmap: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
 	klog.V(4).Infof("verb %s share name %s", event.Verb, share.Name)
+	var err error
 	switch event.Verb {
 	case client.DeleteObjectAction:
 		objcache.DelSharedConfigMap(share)
+		if c.refreshResources {
+			c.PruneConfigMapInformers(objcache.NamespacesWithSharedConfigMaps())
+
+		}
 	case client.AddObjectAction:
+		if c.refreshResources {
+			// this must be before AddShareConfigMap so we wait until the information cache has synched
+			err = c.RegisterConfigMapInformer(share.Spec.ConfigMapRef.Namespace)
+		}
 		objcache.AddSharedConfigMap(share)
+		if c.refreshResources {
+			c.PruneConfigMapInformers(objcache.NamespacesWithSharedConfigMaps())
+		}
 	case client.UpdateObjectAction:
+		if c.refreshResources {
+			// this must be before UpdateShareConfigMap so we wait until the informer cache has synched
+			err = c.RegisterConfigMapInformer(share.Spec.ConfigMapRef.Namespace)
+		}
 		objcache.UpdateSharedConfigMap(share)
+		if c.refreshResources {
+			c.PruneConfigMapInformers(objcache.NamespacesWithSharedConfigMaps())
+		}
 	default:
 		return fmt.Errorf("unexpected share event action: %s", event.Verb)
 	}
 
-	return nil
+	return err
 }
 
 func (c *Controller) syncSharedSecret(event client.Event) error {
@@ -517,16 +595,34 @@ func (c *Controller) syncSharedSecret(event client.Event) error {
 		return fmt.Errorf("unexpected object vs. shared secret: %v", event.Object.GetObjectKind().GroupVersionKind())
 	}
 	klog.V(4).Infof("verb %s share name %s", event.Verb, share.Name)
+	var err error
 	switch event.Verb {
 	case client.DeleteObjectAction:
 		objcache.DelSharedSecret(share)
+		if c.refreshResources {
+			c.PruneSecretInformers(objcache.NamespacesWithSharedSecrets())
+		}
 	case client.AddObjectAction:
+		if c.refreshResources {
+			// this must be before AddShareSecret so we wait until the informer cache has synched
+			err = c.RegisterSecretInformer(share.Spec.SecretRef.Namespace)
+		}
 		objcache.AddSharedSecret(share)
+		if c.refreshResources {
+			c.PruneSecretInformers(objcache.NamespacesWithSharedSecrets())
+		}
 	case client.UpdateObjectAction:
+		if c.refreshResources {
+			// this must be before UpdateShareSecret so we wait until the informer cache has synched
+			err = c.RegisterSecretInformer(share.Spec.SecretRef.Namespace)
+		}
 		objcache.UpdateSharedSecret(share)
+		if c.refreshResources {
+			c.PruneSecretInformers(objcache.NamespacesWithSharedSecrets())
+		}
 	default:
 		return fmt.Errorf("unexpected share event action: %s", event.Verb)
 	}
 
-	return nil
+	return err
 }

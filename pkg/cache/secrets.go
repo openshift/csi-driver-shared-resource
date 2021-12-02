@@ -1,10 +1,10 @@
 package cache
 
 import (
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
@@ -44,10 +44,7 @@ func UpsertSecret(secret *corev1.Secret) {
 	// first, find the shares pointing to this secret, and call the callbacks, in case certain pods
 	// have had their permissions revoked; this will also handle if we had share events arrive before
 	// the corresponding secret
-	sharedSecretsList, err := client.GetListers().SharedSecrets.List(labels.Everything())
-	if err != nil {
-		klog.Warningf("error during UpsertSecret on shared secrets lister list: %s", err.Error())
-	}
+	sharedSecretsList := client.ListSharedSecrets()
 	for _, share := range sharedSecretsList {
 		if share.Spec.SecretRef.Namespace == secret.Namespace && share.Spec.SecretRef.Name == secret.Name {
 			shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
@@ -69,6 +66,9 @@ func DelSecret(secret *corev1.Secret) {
 // if the corresponding share references a secret, then the function registered here will be called to possibly change
 // storage
 func RegisterSecretUpsertCallback(volID, sID string, f func(key, value interface{}) bool) {
+	if !config.LoadedConfig.RefreshResources {
+		return
+	}
 	secretUpsertCallbacks.Store(volID, f)
 	ns, name, _ := SplitKey(sID)
 	s := client.GetSecret(ns, name)

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -199,8 +200,17 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	kubeletTargetPath = req.GetTargetPath()
 	// when on always-read-only mode it will make sure the volume mounts won't be writable at all
 	readOnly := ns.alwaysReadOnly || req.GetReadonly()
+	attrib := req.GetVolumeContext()
+	refresh := true
+	refreshStr, rok := attrib[RefreshResource]
+	if rok {
+		r, e := strconv.ParseBool(refreshStr)
+		if e == nil {
+			refresh = r
+		}
+	}
 
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
+	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, refresh, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -233,7 +243,6 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	volumeId := req.GetVolumeId()
-	attrib := req.GetVolumeContext()
 	mountFlags := req.GetVolumeCapability().GetMount().GetMountFlags()
 
 	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",

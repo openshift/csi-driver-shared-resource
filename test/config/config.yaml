@@ -1,7 +1,3 @@
 ---
 refreshResources: false
 shareRelistInterval: 20m
-ignoredNamespaces: 
-  - namespace-a
-  - namespace-b
-  - namespace-c

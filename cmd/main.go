@@ -82,7 +82,7 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		go runOperator(cfg, driver)
+		go runOperator(cfg)
 		go watchForConfigChanges(cfgManager)
 		driver.Run()
 	},
@@ -127,8 +127,8 @@ func loadSharedresourceClientset() (sharev1clientset.Interface, error) {
 
 // runOperator based on the informed configuration, it will spawn and run the Controller, until
 // trapping OS signals.
-func runOperator(cfg *config.Config, hp hostpath.HostPathDriver) {
-	c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources, cfg.IgnoredNamespaces, hp)
+func runOperator(cfg *config.Config) {
+	c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources)
 	if err != nil {
 		fmt.Printf("Failed to set up controller: %s", err.Error())
 		os.Exit(1)

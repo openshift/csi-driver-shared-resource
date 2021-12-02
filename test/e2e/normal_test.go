@@ -55,6 +55,17 @@ func coreTestBasicThenNoShareThenShare(testArgs *framework.TestArgs) {
 	framework.ExecPod(testArgs)
 }
 
+func TestBasicNoRefresh(t *testing.T) {
+	testArgs := &framework.TestArgs{
+		T:         t,
+		NoRefresh: false,
+	}
+	prep(testArgs)
+	framework.CreateTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	basicShareSetupAndVerification(testArgs)
+}
+
 func TestBasicThenNoShareThenShareReadWrite(t *testing.T) {
 	testArgs := &framework.TestArgs{
 		T: t,

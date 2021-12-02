@@ -28,6 +28,7 @@ type TestArgs struct {
 	DaemonSetUp                        bool
 	TestPodUp                          bool
 	ReadOnly                           bool
+	NoRefresh                          bool
 	TestDuration                       time.Duration
 }
 
