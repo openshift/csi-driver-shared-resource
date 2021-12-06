@@ -17,6 +17,7 @@ import (
 	kubexec "k8s.io/kubectl/pkg/cmd/exec"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 )
@@ -60,6 +61,9 @@ func CreateTestPod(t *TestArgs) {
 			},
 			ServiceAccountName: "default",
 		},
+	}
+	if t.NoRefresh {
+		pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes[hostpath.RefreshResource] = "false"
 	}
 	if t.SecondShare {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{

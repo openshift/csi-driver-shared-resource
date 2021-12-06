@@ -17,6 +17,7 @@ const (
 	CSIEphemeral                       = "csi.storage.k8s.io/ephemeral"
 	SharedConfigMapShareKey            = "sharedConfigMap"
 	SharedSecretShareKey               = "sharedSecret"
+	RefreshResource                    = "refreshResource"
 	bindDir                            = "bind-dir"
 	mountAccess             accessType = iota
 )

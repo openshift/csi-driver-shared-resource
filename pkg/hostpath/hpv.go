@@ -29,6 +29,7 @@ type hostPathVolume struct {
 	PodUID              string     `json:"podUID"`
 	PodSA               string     `json:"podSA"`
 	ReadOnly            bool       `json:"readOnly"`
+	Refresh             bool       `json:"refresh"`
 	// hpv's can be accessed/modified by both the sharedSecret/SharedConfigMap events and the configmap/secret events; to prevent data races
 	// we serialize access to a given hpv with a per hpv mutex stored in this map; access to hpv fields should not
 	// be done directly, but only by each field's getter and setter.  Getters and setters then leverage the per hpv
@@ -115,6 +116,12 @@ func (hpv *hostPathVolume) IsReadOnly() bool {
 	return hpv.ReadOnly
 }
 
+func (hpv *hostPathVolume) IsRefresh() bool {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	return hpv.Refresh
+}
+
 func (hpv *hostPathVolume) SetVolName(volName string) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
@@ -180,6 +187,12 @@ func (hpv *hostPathVolume) SetReadOnly(readOnly bool) {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	hpv.ReadOnly = readOnly
+}
+
+func (hpv *hostPathVolume) SetRefresh(refresh bool) {
+	hpv.Lock.Lock()
+	defer hpv.Lock.Unlock()
+	hpv.Refresh = refresh
 }
 
 func (hpv *hostPathVolume) StoreToDisk() error {

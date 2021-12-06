@@ -26,9 +26,6 @@ shareRelistInterval: 10m
 
 # toggles actively watching for resources, when disabled it will only read objects before mount
 refreshResources: true
-
-# list of namespace names ignored
-ignoredNamespaces: []
 ```
 
 When the file is not present, the driver assumes default values instead. And, when the configuration

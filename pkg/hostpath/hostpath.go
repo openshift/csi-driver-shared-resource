@@ -90,7 +90,7 @@ func remHPV(name string) {
 }
 
 type HostPathDriver interface {
-	createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error)
+	createHostpathVolume(volID, targetPath string, readOnly, refresh bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error)
 	getHostpathVolume(volID string) *hostPathVolume
 	deleteHostpathVolume(volID string) error
 	getVolumePath(volID string, volCtx map[string]string) (string, string)
@@ -201,7 +201,7 @@ func commonRangerProceedFilter(hpv *hostPathVolume, key interface{}) bool {
 	}
 	keyStr := key.(string)
 	if keyStr != compareKey {
-		klog.V(0).Infof("GGMcommonRangerProceedFilter skipping %s as it does not match %s for %s:%s:%s", keyStr, compareKey, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID())
+		klog.V(4).Infof("commonRangerProceedFilter skipping %s as it does not match %s for %s:%s:%s", keyStr, compareKey, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID())
 		return false
 	}
 	return true
@@ -519,10 +519,6 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 			return err
 		}
 	}
-	/*err := os.MkdirAll(hpv.GetVolPathAnchorDir(), 0777)
-	if err != nil {
-		return err
-	}*/
 	switch hpv.GetSharedDataKind() {
 	case consts.ResourceReferenceTypeConfigMap:
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s configmap", hpv.GetVolID())
@@ -567,10 +563,13 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 				return upsertError
 			}
 		}
-		objcache.RegisterConfigMapUpsertCallback(hpv.GetVolID(), comboKey, upsertRangerCM)
+		if hpv.IsRefresh() {
+			objcache.RegisterConfigMapUpsertCallback(hpv.GetVolID(), comboKey, upsertRangerCM)
+		}
 		deleteRangerCM := func(key, value interface{}) bool {
 			return commonDeleteRanger(hpv, key)
 		}
+		//we should register delete callbacks regardless of any per volume refresh setting to account for removed permissions
 		objcache.RegisterConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerCM)
 	case consts.ResourceReferenceTypeSecret:
 		klog.V(4).Infof("mapBackingResourceToPod postlock %s secret", hpv.GetVolID())
@@ -608,10 +607,13 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 				return upsertError
 			}
 		}
-		objcache.RegisterSecretUpsertCallback(hpv.GetVolID(), comboKey, upsertRangerSec)
+		if hpv.IsRefresh() {
+			objcache.RegisterSecretUpsertCallback(hpv.GetVolID(), comboKey, upsertRangerSec)
+		}
 		deleteRangerSec := func(key, value interface{}) bool {
 			return commonDeleteRanger(hpv, key)
 		}
+		//we should register delete callbacks regardless of any per volume refresh setting to account for removed permissions
 		objcache.RegisterSecretDeleteCallback(hpv.GetVolID(), deleteRangerSec)
 	default:
 		return fmt.Errorf("invalid share backing resource kind %s", hpv.GetSharedDataKind())
@@ -651,7 +653,7 @@ func (hp *hostPath) registerRangers(hpv *hostPathVolume) {
 
 // createVolume create the directory for the hostpath volume.
 // It returns the volume path or err if one occurs.
-func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error) {
+func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly, refresh bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error) {
 	if cmShare != nil && sShare != nil {
 		return nil, fmt.Errorf("cannot store both SharedConfigMap and SharedSecret in a volume")
 	}
@@ -691,6 +693,7 @@ func (hp *hostPath) createHostpathVolume(volID, targetPath string, readOnly bool
 	hostpathVol.SetPodName(podName)
 	hostpathVol.SetPodUID(podUID)
 	hostpathVol.SetPodSA(podSA)
+	hostpathVol.SetRefresh(refresh)
 	switch {
 	case cmShare != nil:
 		hostpathVol.SetSharedDataKind(string(consts.ResourceReferenceTypeConfigMap))

@@ -38,7 +38,6 @@ func TestConfig_LocalConfigFile(t *testing.T) {
 	expectedCfg := NewConfig()
 	expectedCfg.RefreshResources = false
 	expectedCfg.ShareRelistInterval = "20m"
-	expectedCfg.IgnoredNamespaces = []string{"namespace-a", "namespace-b", "namespace-c"}
 	if !reflect.DeepEqual(&expectedCfg, cfg) {
 		t.Fatalf("configuration instance '%#v', is not equal to excepted", cfg)
 	}

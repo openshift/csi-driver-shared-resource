@@ -83,7 +83,7 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
 	volCtx := seedVolumeContext()
-	_, err = hp.createHostpathVolume(t.Name(), "", false, volCtx, &sharev1alpha1.SharedConfigMap{}, nil, 0, mountAccess+1)
+	_, err = hp.createHostpathVolume(t.Name(), "", false, true, volCtx, &sharev1alpha1.SharedConfigMap{}, nil, 0, mountAccess+1)
 	if err == nil {
 		t.Fatalf("err nil unexpectedly")
 	}
@@ -655,7 +655,7 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 			// creating hostPathVolume only for this test
 			volCtx := seedVolumeContext()
-			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, volCtx, test.cmShare, test.sShare, 0, mountAccess)
+			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, true, volCtx, test.cmShare, test.sShare, 0, mountAccess)
 			if err != nil {
 				t.Fatalf("unexpected error on createHostpathVolume: '%s'", err.Error())
 			}
@@ -706,11 +706,16 @@ func primeSecretVolume(t *testing.T, hp HostPathDriver, targetPath string, readO
 	shareSecretReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, share, nil
 	}
+	shareSecretListReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		list := sharev1alpha1.SharedSecretList{Items: []sharev1alpha1.SharedSecret{*share}}
+		return true, &list, nil
+	}
 	shareClient.PrependReactor("get", "sharedsecrets", shareSecretReactorFunc)
+	shareClient.PrependReactor("list", "sharedsecrets", shareSecretListReactorFunc)
 	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient, 10*time.Minute)
 	client.SetSharedSecretsLister(shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Lister())
 
-	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, volCtx, nil, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, true, volCtx, nil, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -765,11 +770,16 @@ func primeConfigMapVolume(t *testing.T, hp HostPathDriver, targetPath string, re
 	shareConfigMapReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
 		return true, share, nil
 	}
+	shareConfigMapListReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		list := sharev1alpha1.SharedConfigMapList{Items: []sharev1alpha1.SharedConfigMap{*share}}
+		return true, &list, nil
+	}
 	shareClient.PrependReactor("get", "sharedconfigmaps", shareConfigMapReactorFunc)
+	shareClient.PrependReactor("list", "sharedconfigmaps", shareConfigMapListReactorFunc)
 	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient, 10*time.Minute)
 	client.SetSharedConfigMapsLister(shareInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Lister())
 
-	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, volCtx, share, nil, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, true, volCtx, share, nil, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}

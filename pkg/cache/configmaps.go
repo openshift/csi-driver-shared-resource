@@ -4,10 +4,10 @@ import (
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 )
 
 /*
@@ -43,10 +43,7 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	// first, find the shares pointing to this configmap, and call the callbacks, in case certain pods
 	// have had their permissions revoked; this will also handle if we had share events arrive before
 	// the corresponding configmap
-	sharecConfigMapList, err := client.GetListers().SharedConfigMaps.List(labels.Everything())
-	if err != nil {
-		klog.Warningf("error during UpsertConfigMap on shared configmaps lister list: %s", err.Error())
-	}
+	sharecConfigMapList := client.ListSharedConfigMap()
 	for _, share := range sharecConfigMapList {
 		if share.Spec.ConfigMapRef.Namespace == configmap.Namespace && share.Spec.ConfigMapRef.Name == configmap.Name {
 			shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
@@ -67,6 +64,9 @@ func DelConfigMap(configmap *corev1.ConfigMap) {
 // if the corresponding share references a configmap, then the function registered here will be called to possibly change
 // storage
 func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value interface{}) bool) {
+	if !config.LoadedConfig.RefreshResources {
+		return
+	}
 	configmapUpsertCallbacks.Store(volID, f)
 	ns, name, _ := SplitKey(cmID)
 	cm := client.GetConfigMap(ns, name)
