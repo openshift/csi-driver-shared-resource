@@ -85,3 +85,8 @@ vendor: ## Vendor Go dependencies. Example: make vendor
 help: ## Print this help. Example: make help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 .PHONY: help
+
+.PHONY: smoke
+smoke:
+	@echo "Testing csi driver shares resource on openshift"
+	@./hack/smoke-test.sh
