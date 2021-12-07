@@ -169,6 +169,7 @@ func (c *Controller) PruneSecretInformers(namespaces map[string]struct{}) {
 	c.secretWatchObjs.Range(func(key, value interface{}) bool {
 		ns := key.(string)
 		if _, ok := namespaces[ns]; !ok {
+			klog.V(2).Infof("unregistering secret informer for namespace %s", ns)
 			c.UnregisterSecretInformer(ns)
 		}
 		return true
@@ -206,6 +207,7 @@ func (c *Controller) PruneConfigMapInformers(namespaces map[string]struct{}) {
 	c.configMapWatchObjs.Range(func(key, value interface{}) bool {
 		ns := key.(string)
 		if _, ok := namespaces[ns]; !ok {
+			klog.V(2).Infof("unregistering configmap informer for namespace %s", ns)
 			c.UnregisterConfigMapInformer(ns)
 		}
 		return true

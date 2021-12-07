@@ -15,6 +15,7 @@ import (
 	"k8s.io/klog/v2"
 
 	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
+	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
@@ -82,9 +83,34 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		go runOperator(cfg)
+		c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources)
+		if err != nil {
+			fmt.Printf("Failed to set up controller: %s", err.Error())
+			os.Exit(1)
+		}
+		prunerTicker := time.NewTicker(cfg.GetShareRelistInterval())
+		prunerDone := make(chan struct{})
+		go func() {
+			for {
+				select {
+				case <-prunerDone:
+					return
+				case <-prunerTicker.C:
+					// remove any orphaned volume files on disk
+					driver.Prune(client.GetClient())
+					if cfg.RefreshResources {
+						// in case we missed delete events, clean up unneeded secret/configmap informers
+						c.PruneSecretInformers(cache.NamespacesWithSharedSecrets())
+						c.PruneConfigMapInformers(cache.NamespacesWithSharedConfigMaps())
+					}
+				}
+			}
+		}()
+
+		go runOperator(c, cfg)
 		go watchForConfigChanges(cfgManager)
 		driver.Run()
+		prunerDone <- struct{}{}
 	},
 }
 
@@ -127,14 +153,9 @@ func loadSharedresourceClientset() (sharev1clientset.Interface, error) {
 
 // runOperator based on the informed configuration, it will spawn and run the Controller, until
 // trapping OS signals.
-func runOperator(cfg *config.Config) {
-	c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources)
-	if err != nil {
-		fmt.Printf("Failed to set up controller: %s", err.Error())
-		os.Exit(1)
-	}
+func runOperator(c *controller.Controller, cfg *config.Config) {
 	stopCh := setupSignalHandler()
-	err = c.Run(stopCh)
+	err := c.Run(stopCh)
 	if err != nil {
 		fmt.Printf("Controller exited: %s", err.Error())
 		os.Exit(1)

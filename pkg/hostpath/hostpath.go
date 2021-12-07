@@ -17,17 +17,22 @@ limitations under the License.
 package hostpath
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8s.io/utils/mount"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
@@ -48,7 +53,8 @@ type hostPath struct {
 	ids *identityServer
 	ns  *nodeServer
 
-	root string
+	root       string
+	volMapRoot string
 }
 
 var (
@@ -97,6 +103,8 @@ type HostPathDriver interface {
 	mapVolumeToPod(hpv *hostPathVolume) error
 	Run()
 	GetRoot() string
+	GetVolMapRoot() string
+	Prune(kubeClient kubernetes.Interface)
 }
 
 // NewHostPathDriver instantiate the HostPathDriver with the driver details.  Optionally, a
@@ -140,6 +148,7 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 		endpoint:          endpoint,
 		maxVolumesPerNode: maxVolumesPerNode,
 		root:              root,
+		volMapRoot:        volMapRoot,
 	}
 
 	if err := hp.loadVolsFromDisk(); err != nil {
@@ -151,6 +160,10 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 
 func (hp *hostPath) GetRoot() string {
 	return hp.root
+}
+
+func (hp *hostPath) GetVolMapRoot() string {
+	return hp.volMapRoot
 }
 
 func (hp *hostPath) Run() {
@@ -775,7 +788,7 @@ func (hp *hostPath) deleteHostpathVolume(volID string) error {
 func (hp *hostPath) loadVolsFromDisk() error {
 	klog.V(2).Infof("loadVolsFromDisk")
 	defer klog.V(2).Infof("loadVolsFromDisk exit")
-	return filepath.Walk(VolumeMapRoot, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(hp.volMapRoot, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
 			return nil
 		}
@@ -786,7 +799,7 @@ func (hp *hostPath) loadVolsFromDisk() error {
 		if info.IsDir() {
 			return nil
 		}
-		fileName := filepath.Join(VolumeMapRoot, info.Name())
+		fileName := filepath.Join(hp.volMapRoot, info.Name())
 		dataFile, oerr := os.Open(fileName)
 		if oerr != nil {
 			klog.V(0).Infof("loadVolsFromDisk error opening file %s: %s", fileName, err.Error())
@@ -817,4 +830,70 @@ func (hp *hostPath) loadVolsFromDisk() error {
 
 		return nil
 	})
+}
+
+// Prune inspects all the volumes stored on disk and checks if their associated pods still exists.  If not, the volume
+// file in question is deleted from disk.
+func (hp *hostPath) Prune(kubeClient kubernetes.Interface) {
+	filesToPrune := map[string]hostPathVolume{}
+	filepath.Walk(hp.volMapRoot, func(path string, info os.FileInfo, err error) error {
+		if info == nil {
+			return nil
+		}
+		if err != nil {
+			// continue to next file
+			klog.V(5).Infof("Prune: for path %s given error %s", path, err.Error())
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		fileName := filepath.Join(hp.volMapRoot, info.Name())
+		dataFile, oerr := os.Open(fileName)
+		if oerr != nil {
+			klog.V(0).Infof("loadVolsFromDisk error opening file %s: %s", fileName, err.Error())
+			// continue to next file
+			return nil
+		}
+		dataDecoder := json.NewDecoder(dataFile)
+		hpv := &hostPathVolume{}
+		err = dataDecoder.Decode(hpv)
+		if err != nil {
+			klog.V(0).Infof("loadVolsFromDisk error decoding file %s: %s", fileName, err.Error())
+			// continue to next file
+			return nil
+		}
+		if hpv == nil {
+			klog.V(0).Infof("loadVolsFromDisk nil but no error for file %s", fileName)
+			// continue to next file
+			return nil
+		}
+		hpv.Lock = &sync.Mutex{}
+		_, err = kubeClient.CoreV1().Pods(hpv.GetPodNamespace()).Get(context.TODO(), hpv.GetPodName(), metav1.GetOptions{})
+		if err != nil && kerrors.IsNotFound(err) {
+			klog.V(2).Infof("pruner: hpv %q: %s", fileName, err.Error())
+			filesToPrune[fileName] = *hpv
+		}
+		return nil
+	})
+	if len(filesToPrune) == 0 {
+		return
+	}
+	mounter := mount.New("")
+	// a bit paranoid, but not deleting files in the walk loop in case that can mess up filepath.Walk's iteration logic
+	for file, hpv := range filesToPrune {
+		err := os.Remove(file)
+		if err != nil {
+			klog.Warningf("pruner: unable to prune file %q: %s", file, err.Error())
+			continue
+		}
+		klog.V(2).Infof("pruner: removed volume file %q with missing pod from disk", file)
+		err = mounter.Unmount(hpv.GetVolPathAnchorDir())
+		if err != nil {
+			klog.V(2).Infof("pruner: issue unmounting for volume %s mount id %s: %s", hpv.GetVolID(), hpv.GetVolPathAnchorDir(), err.Error())
+		} else {
+			klog.V(2).Infof("pruner: successfully unmounted volume %s mount id %s", hpv.GetVolID(), hpv.GetVolPathAnchorDir())
+		}
+	}
+
 }
