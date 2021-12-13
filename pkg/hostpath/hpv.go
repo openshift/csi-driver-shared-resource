@@ -195,20 +195,20 @@ func (hpv *hostPathVolume) SetRefresh(refresh bool) {
 	hpv.Refresh = refresh
 }
 
-func (hpv *hostPathVolume) StoreToDisk() error {
+func (hpv *hostPathVolume) StoreToDisk(volMapRoot string) error {
 	hpv.Lock.Lock()
 	defer hpv.Lock.Unlock()
 	klog.V(4).Infof("storeVolToDisk %s", hpv.VolID)
 	defer klog.V(4).Infof("storeVolToDisk exit %s", hpv.VolID)
 
-	f, terr := os.Open(VolumeMapRoot)
+	f, terr := os.Open(volMapRoot)
 	if terr != nil {
 		// catch for unit tests
 		return nil
 	}
 	defer f.Close()
 
-	filePath := filepath.Join(VolumeMapRoot, hpv.VolID)
+	filePath := filepath.Join(volMapRoot, hpv.VolID)
 	dataFile, err := os.Create(filePath)
 	if err != nil {
 		return err

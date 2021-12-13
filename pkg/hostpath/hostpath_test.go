@@ -18,10 +18,12 @@ package hostpath
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -405,6 +407,33 @@ func TestDeleteReAddShare(t *testing.T) {
 		// clear out hpv for next run
 		hp.deleteHostpathVolume(t.Name())
 	}
+}
+
+func TestPruner(t *testing.T) {
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
+	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+
+	hpv := &hostPathVolume{VolID: "vol", PodNamespace: "ns", PodName: "pod", Lock: &sync.Mutex{}}
+	hpv.StoreToDisk(hp.GetVolMapRoot())
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	hp.Prune(k8sClient)
+	prunedFile := filepath.Join(hp.GetVolMapRoot(), "vol")
+	filepath.Walk(hp.GetVolMapRoot(), func(path string, info fs.FileInfo, err error) error {
+		if path == prunedFile {
+			t.Fatalf("file %q was not pruned", path)
+		}
+		return nil
+	})
 }
 
 func TestUpdateShare(t *testing.T) {

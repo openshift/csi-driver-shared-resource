@@ -49,7 +49,7 @@ func CreateTestPod(t *TestArgs) {
 			Containers: []corev1.Container{
 				{
 					Name:    containerName,
-					Image:   "registry.access.redhat.com/ubi8/ubi",
+					Image:   "registry.redhat.io/ubi8/ubi",
 					Command: []string{"sleep", "1000000"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -96,6 +96,27 @@ func CreateTestPod(t *TestArgs) {
 	t.T.Logf("%s: end create test pod %s", time.Now().String(), t.Name)
 
 	if t.TestPodUp {
+		eventClient := kubeClient.CoreV1().Events(t.Name)
+		t.T.Logf("%s: start verify image for test pod %s is pulled", time.Now().String(), t.Name)
+		err = wait.PollImmediate(1*time.Second, 1*time.Minute, func() (done bool, err error) {
+			eventList, err := eventClient.List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				t.T.Logf("%s: error list events for %s: %s", time.Now().String(), t.Name, err.Error())
+				return false, nil
+			}
+			for _, event := range eventList.Items {
+				if event.InvolvedObject.Kind == "Pod" &&
+					(strings.Contains(event.Reason, "Pulled") || strings.Contains(event.Reason, "Already")) {
+					t.T.Logf("%s: image for test pod %s available: %s", time.Now().String(), t.Name, event.Reason)
+					return true, nil
+				}
+			}
+			return false, nil
+		})
+		// even if we do not pull the image int time, we'll still given it time to sort out as part of the Pod getting to Running state
+		if err != nil {
+			t.T.Logf("%s: did not see image pull event for pod %s but will still see if it comes up in time", time.Now().String(), t.Name)
+		}
 		t.T.Logf("%s: start verify test pod %s is up", time.Now().String(), t.Name)
 		err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
 			pod, err = podClient.Get(context.TODO(), t.Name, metav1.GetOptions{})

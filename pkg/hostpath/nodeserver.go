@@ -270,7 +270,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			err.Error()))
 	}
 
-	if err := vol.StoreToDisk(); err != nil {
+	if err := vol.StoreToDisk(ns.hp.GetVolMapRoot()); err != nil {
 		metrics.IncMountCounters(false)
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
@@ -314,7 +314,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete volume: %s", err))
 	}
 
-	filePath := filepath.Join(VolumeMapRoot, hpv.GetVolID())
+	filePath := filepath.Join(ns.hp.GetVolMapRoot(), hpv.GetVolID())
 	if err := os.Remove(filePath); err != nil {
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
