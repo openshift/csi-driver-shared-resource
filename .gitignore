@@ -1,2 +1,5 @@
 _output
 release.yaml
+kubeconfig
+smoke/features/steps/__pycache__
+.mypy_cache
