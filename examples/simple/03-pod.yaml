@@ -1,7 +1,7 @@
 kind: Pod
 apiVersion: v1
 metadata:
-  name: my-csi-app
+  name: my-csi-app-pod
   namespace: my-csi-app-namespace
 spec:
   serviceAccountName: default
@@ -29,4 +29,4 @@ spec:
         readOnly: true
         driver: csi.sharedresource.openshift.io
         volumeAttributes:
-          sharedConfigMap: my-share
+          sharedConfigMap: my-share-pod

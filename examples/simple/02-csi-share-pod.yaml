@@ -1,7 +1,7 @@
 apiVersion: sharedresource.openshift.io/v1alpha1
 kind: SharedConfigMap
 metadata:
-  name: my-share
+  name: my-share-pod
 spec:
   configMapRef:
     name: openshift-install
