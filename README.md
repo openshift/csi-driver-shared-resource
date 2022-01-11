@@ -49,8 +49,11 @@ or namespace administrator.
 
 The full definition of the `SharedConfigMap` can be found [here](deploy/0000_10_sharedconfigmap.crd.yaml) or `SharedSecret` custom resource can be found [here](deploy/0000_10_sharedsecret.crd.yaml).
 
-For a more real world example of using this new driver to help with sharing RHEL entitlements, [this blog post](https://www.openshift.com/blog/the-path-to-improving-the-experience-with-rhel-entitlements-on-openshift)
-dives into that scenario.
+Under the [examples directory](examples) there is both a simple example of using a `SharedConfigMap` in a `Pod`, and an
+example of performing an OpenShift `Build` from a `BuildConfig` that uses Red Hat Entitlements available from your Red Hat Subscription when
+your subscription credentials are stored on your cluster via OpenShift Insights Operator, and resulting `Secret` for those
+credentials is made available to additional `Namespaces` via a `SharedSecret`.  Instructions for the `Pod` example are
+[here](docs/simple-example.md), and for the `BuildConfig` example are [here](docs/build-with-rhel-entitlements.md).
 
 Next, for some details around support for updating `SharedConfigMap` or `SharedSecret` volumes as their corresponding Secrets or ConfigMaps change,
 please visit [here](docs/content-update-details.md).
