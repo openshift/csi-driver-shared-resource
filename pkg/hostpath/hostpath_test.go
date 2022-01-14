@@ -34,6 +34,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	fakekubetesting "k8s.io/client-go/testing"
+	"k8s.io/utils/mount"
 
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	fakeshareclientset "github.com/openshift/client-go/sharedresource/clientset/versioned/fake"
@@ -51,6 +52,35 @@ const (
 	configmapvalue1 = "configmapvalue1"
 )
 
+// the actual Mounter from k8s/util requires sudo privileges to run, so for the pruner related tests we create a fake
+// mounter since the k8s code does not provide a fake mounter
+type fakeMounter struct {
+}
+
+func (f *fakeMounter) Mount(source string, target string, fstype string, options []string) error {
+	return nil
+}
+
+func (f *fakeMounter) MountSensitive(source string, target string, fstype string, options []string, sensitiveOptions []string) error {
+	return nil
+}
+
+func (f *fakeMounter) Unmount(target string) error {
+	return nil
+}
+
+func (f *fakeMounter) List() ([]mount.MountPoint, error) {
+	return nil, nil
+}
+
+func (f *fakeMounter) IsLikelyNotMountPoint(file string) (bool, error) {
+	return false, nil
+}
+
+func (f *fakeMounter) GetMountRefs(pathname string) ([]string, error) {
+	return nil, nil
+}
+
 func testHostPathDriver(testName string, kubeClient kubernetes.Interface) (HostPathDriver, string, string, error) {
 	tmpDir1, err := ioutil.TempDir(os.TempDir(), testName)
 	if err != nil {
@@ -63,7 +93,7 @@ func testHostPathDriver(testName string, kubeClient kubernetes.Interface) (HostP
 	if kubeClient != nil {
 		client.SetClient(kubeClient)
 	}
-	hp, err := NewHostPathDriver(tmpDir1, tmpDir2, testName, "nodeID1", "endpoint1", 0, "version1")
+	hp, err := NewHostPathDriver(tmpDir1, tmpDir2, testName, "nodeID1", "endpoint1", 0, "version1", &fakeMounter{})
 	return hp, tmpDir1, tmpDir2, err
 }
 
@@ -85,7 +115,7 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
 	volCtx := seedVolumeContext()
-	_, err = hp.createHostpathVolume(t.Name(), "", false, true, volCtx, &sharev1alpha1.SharedConfigMap{}, nil, 0, mountAccess+1)
+	_, err = hp.createHostpathVolume(t.Name(), "", true, volCtx, &sharev1alpha1.SharedConfigMap{}, nil, 0, mountAccess+1)
 	if err == nil {
 		t.Fatalf("err nil unexpectedly")
 	}
@@ -95,318 +125,282 @@ func TestCreateHostPathVolumeBadAccessType(t *testing.T) {
 }
 
 func TestCreateDeleteConfigMap(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), k8sClient)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		cm, searchPath := primeConfigMapVolume(t, hp, targetPath, ro, nil, k8sClient, shareClient)
-		_, foundConfigMap := findSharedItems(t, searchPath)
-		if !foundConfigMap {
-			t.Fatalf("did not find configmap in mount path ro %v", ro)
-		}
-		cache.DelConfigMap(cm)
-		_, foundConfigMap = findSharedItems(t, searchPath)
-		if foundConfigMap {
-			t.Fatalf("configmap not deleted ro %v", ro)
-		}
-		// clear out hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), k8sClient)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	cm, searchPath := primeConfigMapVolume(t, hp, targetPath, nil, k8sClient, shareClient)
+	_, foundConfigMap := findSharedItems(t, searchPath)
+	if !foundConfigMap {
+		t.Fatalf("did not find configmap in mount path ")
+	}
+	cache.DelConfigMap(cm)
+	_, foundConfigMap = findSharedItems(t, searchPath)
+	if foundConfigMap {
+		t.Fatalf("configmap not deleted")
+	}
+	// clear out hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 func TestCreateDeleteSecret(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-		client.SetShareClient(shareClient)
-		secret, searchPath := primeSecretVolume(t, hp, targetPath, ro, nil, k8sClient, shareClient)
-		foundSecret, _ := findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("did not find secret in mount path")
-		}
-		cache.DelSecret(secret)
-		foundSecret, _ = findSharedItems(t, searchPath)
-		if foundSecret {
-			t.Fatalf("secret not deleted")
-		}
-		// clear out hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	client.SetShareClient(shareClient)
+	secret, searchPath := primeSecretVolume(t, hp, targetPath, nil, k8sClient, shareClient)
+	foundSecret, _ := findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("did not find secret in mount path")
+	}
+	cache.DelSecret(secret)
+	foundSecret, _ = findSharedItems(t, searchPath)
+	if foundSecret {
+		t.Fatalf("secret not deleted")
+	}
+	// clear out hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 func TestDeleteSecretVolume(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, nil, k8sClient, shareClient)
-		err = hp.deleteHostpathVolume(t.Name())
-		if err != nil {
-			t.Fatalf("unexpected error on delete volume: %s", err.Error())
-		}
-		foundSecret, _ := findSharedItems(t, searchPath)
-
-		if foundSecret {
-			t.Fatalf("secret not deleted")
-		}
-		if ro {
-			if empty, err := isDirEmpty(searchPath); !empty || err != nil {
-				errStr := ""
-				if err != nil {
-					errStr = err.Error()
-				}
-				t.Fatalf("volume directory not cleaned out empty %v err %s", empty, errStr)
-			}
-		}
-
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	_, searchPath := primeSecretVolume(t, hp, targetPath, nil, k8sClient, shareClient)
+	err = hp.deleteHostpathVolume(t.Name())
+	if err != nil {
+		t.Fatalf("unexpected error on delete volume: %s", err.Error())
+	}
+	foundSecret, _ := findSharedItems(t, searchPath)
 
+	if foundSecret {
+		t.Fatalf("secret not deleted")
+	}
 }
 
 func TestChangeKeys(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		secret, searchPath := primeSecretVolume(t, hp, targetPath, ro, nil, k8sClient, shareClient)
-		foundSecret, _ := findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("did not find secret in mount path")
-		}
-
-		delete(secret.Data, secretkey1)
-		secretkey3 := "secretkey3"
-		secretvalue3 := "secretvalue3"
-		secret.Data[secretkey3] = []byte(secretvalue3)
-		cache.UpsertSecret(secret)
-		foundSecret, _ = findSharedItems(t, searchPath)
-		if foundSecret {
-			t.Fatalf("found old key secretkey1")
-		}
-		filepath.Walk(searchPath, func(path string, info os.FileInfo, err error) error {
-			if err == nil && strings.Contains(info.Name(), secretkey3) {
-				foundSecret = true
-			}
-			return nil
-		})
-		if !foundSecret {
-			t.Fatalf("did not find key secretkey3")
-		}
-		// delete hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	secret, searchPath := primeSecretVolume(t, hp, targetPath, nil, k8sClient, shareClient)
+	foundSecret, _ := findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("did not find secret in mount path")
+	}
+
+	delete(secret.Data, secretkey1)
+	secretkey3 := "secretkey3"
+	secretvalue3 := "secretvalue3"
+	secret.Data[secretkey3] = []byte(secretvalue3)
+	cache.UpsertSecret(secret)
+	foundSecret, _ = findSharedItems(t, searchPath)
+	if foundSecret {
+		t.Fatalf("found old key secretkey1")
+	}
+	filepath.Walk(searchPath, func(path string, info os.FileInfo, err error) error {
+		if err == nil && strings.Contains(info.Name(), secretkey3) {
+			foundSecret = true
+		}
+		return nil
+	})
+	if !foundSecret {
+		t.Fatalf("did not find key secretkey3")
+	}
+	// delete hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 func TestDeleteConfigMapVolume(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		_, searchPath := primeConfigMapVolume(t, hp, targetPath, ro, nil, k8sClient, shareClient)
-		err = hp.deleteHostpathVolume(t.Name())
-		if err != nil {
-			t.Fatalf("unexpected error on delete volume: %s", err.Error())
-		}
-		_, foundConfigMap := findSharedItems(t, searchPath)
-
-		if foundConfigMap {
-			t.Fatalf("configmap not deleted ro %v", ro)
-		}
-		if ro {
-			if empty, err := isDirEmpty(searchPath); !empty || err != nil {
-				errStr := ""
-				if err != nil {
-					errStr = err.Error()
-				}
-				t.Fatalf("volume directory not cleaned out empty %v err %s", empty, errStr)
-			}
-		}
-
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	_, searchPath := primeConfigMapVolume(t, hp, targetPath, nil, k8sClient, shareClient)
+	err = hp.deleteHostpathVolume(t.Name())
+	if err != nil {
+		t.Fatalf("unexpected error on delete volume: %s", err.Error())
+	}
+	_, foundConfigMap := findSharedItems(t, searchPath)
+
+	if foundConfigMap {
+		t.Fatalf("configmap not deleted ro")
+	}
+
 }
 
 func TestDeleteShare(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
-			return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
-		}
-		k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
-		client.SetClient(k8sClient)
-
-		share := &sharev1alpha1.SharedSecret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "TestDeleteShare",
-			},
-			Spec: sharev1alpha1.SharedSecretSpec{
-				SecretRef: sharev1alpha1.SharedSecretReference{
-					Name:      "secret1",
-					Namespace: "namespace",
-				},
-
-				Description: "",
-			},
-			Status: sharev1alpha1.SharedSecretStatus{},
-		}
-
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share, k8sClient, shareClient)
-		foundSecret, _ := findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("secret not found")
-		}
-
-		cache.DelSharedSecret(share)
-		foundSecret, _ = findSharedItems(t, searchPath)
-
-		if foundSecret {
-			t.Fatalf("secret not deleted")
-		}
-		// clear our hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
+	}
+	k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
+	client.SetClient(k8sClient)
+
+	share := &sharev1alpha1.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "TestDeleteShare",
+		},
+		Spec: sharev1alpha1.SharedSecretSpec{
+			SecretRef: sharev1alpha1.SharedSecretReference{
+				Name:      "secret1",
+				Namespace: "namespace",
+			},
+
+			Description: "",
+		},
+		Status: sharev1alpha1.SharedSecretStatus{},
+	}
+
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	_, searchPath := primeSecretVolume(t, hp, targetPath, share, k8sClient, shareClient)
+	foundSecret, _ := findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("secret not found")
+	}
+
+	cache.DelSharedSecret(share)
+	foundSecret, _ = findSharedItems(t, searchPath)
+
+	if foundSecret {
+		t.Fatalf("secret not deleted")
+	}
+	// clear our hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 func TestDeleteReAddShare(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-
-		acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
-			return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
-		}
-		k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
-
-		share := &sharev1alpha1.SharedSecret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "TestDeleteReAddShare",
-				ResourceVersion: "1",
-			},
-			Spec: sharev1alpha1.SharedSecretSpec{
-				SecretRef: sharev1alpha1.SharedSecretReference{
-					Name:      "secret1",
-					Namespace: "namespace",
-				},
-				Description: "",
-			},
-			Status: sharev1alpha1.SharedSecretStatus{},
-		}
-
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share, k8sClient, shareClient)
-		foundSecret, _ := findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("secret not found")
-		}
-
-		cache.DelSharedSecret(share)
-		foundSecret, _ = findSharedItems(t, searchPath)
-
-		if foundSecret {
-			t.Fatalf("secret not deleted")
-		}
-
-		share.ResourceVersion = "2"
-		cache.AddSharedSecret(share)
-		foundSecret, _ = findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("secret not found after readd")
-		}
-		// clear out hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+
+	acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
+	}
+	k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
+
+	share := &sharev1alpha1.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "TestDeleteReAddShare",
+			ResourceVersion: "1",
+		},
+		Spec: sharev1alpha1.SharedSecretSpec{
+			SecretRef: sharev1alpha1.SharedSecretReference{
+				Name:      "secret1",
+				Namespace: "namespace",
+			},
+			Description: "",
+		},
+		Status: sharev1alpha1.SharedSecretStatus{},
+	}
+
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	_, searchPath := primeSecretVolume(t, hp, targetPath, share, k8sClient, shareClient)
+	foundSecret, _ := findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("secret not found")
+	}
+
+	cache.DelSharedSecret(share)
+	foundSecret, _ = findSharedItems(t, searchPath)
+
+	if foundSecret {
+		t.Fatalf("secret not deleted")
+	}
+
+	share.ResourceVersion = "2"
+	cache.AddSharedSecret(share)
+	foundSecret, _ = findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("secret not found after readd")
+	}
+	// clear out hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 func TestPruner(t *testing.T) {
@@ -426,6 +420,7 @@ func TestPruner(t *testing.T) {
 	hpv.StoreToDisk(hp.GetVolMapRoot())
 	k8sClient := fakekubeclientset.NewSimpleClientset()
 	client.SetClient(k8sClient)
+
 	hp.Prune(k8sClient)
 	prunedFile := filepath.Join(hp.GetVolMapRoot(), "vol")
 	filepath.Walk(hp.GetVolMapRoot(), func(path string, info fs.FileInfo, err error) error {
@@ -437,139 +432,135 @@ func TestPruner(t *testing.T) {
 }
 
 func TestUpdateShare(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
-			return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
-		}
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
-		client.SetClient(k8sClient)
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
+	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
+	}
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
+	client.SetClient(k8sClient)
 
-		share := &sharev1alpha1.SharedSecret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:            "TestUpdateShare",
-				ResourceVersion: "1",
-			},
-			Spec: sharev1alpha1.SharedSecretSpec{
-				SecretRef: sharev1alpha1.SharedSecretReference{
-					Name:      "secret1",
-					Namespace: "namespace",
-				},
-				Description: "",
-			},
-			Status: sharev1alpha1.SharedSecretStatus{},
-		}
-
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share, k8sClient, shareClient)
-		foundSecret, _ := findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("secret not found")
-		}
-
-		// change share to a different secret (no longer support switch between secret and crd with now having different CRDs for each)
-		secret2 := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "secret2",
+	share := &sharev1alpha1.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            "TestUpdateShare",
+			ResourceVersion: "1",
+		},
+		Spec: sharev1alpha1.SharedSecretSpec{
+			SecretRef: sharev1alpha1.SharedSecretReference{
+				Name:      "secret1",
 				Namespace: "namespace",
 			},
-			Data: map[string][]byte{secretkey2: []byte(secretvalue2)},
-		}
-		cache.UpsertSecret(secret2)
-		share.Spec.SecretRef.Name = "secret2"
-		share.ResourceVersion = "2"
-		cache.UpdateSharedSecret(share)
-
-		foundSecret, _ = findSharedItems(t, searchPath)
-
-		if !foundSecret {
-			t.Fatalf("secret still should have been found")
-		}
-
-		// clear out hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+			Description: "",
+		},
+		Status: sharev1alpha1.SharedSecretStatus{},
 	}
+
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	_, searchPath := primeSecretVolume(t, hp, targetPath, share, k8sClient, shareClient)
+	foundSecret, _ := findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("secret not found")
+	}
+
+	// change share to a different secret (no longer support switch between secret and crd with now having different CRDs for each)
+	secret2 := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "secret2",
+			Namespace: "namespace",
+		},
+		Data: map[string][]byte{secretkey2: []byte(secretvalue2)},
+	}
+	cache.UpsertSecret(secret2)
+	share.Spec.SecretRef.Name = "secret2"
+	share.ResourceVersion = "2"
+	cache.UpdateSharedSecret(share)
+
+	foundSecret, _ = findSharedItems(t, searchPath)
+
+	if !foundSecret {
+		t.Fatalf("secret still should have been found")
+	}
+
+	// clear out hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 func TestPermChanges(t *testing.T) {
-	readOnly := []bool{true, false}
-	for _, ro := range readOnly {
-		hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
-		if err != nil {
-			t.Fatalf("%s", err.Error())
-		}
-		defer os.RemoveAll(dir1)
-		defer os.RemoveAll(dir2)
-		targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
-		if err != nil {
-			t.Fatalf("err on targetPath %s", err.Error())
-		}
-		defer os.RemoveAll(targetPath)
-		k8sClient := fakekubeclientset.NewSimpleClientset()
-		client.SetClient(k8sClient)
-		acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
-			return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
-		}
-		k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
-
-		share := &sharev1alpha1.SharedSecret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "TestPermChanges",
-			},
-			Spec: sharev1alpha1.SharedSecretSpec{
-				SecretRef: sharev1alpha1.SharedSecretReference{
-					Name:      "secret1",
-					Namespace: "namespace",
-				},
-				Description: "",
-			},
-			Status: sharev1alpha1.SharedSecretStatus{},
-		}
-
-		shareClient := fakeshareclientset.NewSimpleClientset()
-		client.SetShareClient(shareClient)
-		_, searchPath := primeSecretVolume(t, hp, targetPath, ro, share, k8sClient, shareClient)
-		foundSecret, _ := findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("secret not found")
-		}
-
-		denyReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
-			return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: false}}, nil
-		}
-		k8sClient.PrependReactor("create", "subjectaccessreviews", denyReactorFunc)
-
-		shareUpdateRanger(share.Name, share)
-
-		foundSecret, _ = findSharedItems(t, searchPath)
-		if foundSecret {
-			t.Fatalf("secret should have been removed")
-		}
-
-		k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
-
-		shareUpdateRanger(share.Name, share)
-
-		foundSecret, _ = findSharedItems(t, searchPath)
-		if !foundSecret {
-			t.Fatalf("secret should have been found")
-		}
-		// clear out hpv for next run
-		hp.deleteHostpathVolume(t.Name())
+	hp, dir1, dir2, err := testHostPathDriver(t.Name(), nil)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
 	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	if err != nil {
+		t.Fatalf("err on targetPath %s", err.Error())
+	}
+	defer os.RemoveAll(targetPath)
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
+	}
+	k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
+
+	share := &sharev1alpha1.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "TestPermChanges",
+		},
+		Spec: sharev1alpha1.SharedSecretSpec{
+			SecretRef: sharev1alpha1.SharedSecretReference{
+				Name:      "secret1",
+				Namespace: "namespace",
+			},
+			Description: "",
+		},
+		Status: sharev1alpha1.SharedSecretStatus{},
+	}
+
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+	_, searchPath := primeSecretVolume(t, hp, targetPath, share, k8sClient, shareClient)
+	foundSecret, _ := findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("secret not found")
+	}
+
+	denyReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: false}}, nil
+	}
+	k8sClient.PrependReactor("create", "subjectaccessreviews", denyReactorFunc)
+
+	shareUpdateRanger(share.Name, share)
+
+	foundSecret, _ = findSharedItems(t, searchPath)
+	if foundSecret {
+		t.Fatalf("secret should have been removed")
+	}
+
+	k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
+
+	shareUpdateRanger(share.Name, share)
+
+	foundSecret, _ = findSharedItems(t, searchPath)
+	if !foundSecret {
+		t.Fatalf("secret should have been found")
+	}
+	// clear out hpv for next run
+	hp.deleteHostpathVolume(t.Name())
+
 }
 
 // TestMapVolumeToPodWithKubeClient creates a new HostPathDriver with a kubernetes client, which
@@ -684,7 +675,7 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 			// creating hostPathVolume only for this test
 			volCtx := seedVolumeContext()
-			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, true, volCtx, test.cmShare, test.sShare, 0, mountAccess)
+			hpv, err := hp.createHostpathVolume(test.name, targetPath, true, volCtx, test.cmShare, test.sShare, 0, mountAccess)
 			if err != nil {
 				t.Fatalf("unexpected error on createHostpathVolume: '%s'", err.Error())
 			}
@@ -694,12 +685,8 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 				t.Fatalf("unexpected error on mapVolumeToPod: '%s'", err.Error())
 			}
 
-			// given it's a read-only mount point, the target-path needs to be amended with the inner
-			// bind directory
-			bindDir := filepath.Join(hp.GetRoot(), "bind-dir")
-
 			// inspecting bind directory looking for files originated from testing resources
-			foundSecret, foundConfigMap := findSharedItems(t, bindDir)
+			foundSecret, foundConfigMap := findSharedItems(t, targetPath)
 			t.Logf("mount point contents: secret='%v', configmap='%v'", foundSecret, foundConfigMap)
 			if !foundSecret && !foundConfigMap {
 				t.Fatalf("mount point doesn't have data: secret='%v', configmap='%v'", foundSecret, foundConfigMap)
@@ -708,7 +695,7 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 	}
 }
 
-func primeSecretVolume(t *testing.T, hp HostPathDriver, targetPath string, readOnly bool, share *sharev1alpha1.SharedSecret, k8sClient *fakekubeclientset.Clientset, shareClient *fakeshareclientset.Clientset) (*corev1.Secret, string) {
+func primeSecretVolume(t *testing.T, hp HostPathDriver, targetPath string, share *sharev1alpha1.SharedSecret, k8sClient *fakekubeclientset.Clientset, shareClient *fakeshareclientset.Clientset) (*corev1.Secret, string) {
 	volCtx := seedVolumeContext()
 	if share == nil {
 		share = &sharev1alpha1.SharedSecret{
@@ -744,7 +731,7 @@ func primeSecretVolume(t *testing.T, hp HostPathDriver, targetPath string, readO
 	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient, 10*time.Minute)
 	client.SetSharedSecretsLister(shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Lister())
 
-	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, true, volCtx, nil, share, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, true, volCtx, nil, share, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -767,13 +754,10 @@ func primeSecretVolume(t *testing.T, hp HostPathDriver, targetPath string, readO
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
-	if readOnly {
-		return secret, filepath.Join(hp.GetRoot(), "bind-dir")
-	}
 	return secret, targetPath
 }
 
-func primeConfigMapVolume(t *testing.T, hp HostPathDriver, targetPath string, readOnly bool, share *sharev1alpha1.SharedConfigMap, k8sClient *fakekubeclientset.Clientset, shareClient *fakeshareclientset.Clientset) (*corev1.ConfigMap, string) {
+func primeConfigMapVolume(t *testing.T, hp HostPathDriver, targetPath string, share *sharev1alpha1.SharedConfigMap, k8sClient *fakekubeclientset.Clientset, shareClient *fakeshareclientset.Clientset) (*corev1.ConfigMap, string) {
 	volCtx := seedVolumeContext()
 	if share == nil {
 		share = &sharev1alpha1.SharedConfigMap{
@@ -808,7 +792,7 @@ func primeConfigMapVolume(t *testing.T, hp HostPathDriver, targetPath string, re
 	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient, 10*time.Minute)
 	client.SetSharedConfigMapsLister(shareInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Lister())
 
-	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, readOnly, true, volCtx, share, nil, 0, mountAccess)
+	hpv, err := hp.createHostpathVolume(t.Name(), targetPath, true, volCtx, share, nil, 0, mountAccess)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
 	}
@@ -830,9 +814,6 @@ func primeConfigMapVolume(t *testing.T, hp HostPathDriver, targetPath string, re
 	err = hp.mapVolumeToPod(hpv)
 	if err != nil {
 		t.Fatalf("unexpected err %s", err.Error())
-	}
-	if readOnly {
-		return cm, filepath.Join(hp.GetRoot(), "bind-dir")
 	}
 	return cm, targetPath
 }
