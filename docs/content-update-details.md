@@ -1,43 +1,50 @@
 # Details around pushing Secret and ConfigMap updates to provisioned Volumes
 
-### Excluded OCP namespaces
+By default, the Shared Resource CSI Driver will watch for updates to `Secrets` and 
+`ConfigMaps` in any of the namespaces referenced in corresponding `SharedSecrets` and 
+`SharedConfigMaps`.  Then, when the actual `Secrets` or `ConfigMaps` referenced by those
+`SharedSecrets` and `SharedConfigMaps` change, each volume across all the active `Pods`
+in the system will have their content corresponding to those `Secrets` and `ConfigMaps`updated.
 
-The current list of namespaces excluded by default from the controller's watches:
+NOTE: this driver can still update the contents of the `Volumes` it provisions, even as it 
+requires `Pods` to mark the `Volumes` as read-only.
 
-- kube-system
-- openshift-machine-api
-- openshift-kube-apiserver
-- openshift-kube-apiserver-operator
-- openshift-kube-scheduler
-- openshift-kube-controller-manager
-- openshift-kube-controller-manager-operator
-- openshift-kube-scheduler-operator
-- openshift-console-operator
-- openshift-controller-manager
-- openshift-controller-manager-operator
-- openshift-cloud-credential-operator
-- openshift-authentication-operator
-- openshift-service-ca
-- openshift-kube-storage-version-migrator-operator
-- openshift-config-operator
-- openshift-etcd-operator
-- openshift-apiserver-operator
-- openshift-cluster-csi-drivers
-- openshift-cluster-storage-operator
-- openshift-cluster-version
-- openshift-image-registry
-- openshift-machine-config-operator
-- openshift-sdn
-- openshift-service-ca-operator
+This default behavior can be disabled at both [global level](config.md) and a per volume level.
 
-The list is configurable by informing `--ignorenamespace` to the `hostpath` plugin instance. The
-plugin can also be configured with `--refreshresources` flag, which makes the controller keep a warm
-cache of `ConfigMap` and `Secret` objects, and as they change the controller will follow the updates.
+The global setting takes precedence.  It is considered the domain of the cluster administrator,
+with the belief that if they want resource refreshing disabled, it should be disabled for everyone.
 
-When `--refreshresources` is disabled (i.e. `--refreshresources=false`), the controller will read the
-backing-resource (`.spec.backingResource`) just before mounting the volume instead of keeping a warm
-cache. Additionally, every volume mount will be always read-only preventing tampering with the data
-provided by this CSI driver.
+For disabling at the volume specific level, the `volumeAttributes` field should have an entry with the 
+key `refreshResource` and a value of `false`.
 
-Allowing the disabling processing of updates, or switching the default for the system as not dealing with
-updates, but then allowing for opting into updates, is also under consideration.
+```yaml
+kind: Pod
+apiVersion: v1
+metadata:
+  name: my-csi-app
+  namespace: my-csi-app-namespace
+spec:
+  serviceAccountName: default
+  containers:
+  
+  # specific container content would be here
+  
+  
+  volumes:
+    - name: my-csi-volume
+      csi:
+        readOnly: true
+        driver: csi.sharedresource.openshift.io
+        volumeAttributes:
+          sharedConfigMap: my-share
+          refreshResource: false
+```
+
+## NOTES
+
+1) If the inverse on order of precedence gains favor as users start using this driver in earnest, we'll 
+look into ways of providing that pattern.
+
+2) This repository's maintainers are well aware of the "atomic writer" concept in upstream Kubernetes for coordinating
+a Pod's access to secret volumes with the system's attempt to update them.  Such support is not yet integrated with
+this driver, but we have plans to do so in a future release.
