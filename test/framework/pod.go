@@ -28,6 +28,7 @@ const (
 
 func CreateTestPod(t *TestArgs) {
 	t.T.Logf("%s: start create test pod %s", time.Now().String(), t.Name)
+	truVal := true
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      t.Name,
@@ -39,7 +40,7 @@ func CreateTestPod(t *TestArgs) {
 					Name: "my-csi-volume",
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
-							ReadOnly:         &t.ReadOnly,
+							ReadOnly:         &truVal,
 							Driver:           string(operatorv1.SharedResourcesCSIDriver),
 							VolumeAttributes: map[string]string{"sharedConfigMap": t.Name},
 						},
@@ -70,7 +71,7 @@ func CreateTestPod(t *TestArgs) {
 			Name: "my-csi-volume" + secondShareSuffix,
 			VolumeSource: corev1.VolumeSource{
 				CSI: &corev1.CSIVolumeSource{
-					ReadOnly:         &t.ReadOnly,
+					ReadOnly:         &truVal,
 					Driver:           string(operatorv1.SharedResourcesCSIDriver),
 					VolumeAttributes: map[string]string{"sharedSecret": t.SecondName},
 				},

@@ -37,12 +37,3 @@ func TestBasicThenDriverRestartThenChangeShare(t *testing.T) {
 		inner(testArgs, t)
 	}
 }
-
-func TestBasicThenDriverRestartThenChangeShareWithReadOnlyMount(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T: t,
-	}
-	testArgs.ReadOnly = true
-	prep(testArgs)
-	inner(testArgs, t)
-}
