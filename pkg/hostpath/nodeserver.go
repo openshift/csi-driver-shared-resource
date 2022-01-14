@@ -44,21 +44,17 @@ type nodeServer struct {
 	nodeID            string
 	maxVolumesPerNode int64
 	hp                HostPathDriver
-	readOnlyMounter   FileSystemMounter
 	readWriteMounter  FileSystemMounter
 	mounter           mount.Interface
-	alwaysReadOnly    bool
 }
 
-func NewNodeServer(hp *hostPath, alwaysReadOnly bool) *nodeServer {
+func NewNodeServer(hp *hostPath) *nodeServer {
 	return &nodeServer{
 		nodeID:            hp.nodeID,
 		maxVolumesPerNode: hp.maxVolumesPerNode,
 		hp:                hp,
 		mounter:           mount.New(""),
-		readOnlyMounter:   &WriteOnceReadMany{},
 		readWriteMounter:  &ReadWriteMany{},
-		alwaysReadOnly:    alwaysReadOnly,
 	}
 }
 
@@ -198,8 +194,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	}
 
 	kubeletTargetPath = req.GetTargetPath()
-	// when on always-read-only mode it will make sure the volume mounts won't be writable at all
-	readOnly := ns.alwaysReadOnly || req.GetReadonly()
+	if !req.GetReadonly() {
+		return nil, status.Error(codes.InvalidArgument, "The Shared Resource CSI driver requires all volume requests to set read-only to 'true'")
+	}
 	attrib := req.GetVolumeContext()
 	refresh := true
 	refreshStr, rok := attrib[RefreshResource]
@@ -210,12 +207,12 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 	}
 
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, readOnly, refresh, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
+	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, refresh, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
-	klog.V(4).Infof("NodePublishVolume created volume: %s (read-only=%v)", kubeletTargetPath, readOnly)
+	klog.V(4).Infof("NodePublishVolume created volume: %s", kubeletTargetPath)
 
 	notMnt, err := mount.IsNotMountPoint(ns.mounter, kubeletTargetPath)
 
@@ -249,16 +246,8 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		kubeletTargetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
 	mountIDString, bindDir := ns.hp.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
-	switch {
-	case readOnly:
-		if err := ns.readOnlyMounter.makeFSMounts(mountIDString, bindDir, kubeletTargetPath, ns.mounter); err != nil {
-			return nil, err
-		}
-	default:
-		if err := ns.readWriteMounter.makeFSMounts(mountIDString, bindDir, kubeletTargetPath, ns.mounter); err != nil {
-			return nil, err
-		}
-
+	if err := ns.readWriteMounter.makeFSMounts(mountIDString, bindDir, kubeletTargetPath, ns.mounter); err != nil {
+		return nil, err
 	}
 
 	// here is what initiates that necessary copy now with *NOT* using bind on the mount so each pod gets its own tmpfs
@@ -296,14 +285,7 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	if hpv == nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unpublish volume %s already gone", volumeID))
 	}
-	var err error
-	switch {
-	case hpv.IsReadOnly():
-		err = ns.readOnlyMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
-	default:
-		err = ns.readWriteMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter)
-	}
-	if err != nil {
+	if err := ns.readWriteMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("error removing %s: %s", targetPath, err.Error()))
 
 	}

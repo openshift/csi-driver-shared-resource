@@ -13,6 +13,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/mount"
 
 	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
@@ -77,6 +78,7 @@ var rootCmd = &cobra.Command{
 			endPoint,
 			maxVolumesPerNode,
 			version,
+			mount.New(""),
 		)
 		if err != nil {
 			fmt.Printf("Failed to initialize driver: %s", err.Error())

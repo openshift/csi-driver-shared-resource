@@ -2,8 +2,6 @@ package hostpath
 
 import (
 	"fmt"
-	"strings"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -70,71 +68,6 @@ func (m *ReadWriteMany) removeFSMounts(mountIDString, intermediateBindMountDir, 
 			intermediateBindMountDir,
 			kubeletTargetDir,
 			err.Error()))
-	}
-	return nil
-}
-
-// WriteOnceReadMany details:
-// Our second generation version after ReadWriteMany.
-// Using an intermediate bind mount between our anchor / starting point and the kubelet's target directory, this
-// can write updates to this intermediate directory, and see those updates reflected in the Pod's volume, even though
-// it is read only for any code running in the Pod.
-// It used to be, when only using tmpfs, we couldn't restart this driver and support updates to the volume surfacing to the Pod.  The Pod's
-// view of the volume still has whatever content was present before the driver restart.
-// On the driver restart, the anchorDir and intermediateBindMountDir tmpfs dirs are no longer present.  And recreation
-// and remount to the kubeletTargetDir is not sufficient to facilitate future updates being visible from the Pod.
-// However, Jan educated us that our situation was the known "emptydir mount propagation" scenario.  To alleviate this,
-// we employ a hostpath volume for /run/csi-data-dir, which is where the intermediateBindMountDir lives.  With this in
-// place, we can restart the driver for read only volumes and the driver can still update the contents for user Pod.
-//
-// So the bind mount intermediate layer facilitates use of tmpfs for CSIVolumeSource with readOnly set to true.  However,
-// at the moment, cri-o cannot set the SELinux label correctly on our read only volume.  Jan from storage team says they
-// own the to-do to work upstream to address this.  In the interim, we need to document this situation for read only volumes.
-type WriteOnceReadMany struct {
-}
-
-func (m *WriteOnceReadMany) makeFSMounts(mountIDString, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
-	options := []string{}
-
-	if err := mounter.Mount(mountIDString, intermediateBindMountDir, "tmpfs", options); err != nil {
-
-		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			mountIDString,
-			intermediateBindMountDir,
-			err.Error()))
-	}
-
-	// now add bind and ro options
-	options = append(options, "bind", "ro")
-
-	if err := mounter.Mount(intermediateBindMountDir, kubeletTargetDir, "tmpfs", options); err != nil {
-		return status.Error(codes.Internal, fmt.Sprintf("failed to mount device: %s at %s: %s",
-			intermediateBindMountDir,
-			kubeletTargetDir,
-			err.Error()))
-	}
-
-	return nil
-}
-
-func (m *WriteOnceReadMany) removeFSMounts(mountIDString, intermediateBindMountDir, kubeletTargetDir string, mounter mount.Interface) error {
-	errList := strings.Builder{}
-	// this util function still works on this mount with an actual path, i.e. the intermediateBindMountDir
-	if err := mount.CleanupMountPoint(intermediateBindMountDir, mounter, true); err != nil {
-		errList.WriteString(err.Error())
-	}
-	// mount.CleanupMountPoint proved insufficient for us, as it always considered our mountIDString here "not a mount", even
-	// though we would rsh into the driver container/pod and manually run 'umount'.  If we did not do this, then
-	// the termination of pods using our CSI driver could hang.  So we just directly call Unmount from out mounter.
-	if err := mounter.Unmount(mountIDString); err != nil {
-		errList.WriteString(err.Error())
-	}
-	if errList.Len() > 0 {
-		return status.Error(codes.Internal, fmt.Sprintf("failed to umount device: %s at %s and %s: %s",
-			mountIDString,
-			intermediateBindMountDir,
-			kubeletTargetDir,
-			errList.String()))
 	}
 	return nil
 }
