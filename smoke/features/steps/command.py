@@ -58,7 +58,7 @@ class Command(object):
         output, exit_code = self.run(cmd)
         return output, exit_code
 
-    def run_wait_for_cmd_out(self, cmd, expOut, timeout=180, interval=10):
+    def run_wait_for_cmd_out(self, cmd, expOut, timeout=120, interval=10):
         output = None
         exit_code = -1
         pingTimeout = time.time() + timeout

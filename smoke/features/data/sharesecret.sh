@@ -14,4 +14,4 @@ create_shared_secret(){
 EOF
 }
 
-create_shared_secret ${1}
+create_shared_secret "${1}"

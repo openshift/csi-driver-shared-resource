@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 shout() {
   set +x
@@ -46,7 +46,7 @@ shout "cleanup test projects"
 set +x
 
 for i in $(oc projects -q); do
-    if [[ $i == "testing-namespace"* ]]; then
-        oc delete project $i
-    fi
+  if [[ $i == "testing-namespace"* ]]; then
+    oc delete project "$i"
+  fi
 done

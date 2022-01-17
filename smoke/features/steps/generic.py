@@ -11,10 +11,13 @@ class Util:
         random.shuffle(str2)
         return ''.join(str2)
 
-    def edit_yaml_file(self, path, new_data):
+    def edit_resource_yaml_file(self, path, new_data, resource):
         with open(path,'r') as yamlfile:
             new_yaml = yaml.safe_load(yamlfile)
-            new_yaml.update(new_data)
+            if(resource == "share-config"):
+                new_yaml['data'].update(new_data)
+            else:
+                new_yaml.update(new_data)
 
         with open(path,'w') as yamlfile:
             yaml.safe_dump(new_yaml, yamlfile)

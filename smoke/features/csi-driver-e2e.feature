@@ -1,7 +1,7 @@
 Feature: SharedSecrets and SharedConfigMap
 
     As a user of openshift tech preview feature
-    I want to verify the functionality of shared resource of csi driver across the defined namespaces
+    I want to verify the basic functionality of the shared resource csi driver
     To assure the stability in long run
 
     Background:
@@ -12,13 +12,16 @@ Feature: SharedSecrets and SharedConfigMap
     @automated
     Scenario: Configmaps are accessbile throughout the cluster : CSI-01-TC01
         Given user has cluster scoped level permission to create CRD "sharedconfigmaps.sharedresource.openshift.io"
-        When user creates the configmap "share-config"   
-        And defines shared configmap "my-shared-config" to share across all namespace
-        And creates another project to access shared resource in different namespace
-        And RBAC for the service account to use the "configmap" in its pod
-        And creates a pod "my-csi-app-check" with "configmap" volume attributes
-        And edits configMap "share-config" data
-        Then pod "my-csi-app-check" should reflect the changed "test4"
+        When user creates the configmap "share-config" in a given namespace  
+        And defines shared configmap "my-shared-config" that references the "shared-config" configmap from the first project to share across all namespace
+        And creates another project that will access the cluster scoped shared configmap that references the configmap in the first project
+        And RBAC for the service account to use the "sharedconfigmap" in its pod
+        And creates a pod "my-csi-app-check" with a CSI volume citing the shared resource csi driver and requesting the previously defined "sharedconfigmap" in the Pod CSI volume's volume attributes
+        And edits configMap "share-config" data "test4" from the first project
+        Then pod "my-csi-app-check" in the second project should reflect the change "test4" to the "share-config"
+        When user adds "refreshResources" to "false" in "share-config" configmap
+        And edits configMap "share-config" data "test5" from the first project
+        Then pod "my-csi-app-check" in the second project should not reflect the change "test5" to the "share-config"
 
     @manual
     Scenario: Verify csi metrics using console : CSI-01-TC02
@@ -27,7 +30,7 @@ Feature: SharedSecrets and SharedConfigMap
             | configmap     | "sharedconfigmaps" |
             |  secret       | "sharedsecrets"    |
         And creates rbac for the service account to use the shared resource in its pod
-        And creates a pod "my-csi-app-check"
+        And creates a pod "my-csi-app-check" that used the sharedconfigmaps and sharedsecrets
         When user login to openshift console with "kubeadmin" user credential
         And go to "Administrator"
         And clicks on "Observe"
@@ -43,10 +46,10 @@ Feature: SharedSecrets and SharedConfigMap
     @automated
     Scenario: Secrets are accessbile throughout the cluster : CSI-01-TC03
         Given user has cluster scoped level permission to create CRD "sharedsecrets.sharedresource.openshift.io"
-        When user creates the secret "my-secret"   
-        And defines shared secret "my-shared-secret" to share across all namespace
-        And creates another project to access shared resource in different namespace
-        And RBAC for the service account to use the "secret" in its pod
-        And creates a pod "my-csi-app-check" with "secret" volume attributes
-        And edits secret "my-secret" data
-        Then pod "my-csi-app-check" should reflect the changed "hostpath"
+        When user creates the secret "my-secret" in a given namespace 
+        And defines shared secret "my-shared-secret" that references the "my-secret" secret from the first project to share across all namespace
+        And creates another project that will access the cluster scoped shared configmap that references the configmap in the first project
+        And RBAC for the service account to use the "sharedsecret" in its pod
+        And creates a pod "my-csi-app-check" with a CSI volume citing the shared resource csi driver and requesting the previously defined "sharedsecret" in the Pod CSI volume's volume attributes
+        And edits secret "my-secret" data from the first project
+        Then pod "my-csi-app-check" in the second project should reflect the change "hostpath" to the "my-secret"

@@ -27,9 +27,9 @@ create_pod(){
 EOF
 }
 
-if [ ${1} == "configmap" ]; then
+if [ "${1}" == "sharedconfigmap" ]; then
   # create pods with volumeAttribute sharedConfigMap
-  create_pod sharedConfigMap my-shared-config
+  create_pod sharedConfigMap my-shared
 else
   # create pods with volumeAttribute sharedSecret
   create_pod sharedSecret my-shared-secret

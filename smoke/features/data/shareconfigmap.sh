@@ -14,4 +14,4 @@ create_shared_configmap(){
 EOF
 }
 
-create_shared_configmap ${1}
+create_shared_configmap "${1}"

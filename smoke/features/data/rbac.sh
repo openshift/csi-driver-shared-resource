@@ -19,7 +19,7 @@ create_role(){
 EOF
 }
 
-if [ ${1} == "configmap" ]; then
+if [ "${1}" == "sharedconfigmap" ]; then
   # create roles with shared configmap
   create_role sharedconfigmaps my-shared-config
 else
@@ -27,7 +27,5 @@ else
   create_role sharedsecrets my-shared-secret
 fi
 
-NAMESPACE = $(oc project -q)
-
 # create role binding
-oc create rolebinding shared-resource-my-shared --role=shared-resource-my-shared --serviceaccount=$NAMESPACE:default
+oc create rolebinding shared-resource-my-shared --role=shared-resource-my-shared --serviceaccount="$(oc project -q)":default
