@@ -70,7 +70,6 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 		nodeID:            "node1",
 		maxVolumesPerNode: 0,
 		mounter:           mount.NewFakeMounter([]mount.MountPoint{}),
-		readOnlyMounter:   &WriteOnceReadMany{},
 		readWriteMounter:  &ReadWriteMany{},
 		hp:                hp,
 	}
@@ -426,6 +425,29 @@ func TestNodePublishVolume(t *testing.T) {
 				},
 			},
 			expectedMsg: "PermissionDenied",
+		},
+		{
+			name:    "read only flag not set to true",
+			cmShare: validSharedConfigMap,
+			reactor: acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "share1",
+				},
+			},
+			expectedMsg: "The Shared Resource CSI driver requires all volume requests to set read-only to",
 		},
 		{
 			name:    "inputs are OK for configmap",

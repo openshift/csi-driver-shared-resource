@@ -73,14 +73,6 @@ func TestBasicThenNoShareThenShareReadWrite(t *testing.T) {
 	coreTestBasicThenNoShareThenShare(testArgs)
 }
 
-func TestBasicThenNoShareThenShareReadOnly(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T:        t,
-		ReadOnly: true,
-	}
-	coreTestBasicThenNoShareThenShare(testArgs)
-}
-
 func coreTestTwoSharesSeparateMountPaths(testArgs *framework.TestArgs) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
@@ -88,17 +80,9 @@ func coreTestTwoSharesSeparateMountPaths(testArgs *framework.TestArgs) {
 	doubleShareSetupAndVerification(testArgs)
 }
 
-func TestTwoSharesSeparateMountPathsReadWrite(t *testing.T) {
+func TestTwoSharesSeparateMountPaths(t *testing.T) {
 	testArgs := &framework.TestArgs{
 		T: t,
-	}
-	coreTestTwoSharesSeparateMountPaths(testArgs)
-}
-
-func TestTwoSharesSeparateMountPathsReadOnly(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T:        t,
-		ReadOnly: true,
 	}
 	coreTestTwoSharesSeparateMountPaths(testArgs)
 }
@@ -115,57 +99,3 @@ to rootfs at \\\"/var/lib/containers/storage/overlay/9a2c6dad956e911bd02c369d0cb
 caused: mkdir /var/lib/containers/storage/overlay/9a2c6dad956e911bd02c369d0cbd013312b514dee81993913769ac81d248b565/merged/data/data-second-share: read-only file system\"\n"
 
 */
-
-func TestTwoSharesSeparateButInheritedMountPaths(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T: t,
-	}
-	prep(testArgs)
-	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
-	testArgs.SecondShareSubDir = true
-	doubleShareSetupAndVerification(testArgs)
-}
-
-func TestTwoSharesSeparateButInheritedMountPathsRemoveSubPath(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T: t,
-	}
-	prep(testArgs)
-	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
-	testArgs.SecondShareSubDir = true
-	doubleShareSetupAndVerification(testArgs)
-
-	testArgs.ShareToDelete = testArgs.SecondName
-	testArgs.ShareToDeleteType = consts.ResourceReferenceTypeSecret
-	framework.DeleteShare(testArgs)
-	testArgs.TestDuration = 30 * time.Second
-	testArgs.SearchString = "invoker"
-	framework.ExecPod(testArgs)
-
-	testArgs.SearchStringMissing = true
-	testArgs.SearchString = ".dockerconfigjson"
-	framework.ExecPod(testArgs)
-}
-
-func TestTwoSharesSeparateButInheritedMountPathsRemoveTopPath(t *testing.T) {
-	testArgs := &framework.TestArgs{
-		T: t,
-	}
-	prep(testArgs)
-	framework.CreateTestNamespace(testArgs)
-	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
-	testArgs.SecondShareSubDir = true
-	doubleShareSetupAndVerification(testArgs)
-
-	testArgs.ShareToDeleteType = consts.ResourceReferenceTypeConfigMap
-	framework.DeleteShare(testArgs)
-	testArgs.TestDuration = 30 * time.Second
-	testArgs.SearchString = ".dockerconfigjson"
-	framework.ExecPod(testArgs)
-
-	testArgs.SearchStringMissing = true
-	testArgs.SearchString = "invoker"
-	framework.ExecPod(testArgs)
-}
