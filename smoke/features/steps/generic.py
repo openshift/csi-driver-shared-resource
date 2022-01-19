@@ -13,8 +13,9 @@ class Util:
 
     def edit_resource_yaml_file(self, path, new_data, resource):
         with open(path,'r') as yamlfile:
+            config_resource = "\"share-config\""
             new_yaml = yaml.safe_load(yamlfile)
-            if(resource == "share-config"):
+            if resource == config_resource:
                 new_yaml['data'].update(new_data)
             else:
                 new_yaml.update(new_data)

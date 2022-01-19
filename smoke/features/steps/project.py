@@ -23,7 +23,7 @@ class Project():
         return exit_code == 0
 
     def current_project(self):
-        output, exit_code = self.cmd.run('oc project -q')
+        output, exit_code = self.cmd.run(f'oc project -q')
         return output
 
     def switch_to(self):

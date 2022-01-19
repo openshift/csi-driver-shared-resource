@@ -29,7 +29,7 @@ EOF
 
 if [ "${1}" == "sharedconfigmap" ]; then
   # create pods with volumeAttribute sharedConfigMap
-  create_pod sharedConfigMap my-shared
+  create_pod sharedConfigMap my-shared-config
 else
   # create pods with volumeAttribute sharedSecret
   create_pod sharedSecret my-shared-secret

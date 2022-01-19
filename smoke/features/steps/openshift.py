@@ -96,6 +96,14 @@ class Openshift(object):
             return output
         return None
 
+    def apply_template(self, template_name, namespace):
+        cmd = f'oc apply -f {template_name} -n {namespace}'
+        output, exit_status = self.cmd.run(cmd)
+        print(f"starting: {output}, {exit_status}")
+        if exit_status == 0:
+            return output
+        return None
+
     def oc_apply(self, yaml):
         cmd = f'oc apply -f {yaml}'
         output, exit_status = self.cmd.run(cmd)
