@@ -1,0 +1,8 @@
+apiVersion: sharedresource.openshift.io/v1alpha1
+kind: SharedSecret
+metadata:
+  name: my-share-bc
+spec:
+  secretRef:
+    name: etc-pki-entitlement
+    namespace: openshift-config-managed

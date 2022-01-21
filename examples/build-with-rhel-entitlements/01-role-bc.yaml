@@ -1,14 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: shared-resource-my-share
+  name: shared-resource-my-share-bc
   namespace: my-csi-app-namespace
 rules:
   - apiGroups:
       - sharedresource.openshift.io
     resources:
-      - sharedconfigmaps
+      - sharedsecrets
     resourceNames:
-      - my-share
+      - my-share-bc
     verbs:
       - use

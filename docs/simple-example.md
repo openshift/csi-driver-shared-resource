@@ -1,102 +1,21 @@
 # Simple Example
 
-From the root directory, deploy from the `./examples` directory the
-application `Pod`, along with the associated test namespace, `SharedResource`, `ClusterRole`, and `ClusterRoleBinding` definitions
+From the root directory, create/apply the various API objects defined in the YAML files in the `./examples` directory.
+There are two examples there, where both use [the same namespace](../examples/00-namespace.yaml).
+
+This document describes the [simple Pod example](../examples/simple).
+
+The example is an application `Pod`, along with `SharedConfigMap`, `Role`, and `RoleBinding` definitions
 needed to illustrate the mounting of one of the API types (in this instance a `ConfigMap` from the `openshift-config`
-namespace) into the `Pod`
-
-For references, some in-lined yaml as a starting point.  Feel free to adjust the details to a working alternative that
-meets your needs:
-
-```yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    openshift.io/cluster-monitoring: "true"
-  name: my-csi-app-namespace
-  
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: shared-resource-my-share
-  namespace: my-csi-app-namespace
-rules:
-  - apiGroups:
-      - sharedresource.openshift.io
-    resources:
-      - sharedconfigmaps
-    resourceNames:
-      - my-share
-    verbs:
-      - use
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: shared-resource-my-share
-  namespace: my-csi-app-namespace
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: shared-resource-my-share
-subjects:
-  - kind: ServiceAccount
-    name: default
-    namespace: my-csi-app-namespace
-
----
-
-apiVersion: sharedresource.openshift.io/v1alpha1
-kind: SharedConfigMap
-metadata:
-  name: my-share
-spec:
-  configMap:
-    name: openshift-install
-    namespace: openshift-config
-
----
-
-kind: Pod
-apiVersion: v1
-metadata:
-  name: my-csi-app
-  namespace: my-csi-app-namespace
-spec:
-  serviceAccountName: default
-  containers:
-    - name: my-frontend
-      image: quay.io/quay/busybox
-      volumeMounts:
-        - mountPath: "/data"
-          name: my-csi-volume
-      command: [ "sleep", "1000000" ]
-  volumes:
-    - name: my-csi-volume
-      csi:
-        driver: csi.sharedresource.openshift.io
-        volumeAttributes:
-          sharedConfigMap: my-share
-
-```
-
-If you are fine with running this example as is, then execute:
+namespace) into the `Pod`.
+ 
+To run this example, execute:
 
 ```shell
-$ kubectl apply -f ./examples
-namespace/my-csi-app-namespace created
-role.rbac.authorization.k8s.io/shared-resource-my-share created
-rolebinding.rbac.authorization.k8s.io/shared-resource-my-share created
-sharedconfigmap.sharedresource.openshift.io/my-share created
-pod/my-csi-app created
+$ kubectl apply -R -f ./examples
 ```
 
-Ensure the `my-csi-app` comes up in `Running` state.
+Ensure the `my-csi-app` Pod comes up in `Running` state.
 
 Then, if you want to validate the volume, inspect the application pod `my-csi-app`.
 
@@ -158,12 +77,3 @@ How `Secrets` and `ConfigMaps` are stored on disk mirror the storage for
 `Secrets` and `ConfigMaps` as done in the code in  [https://github.com/kubernetes/kubernetes](https://github.com/kubernetes/kubernetes)
 where a file is created for each key in a `ConfigMap` `data` map or `binaryData` map and each key in a `Secret`
 `data` map.
-
-If you want to try other `ConfigMaps` or a `Secret`, first clear out the existing application:
-
-```shell
-$ oc delete -f ./examples 
-``` 
-
-And the edit `./examples/02-csi-share.yaml` and change the `spec` stanza to point to the item
-you want to share, and then re-run `oc apply -f ./examples`.
