@@ -1,0 +1,8 @@
+kind: ConfigMap
+apiVersion: v1
+data:
+  test1: ""
+  test2: ""
+  test3: ""
+metadata:
+  name: share-config

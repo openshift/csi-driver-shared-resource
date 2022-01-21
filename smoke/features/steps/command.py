@@ -1,6 +1,7 @@
 import subprocess
 import time
 import os
+import re
 
 class Command(object):
     path = ""
@@ -56,3 +57,14 @@ class Command(object):
         cmd = "oc  wait --for={} --timeout={}s {} {}".format(wait_for, timeout_seconds, resource_type, resource_name)
         output, exit_code = self.run(cmd)
         return output, exit_code
+
+    def run_wait_for_cmd_out(self, cmd, expOut, timeout=140, interval=10):
+        output = None
+        exit_code = -1
+        pingTimeout = time.time() + timeout
+        while time.time() < pingTimeout:
+            output, exit_code = self.run(cmd)
+            time.sleep(interval)
+            if expOut in output: return True, output, exit_code
+        print("ERROR: Time out while waiting for expected output.")
+        return False, output, exit_code

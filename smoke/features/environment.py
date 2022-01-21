@@ -18,10 +18,14 @@ before_scenario(context, scenario), after_scenario(context, scenario)
     The scenario passed in is an instance of Scenario.
 '''
 
-def before_scenario(_context, _scenario):
-    print("\nGetting OC status before {} scenario".format(_scenario))
-    code, output = subprocess.getstatusoutput('oc get project default')
-    print("[CODE] {}".format(code))
-    print("[CMD] {}".format(output))
-    code | should.be_equal_to(0)
-    print("***Connected to cluster***")
+class Env:
+    def __init__ (self):
+        global first_project
+
+    def before_scenario(self, _context, _scenario):
+        print("\nGetting OC status before {} scenario".format(_scenario))
+        code, output = subprocess.getstatusoutput('oc get project default')
+        print("[CODE] {}".format(code))
+        print("[CMD] {}".format(output))
+        code | should.be_equal_to(0)
+        print("***Connected to cluster***")
