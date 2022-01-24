@@ -73,6 +73,12 @@ build-image: ## Build the images and push them to the remote registry. Example: 
 	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource:$(TAG)
 .PHONY: build-image
 
+build-mustgather-image: ## Build the customer must gather images and push them to the remote registry. Example: make build-mustgather-image
+	rm -rf _output
+	$(CONTAINER_RUNTIME) build -f Dockerfile.mustgather -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource-mustgather:$(TAG) .
+	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource-mustgather:$(TAG)
+.PHONY: build-mustgather-image
+
 clean: ## Clean up the workspace. Example: make clean
 	rm -rf _output
 .PHONY: clean
