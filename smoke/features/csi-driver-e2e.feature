@@ -69,3 +69,17 @@ Feature: SharedSecrets and SharedConfigMap
         And creates a pod "my-csi-app-check" with a CSI volume citing the shared resource csi driver and requesting the previously defined "sharedsecret" in the Pod CSI volume's volume attributes
         And edits secret "my-secret" data from the first project
         Then pod "my-csi-app-check" in the second project should mount the data "hostpath" available in the "my-secret"
+    
+    @manual
+    Scenario: Openshift buildconfig uses shared resource for rhel entitlement subscription : CSI-01-TC05
+        Given user has created openshift cluster using pull secret that has valid Red Hat subscription which helps in installing Red Hat RPMs
+        Then log onto openshift console of the created cluster
+        And click on "Openshift Cluster Manager" link
+        When user clicks on "Edit subscription settings" on openshift cluster manager page
+        Then to access the entitled content available with the subscription we choose "Self-Support" SLA
+        And wait for Insights Operator to pull the credential into the Secret
+        Then user should see secret "etc-pki-entitlement" created in the namespace "openshift-config-managed"
+        When we create a project "my-csi-app-namespace" using "./examples/00-namespace.yaml"
+        And creates shared secret, role, role binding and buildconfig to use secret "etc-pki-entitlement" using defined files in "./examples/build-with-rhel-entitlements/"
+        And starts a build for buildconfig "my-csi-bc"
+        Then build logs should reflect the installed Red Hat entitled content via subscription
