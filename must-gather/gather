@@ -1,0 +1,22 @@
+#!/bin/bash
+
+pods=()
+
+cdsrNamespace="openshift-cluster-csi-drivers"
+for I in $(oc get pod -n ${cdsrNamespace} -o custom-columns=NAME:.metadata.name --no-headers); do
+  pods+=("$I")
+done
+
+object_collection_path=must-gather/cluster-scoped-resources/sharedresource.openshift.io
+mkdir -p ${object_collection_path}
+
+for pod in "${pods[@]}"; do
+  if [[ $pod != shared-resource-csi-driver-node* ]] ;
+  then
+    continue
+  fi
+  mkdir -p ${object_collection_path}/"$pod"
+  oc rsync -c hostpath -n ${cdsrNamespace} "$pod":/csi-volumes-map ${object_collection_path}/"$pod"
+done
+
+exit 0
