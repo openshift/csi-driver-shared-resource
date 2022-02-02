@@ -12,8 +12,10 @@ create_role(){
         - sharedresource.openshift.io
       resources:
         - $1
-      resourceNames:
         - $2
+      resourceNames:
+        - $3
+        - $4
       verbs:
         - use
 EOF
@@ -21,10 +23,13 @@ EOF
 
 if [ "${1}" == "sharedconfigmap" ]; then
   # create roles with shared configmap
-  create_role sharedconfigmaps my-shared-config
-else
+  create_role sharedconfigmaps "" my-shared-config ""
+elif [ "${1}" == "sharedsecret" ]; then
   # create roles with shared secret
-  create_role sharedsecrets my-shared-secret
+  create_role sharedsecrets "" my-shared-secret ""
+else
+  # create roles with shared configmaps and secrets
+  create_role sharedconfigmaps sharedsecrets my-shared-config my-shared-secret
 fi
 
 # create role binding
