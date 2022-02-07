@@ -19,7 +19,7 @@ from smoke.features.steps.openshift import Openshift
 from smoke.features.steps.project import Project
 from smoke.features.steps.generic import Util
 from smoke.features.steps.command import Command
-from smoke.features.environment import Env
+from smoke.features.steps.csi_resource import ResourceTypeModel
 
 # Test results file path
 scripts_dir = os.getenv('OUTPUT_DIR')
@@ -31,14 +31,13 @@ config.load_kube_config()
 oc = Openshift()
 util = Util()
 cmd = Command()
-env = Env()
 
 def edit_resource(context, share_resource, new_data, path):
     print(f"start editing resource {share_resource}")
-    util.edit_resource_yaml_file(path, new_data, share_resource)
+    new_path = util.edit_resource_yaml_file(path, new_data, share_resource)
     current_project = Project().current_project()
-    Project(env.first_project).switch_to()
-    oc.oc_apply(path)
+    Project(context.feature.first_project).switch_to()
+    oc.oc_apply(new_path)
     Project(current_project).switch_to()
 
 # STEP
@@ -54,12 +53,6 @@ def given_project_is_used(context, project_name):
             "Project {} is created".format(project_name))
     print("Project {} is created!!!".format(project_name))
     context.project = project
-
-
-def before_feature(context, feature):
-    if scenario.name != None and "TEST_NAMESPACE" in scenario.name:
-        print("Scenario using env namespace subtitution found: {0}, env: {}".format(scenario.name, os.getenv("TEST_NAMESPACE")))
-        scenario.name = txt.replace("TEST_NAMESPACE", os.getenv("TEST_NAMESPACE"))
 
 # STEP
 @given(u'Project [{project_env}] is used')
@@ -113,9 +106,9 @@ def shared_configmap(context, my_shared_config, shared_config):
     cmfile = "./smoke/features/data/shareconfigmap.sh"
     oc.shell_cmd(cmfile, namespace)
 
-@when(u'creates another project that will access the cluster scoped shared {resource} that references the {shared_resource} in the first project')
+@when(u'creates another project that will access the cluster scoped shared {resource} that references the {shared_resource} created in the first project')
 def another_project(context, resource, shared_resource):
-    env.first_project = Project().current_project()
+    context.feature.first_project = Project().current_project()
     setProject(context)
 
 @when(u'RBAC for the service account to use the {shared_resource} in its pod')
@@ -123,12 +116,12 @@ def create_rbac(context, shared_resource):
     rbacFile = "./smoke/features/data/rbac.sh"
     oc.shell_cmd(rbacFile, shared_resource)
 
-@when(u'creates a pod {pod_name} with a CSI volume citing the shared resource csi driver and requesting the previously defined {shared_resource} in the Pod CSI volume\'s volume attributes')
-def create_pod(context, pod_name, shared_resource):
+@when(u'creates a pod {pod_name} with a CSI volume citing the shared resource csi driver with read only {permission} and requesting the previously defined {shared_resource} in the Pod CSI volume\'s volume attributes')
+def create_pod(context, pod_name, shared_resource, permission):
     namespace = Project().current_project()
     print(f"creating pod {pod_name} within namespace: {namespace}")
     podFile = "./smoke/features/data/pod.sh"
-    oc.shell_cmd(podFile, shared_resource)
+    oc.shell_cmd(podFile, shared_resource + " " + permission)
 
 @when(u'edits configMap {share_config} data {value} from the first project')
 def edit_configmap_with_data(context, share_config, value):
@@ -143,6 +136,8 @@ def pod_log_contains(context, pod_name, data, share_resource):
     match = oc.get_pod_log(pod_name, data)
     if match:
         print(f"pod {pod_name} successfully reflect the changes")
+    else:
+        print(f"either the refreshResources is set to false or read only is disabled.")
 
 @when(u'user creates the secret {my_secret} in a given namespace')
 def create_secret(context, my_secret):
@@ -166,17 +161,53 @@ def edit_secret(context, my_secret):
     path = "./smoke/features/data/secret.yaml"
     edit_resource(context, my_secret, new_data, path)
 
-@when(u'user adds {refresh_Resources} to {value} in {share_config} configmap')
-def add_refresh_resource(context, refresh_Resources, value, share_config):
+@when(u'user adds {refresh_Resources} to {value} and data {test_data} in {share_config} configmap')
+def add_refresh_resource(context, refresh_Resources, value, share_config, test_data):
     new_data = {
-        "config.yaml": "---\nshareRelistInterval: 5m\nrefreshResources: false\n"
+        "config.yaml": "---\nshareRelistInterval: 5m\nrefreshResources: false\n",
+        test_data: ''
     }
     path = "./smoke/features/data/configmap.yaml"
     edit_resource(context, share_config, new_data, path)
 
-@then(u'pod {pod_name} in the second project should not mount the data {data} available in the {share_resource}')
+@then(u'pod {pod_name} in the second project should not receive the update to the configmap data {data} available in the {share_resource}')
 def pod_log_not_contains(context, pod_name, data, share_resource):
     match = oc.get_pod_log(pod_name, data)
     if not match:
         print(f"pod {pod_name} do not reflect changes as refreshResource is disabled")
 
+@given(u'user has created resource type with shared resource')
+def data_driven_resource_create(context):
+    model = getattr(context, "model", None)
+    if not model:
+        context.model = ResourceTypeModel()
+    for row in context.table:
+        context.model.add_resource(row["resource type"], shareResource=row["shared resource"])
+        resources = context.model.get_resource_type(row["shared resource"])
+        if resources == "configmap":
+            configmap(context, "share-config")
+            shared_configmap(context, "my-shared-config", "share-config")
+        else:
+            create_secret(context, "my-secret")
+            shared_secret(context, "my-shared-secret", "my-secret")
+    
+@when(u'creates a pod {pod_name} that used the sharedconfigmaps or sharedsecrets')
+def create_pods(context, pod_name):
+    # Lets create a pod for configmap as an example
+    create_pod(context, pod_name, "sharedconfigmap", "true")
+
+@when(u'user removes the share related rbac "use" permissions')
+def delete_rbac(context):
+    namespace = Project().current_project()
+    name = "shared-resource-my-shared"
+    oc.delete("role", name, namespace)
+    oc.delete("rolebinding", name, namespace)
+
+@then(u'pod {pod_name} in the second project should have the share related data from its volume removed within the controller\'s relist interval.')
+def remove_data_with_permission_removal(context, pod_name):
+    # This particular scenario takes up to 10 min to remove the data
+    # because this happens on the controller relist
+    cmd = '/bin/sh -c \'for i in `ls /data`; do echo $i; done\''
+    output = oc.exec_not_in_pod(pod_name, cmd, True, 60)
+    if not output:
+        print(f"mounted data removed successfully.")

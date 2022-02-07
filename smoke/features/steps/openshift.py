@@ -54,7 +54,10 @@ class Openshift(object):
 
     def is_resource_in(self, resource_type):
         output, exit_code = self.cmd.run(f'oc get {resource_type}')
-        return exit_code == 0
+        if exit_code != 0:
+            print("Resource not found")
+            return False
+        return True
 
     def wait_for_pod(self, pod_name_pattern, namespace, interval=5, timeout=60):
         pod = self.search_pod_in_namespace(pod_name_pattern, namespace)
@@ -235,7 +238,21 @@ class Openshift(object):
         print(f"Inside the {pod_name}: {output}, {exit_status}")
         if exit_status == 0:
             return output
-        return None
+        return output
+
+    def exec_not_in_pod(self, pod_name, container_cmd, wait, timeout):
+        cmd = f'oc exec {pod_name} -- {container_cmd}'
+        output, exit_code = self.cmd.run(cmd)
+        if exit_code == 0:
+            if wait:
+                attempts = 10
+                while exit_code == 0 and attempts > 0:
+                    output, exit_code = self.cmd.run(
+                        f'oc exec {pod_name} -- {container_cmd}')
+                    attempts -= 1
+                    time.sleep(timeout)
+        print(f"Inside the {pod_name}: {output}, {exit_code}")
+        return output
     
     def oc_process_template(self,file_path):
         cmd = f'oc process -f {file_path}|oc create -f -'

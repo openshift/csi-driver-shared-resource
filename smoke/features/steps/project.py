@@ -25,6 +25,10 @@ class Project():
     def current_project(self):
         output, exit_code = self.cmd.run(f'oc project -q')
         return output
+    
+    def get_all_project(self):
+        output, exit_code = self.cmd.run(f'oc projects -q')
+        return output
 
     def switch_to(self):
         create_project_output, exit_code = self.cmd.run('oc project {}'.format(self.name))
@@ -43,4 +47,9 @@ class Project():
     def create_namespace(self, namespace):
         output, exit_status = self.cmd.run(f'oc new-project {namespace}')
         output.find(r'.*Now\susing\sproject\"%s\"\son\sserver.*' % {namespace})
+        return exit_status == 0
+
+    def delete_namespace(self, namespace):
+        output, exit_status = self.cmd.run(f'oc delete project {namespace}')
+        output.find(r'.*\"%s\"\sdeleted.*' % {namespace})
         return exit_status == 0

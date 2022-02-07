@@ -40,13 +40,3 @@ echo "Logs will be collected in ""${TEST_SMOKE_OUTPUT_DIR}"
                               --no-capture --no-capture-stderr \
                               --tags="~manual" smoke/features                     
 echo "Logs collected in ""${TEST_SMOKE_OUTPUT_DIR}"
-
-shout "cleanup test projects"
-
-set +x
-
-for i in $(oc projects -q); do
-  if [[ $i == "testing-namespace"* ]]; then
-    oc delete project "$i"
-  fi
-done
