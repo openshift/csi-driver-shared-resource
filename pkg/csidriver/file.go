@@ -1,4 +1,4 @@
-package hostpath
+package csidriver
 
 import (
 	"fmt"

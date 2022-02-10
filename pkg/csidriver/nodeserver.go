@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package hostpath
+package csidriver
 
 import (
 	"fmt"
@@ -43,16 +43,16 @@ var (
 type nodeServer struct {
 	nodeID            string
 	maxVolumesPerNode int64
-	hp                HostPathDriver
+	d                 CSIDriver
 	readWriteMounter  FileSystemMounter
 	mounter           mount.Interface
 }
 
-func NewNodeServer(hp *hostPath) *nodeServer {
+func NewNodeServer(d *driver) *nodeServer {
 	return &nodeServer{
-		nodeID:            hp.nodeID,
-		maxVolumesPerNode: hp.maxVolumesPerNode,
-		hp:                hp,
+		nodeID:            d.nodeID,
+		maxVolumesPerNode: d.maxVolumesPerNode,
+		d:                 d,
 		mounter:           mount.New(""),
 		readWriteMounter:  &ReadWriteMany{},
 	}
@@ -207,7 +207,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 	}
 
-	vol, err := ns.hp.createHostpathVolume(req.GetVolumeId(), kubeletTargetPath, refresh, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
+	vol, err := ns.d.createVolume(req.GetVolumeId(), kubeletTargetPath, refresh, req.GetVolumeContext(), cmShare, sShare, maxStorageCapacity, mountAccess)
 	if err != nil && !os.IsExist(err) {
 		klog.Error("ephemeral mode failed to create volume: ", err)
 		return nil, status.Error(codes.Internal, err.Error())
@@ -245,13 +245,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	klog.V(4).Infof("NodePublishVolume %v\nfstype %v\ndevice %v\nvolumeId %v\nattributes %v\nmountflags %v\n",
 		kubeletTargetPath, fsType, deviceId, volumeId, attrib, mountFlags)
 
-	mountIDString, bindDir := ns.hp.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
+	mountIDString, bindDir := ns.d.getVolumePath(req.GetVolumeId(), req.GetVolumeContext())
 	if err := ns.readWriteMounter.makeFSMounts(mountIDString, bindDir, kubeletTargetPath, ns.mounter); err != nil {
 		return nil, err
 	}
 
 	// here is what initiates that necessary copy now with *NOT* using bind on the mount so each pod gets its own tmpfs
-	if err := ns.hp.mapVolumeToPod(vol); err != nil {
+	if err := ns.d.mapVolumeToPod(vol); err != nil {
 		metrics.IncMountCounters(false)
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to populate mount device: %s at %s: %s",
 			bindDir,
@@ -259,7 +259,7 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 			err.Error()))
 	}
 
-	if err := vol.StoreToDisk(ns.hp.GetVolMapRoot()); err != nil {
+	if err := vol.StoreToDisk(ns.d.GetVolMapRoot()); err != nil {
 		metrics.IncMountCounters(false)
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())
@@ -281,22 +281,22 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 	targetPath := req.GetTargetPath()
 	volumeID := req.GetVolumeId()
 
-	hpv := ns.hp.getHostpathVolume(volumeID)
-	if hpv == nil {
+	dv := ns.d.getVolume(volumeID)
+	if dv == nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("unpublish volume %s already gone", volumeID))
 	}
-	if err := ns.readWriteMounter.removeFSMounts(hpv.GetVolPathAnchorDir(), hpv.GetVolPathBindMountDir(), targetPath, ns.mounter); err != nil {
+	if err := ns.readWriteMounter.removeFSMounts(dv.GetVolPathAnchorDir(), dv.GetVolPathBindMountDir(), targetPath, ns.mounter); err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("error removing %s: %s", targetPath, err.Error()))
 
 	}
 
 	klog.V(4).Infof("volume %s at path %s has been unpublished.", volumeID, targetPath)
 
-	if err := ns.hp.deleteHostpathVolume(volumeID); err != nil && !os.IsNotExist(err) {
+	if err := ns.d.deleteVolume(volumeID); err != nil && !os.IsNotExist(err) {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to delete volume: %s", err))
 	}
 
-	filePath := filepath.Join(ns.hp.GetVolMapRoot(), hpv.GetVolID())
+	filePath := filepath.Join(ns.d.GetVolMapRoot(), dv.GetVolID())
 	if err := os.Remove(filePath); err != nil {
 		klog.Errorf("failed to persist driver volume metadata to disk: %s", err.Error())
 		return nil, status.Error(codes.Internal, err.Error())

@@ -1,3 +1,4 @@
+//go:build slow
 // +build slow
 
 package e2e

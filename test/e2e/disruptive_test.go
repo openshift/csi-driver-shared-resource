@@ -1,3 +1,4 @@
+//go:build disruptive
 // +build disruptive
 
 package e2e
