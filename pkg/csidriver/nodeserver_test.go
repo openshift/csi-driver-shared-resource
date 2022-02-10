@@ -1,4 +1,4 @@
-package hostpath
+package csidriver
 
 import (
 	"io/ioutil"
@@ -62,7 +62,7 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 	if strings.Contains(testName, "/") {
 		testName = strings.Split(testName, "/")[0]
 	}
-	hp, tmpDir, volPathTmpDir, err := testHostPathDriver(testName, nil)
+	d, tmpDir, volPathTmpDir, err := testDriver(testName, nil)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -71,7 +71,7 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 		maxVolumesPerNode: 0,
 		mounter:           mount.NewFakeMounter([]mount.MountPoint{}),
 		readWriteMounter:  &ReadWriteMany{},
-		hp:                hp,
+		d:                 d,
 	}
 	return ns, tmpDir, volPathTmpDir, nil
 }

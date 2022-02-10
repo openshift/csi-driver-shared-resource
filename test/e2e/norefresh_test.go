@@ -1,3 +1,4 @@
+//go:build norefresh
 // +build norefresh
 
 package e2e
@@ -21,7 +22,7 @@ func TestChangeRefreshConfigurationThenBasic(t *testing.T) {
 	framework.TurnOffRefreshResources(testArgs)
 	err := framework.WaitForPodContainerRestart(testArgs)
 	if err != nil {
-		testArgs.MessageString = fmt.Sprintf("hostpath container restart did not seem to occur")
+		testArgs.MessageString = fmt.Sprintf("csidriver container restart did not seem to occur")
 		framework.LogAndDebugTestError(testArgs)
 	}
 

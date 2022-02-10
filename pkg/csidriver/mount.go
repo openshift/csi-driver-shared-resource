@@ -1,4 +1,4 @@
-package hostpath
+package csidriver
 
 import (
 	"fmt"
@@ -43,7 +43,7 @@ type FileSystemMounter interface {
 // - that said,  testing confirmed using fstype of tmpfs on hostpath/xfs volumes still results in the target
 //   being xfs and not tmpfs
 // - with the lack of a bind option, and each pod getting its own tmpfs we have to copy the data from our emptydir
-//   based location to the targetPath here ... that is handled in hostpath.go
+//   based location to the targetPath here ... that is handled in driver.go
 type ReadWriteMany struct {
 }
 

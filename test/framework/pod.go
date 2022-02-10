@@ -17,7 +17,7 @@ import (
 	kubexec "k8s.io/kubectl/pkg/cmd/exec"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
+	"github.com/openshift/csi-driver-shared-resource/pkg/csidriver"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 )
@@ -64,7 +64,7 @@ func CreateTestPod(t *TestArgs) {
 		},
 	}
 	if t.NoRefresh {
-		pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes[hostpath.RefreshResource] = "false"
+		pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes[csidriver.RefreshResource] = "false"
 	}
 	if t.SecondShare {
 		pod.Spec.Volumes = append(pod.Spec.Volumes, corev1.Volume{
@@ -240,8 +240,8 @@ func GetPodContainerRestartCount(t *TestArgs) map[string]int32 {
 	for _, pod := range podList.Items {
 		if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
 			for _, cs := range pod.Status.ContainerStatuses {
-				if strings.TrimSpace(cs.Name) == "hostpath" {
-					t.T.Logf("%s: GetPodContainerRestartCount pod %s hostpath container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
+				if strings.TrimSpace(cs.Name) == "csidriver" {
+					t.T.Logf("%s: GetPodContainerRestartCount pod %s csidriver container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
 					rc[pod.Name] = cs.RestartCount
 				}
 			}
@@ -272,8 +272,8 @@ func WaitForPodContainerRestart(t *TestArgs) error {
 					t.T.Logf("%s: WaitForPodContainerRestart pod %s not in running phase: %s", time.Now().String(), pod.Name, pod.Status.Phase)
 				}
 				for _, cs := range pod.Status.ContainerStatuses {
-					if strings.TrimSpace(cs.Name) == "hostpath" {
-						t.T.Logf("%s: WaitForPodContainerRestart pod %s hostpath container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
+					if strings.TrimSpace(cs.Name) == "csidriver" {
+						t.T.Logf("%s: WaitForPodContainerRestart pod %s csidriver container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
 						countBeforeConfigChange, ok := t.CurrentDriverContainerRestartCount[pod.Name]
 						if !ok {
 							t.T.Logf("%s: WaitForPodContainerRestart pod %s did not have a prior restart count?", time.Now().String(), pod.Name)

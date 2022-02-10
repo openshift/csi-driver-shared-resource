@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package hostpath
+package csidriver
 
 import (
 	"context"
@@ -42,7 +42,7 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
 
-type hostPath struct {
+type driver struct {
 	name              string
 	nodeID            string
 	version           string
@@ -62,7 +62,7 @@ type hostPath struct {
 var (
 	vendorVersion = "dev"
 
-	hostPathVolumes = sync.Map{}
+	volumes = sync.Map{}
 )
 
 const (
@@ -71,48 +71,48 @@ const (
 	// no bind mount, approach.
 	DataRoot = "/run/csi-data-dir"
 
-	// Directory where we persist `hostPathVolumes`
-	// This is a hostpath volume on the local node
+	// Directory where we persist `volumes`
+	// This is a csidriver volume on the local node
 	// to maintain state across restarts of the DaemonSet
 	VolumeMapRoot = "/csi-volumes-map"
 )
 
-func (hp *hostPath) getHostpathVolume(name string) *hostPathVolume {
-	obj, loaded := hostPathVolumes.Load(name)
+func (d *driver) getVolume(name string) *driverVolume {
+	obj, loaded := volumes.Load(name)
 	if loaded {
-		hpv, _ := obj.(*hostPathVolume)
-		return hpv
+		dv, _ := obj.(*driverVolume)
+		return dv
 	}
 	return nil
 }
 
-func setHPV(name string, hpv *hostPathVolume) {
-	if hpv.Lock == nil {
-		hpv.Lock = &sync.Mutex{}
+func setDPV(name string, dpv *driverVolume) {
+	if dpv.Lock == nil {
+		dpv.Lock = &sync.Mutex{}
 	}
-	hostPathVolumes.Store(name, hpv)
+	volumes.Store(name, dpv)
 }
 
-func remHPV(name string) {
-	hostPathVolumes.Delete(name)
+func remV(name string) {
+	volumes.Delete(name)
 }
 
-type HostPathDriver interface {
-	createHostpathVolume(volID, targetPath string, refresh bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error)
-	getHostpathVolume(volID string) *hostPathVolume
-	deleteHostpathVolume(volID string) error
+type CSIDriver interface {
+	createVolume(volID, targetPath string, refresh bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*driverVolume, error)
+	getVolume(volID string) *driverVolume
+	deleteVolume(volID string) error
 	getVolumePath(volID string, volCtx map[string]string) (string, string)
-	mapVolumeToPod(hpv *hostPathVolume) error
+	mapVolumeToPod(dv *driverVolume) error
 	Run()
 	GetRoot() string
 	GetVolMapRoot() string
 	Prune(kubeClient kubernetes.Interface)
 }
 
-// NewHostPathDriver instantiate the HostPathDriver with the driver details.  Optionally, a
+// NewCSIDriver instantiate the CSIDriver with the driver details.  Optionally, a
 // Kubernetes Clientset can be informed to update (warm up) the object cache before creating the
 // volume (and it's data) for mounting on the incoming pod.
-func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, maxVolumesPerNode int64, version string, mounter mount.Interface) (HostPathDriver, error) {
+func NewCSIDriver(root, volMapRoot, driverName, nodeID, endpoint string, maxVolumesPerNode int64, version string, mounter mount.Interface) (CSIDriver, error) {
 	if driverName == "" {
 		return nil, errors.New("no driver name provided")
 	}
@@ -140,10 +140,10 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 	klog.Infof("EndPoint: '%s', NodeID: '%s'", endpoint, nodeID)
 
 	if !config.LoadedConfig.RefreshResources {
-		klog.Info("RefreshResources is disabled and HostPathDriver will directly read Kubernetes corev1 resources!")
+		klog.Info("RefreshResources is disabled and CSIDriver will directly read Kubernetes corev1 resources!")
 	}
 
-	hp := &hostPath{
+	d := &driver{
 		name:              driverName,
 		version:           vendorVersion,
 		nodeID:            nodeID,
@@ -154,83 +154,83 @@ func NewHostPathDriver(root, volMapRoot, driverName, nodeID, endpoint string, ma
 		mounter:           mounter,
 	}
 
-	if err := hp.loadVolsFromDisk(); err != nil {
+	if err := d.loadVolsFromDisk(); err != nil {
 		return nil, fmt.Errorf("failed to load volume map on disk: %v", err)
 	}
 
-	return hp, nil
+	return d, nil
 }
 
-func (hp *hostPath) GetRoot() string {
-	return hp.root
+func (d *driver) GetRoot() string {
+	return d.root
 }
 
-func (hp *hostPath) GetVolMapRoot() string {
-	return hp.volMapRoot
+func (d *driver) GetVolMapRoot() string {
+	return d.volMapRoot
 }
 
-func (hp *hostPath) Run() {
+func (d *driver) Run() {
 	// Create GRPC servers
-	hp.ids = NewIdentityServer(hp.name, hp.version)
+	d.ids = NewIdentityServer(d.name, d.version)
 
 	// the node-server will be on always-read-only mode when the object-cache is being populated
 	// directly
-	hp.ns = NewNodeServer(hp)
+	d.ns = NewNodeServer(d)
 
 	s := NewNonBlockingGRPCServer()
-	s.Start(hp.endpoint, hp.ids, hp.ns)
+	s.Start(d.endpoint, d.ids, d.ns)
 	s.Wait()
 }
 
-// getVolumePath returns the canonical paths for hostpath volume
-func (hp *hostPath) getVolumePath(volID string, volCtx map[string]string) (string, string) {
+// getVolumePath returns the canonical paths for csidriver volume
+func (d *driver) getVolumePath(volID string, volCtx map[string]string) (string, string) {
 	podNamespace, podName, podUID, podSA := getPodDetails(volCtx)
 	mountIDString := strings.Join([]string{podNamespace, podName, volID}, "-")
-	return mountIDString, filepath.Join(hp.root, bindDir, volID, podNamespace, podName, podUID, podSA)
+	return mountIDString, filepath.Join(d.root, bindDir, volID, podNamespace, podName, podUID, podSA)
 }
 
-func commonRangerProceedFilter(hpv *hostPathVolume, key interface{}) bool {
-	if hpv == nil {
+func commonRangerProceedFilter(dv *driverVolume, key interface{}) bool {
+	if dv == nil {
 		return false
 	}
 	compareKey := ""
 	// see if the shared item pertains to this volume
-	switch hpv.GetSharedDataKind() {
+	switch dv.GetSharedDataKind() {
 	case consts.ResourceReferenceTypeSecret:
-		sharedSecret := client.GetSharedSecret(hpv.GetSharedDataId())
+		sharedSecret := client.GetSharedSecret(dv.GetSharedDataId())
 		if sharedSecret == nil {
-			klog.V(6).Infof("commonRangerProceedFilter could not retrieve share %s for %s:%s:%s", hpv.GetSharedDataId(), hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID())
+			klog.V(6).Infof("commonRangerProceedFilter could not retrieve share %s for %s:%s:%s", dv.GetSharedDataId(), dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID())
 			return false
 		}
 		compareKey = objcache.BuildKey(sharedSecret.Spec.SecretRef.Namespace, sharedSecret.Spec.SecretRef.Name)
 	case consts.ResourceReferenceTypeConfigMap:
-		sharedConfigMap := client.GetSharedConfigMap(hpv.GetSharedDataId())
+		sharedConfigMap := client.GetSharedConfigMap(dv.GetSharedDataId())
 		if sharedConfigMap == nil {
-			klog.V(6).Infof("commonRangerProceedFilter could not retrieve share %s for %s:%s:%s", hpv.GetSharedDataId(), hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID())
+			klog.V(6).Infof("commonRangerProceedFilter could not retrieve share %s for %s:%s:%s", dv.GetSharedDataId(), dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID())
 			return false
 		}
 		compareKey = objcache.BuildKey(sharedConfigMap.Spec.ConfigMapRef.Namespace, sharedConfigMap.Spec.ConfigMapRef.Name)
 	default:
-		klog.Warningf("commonRangerProceedFilter unknown share type for %s:%s:%s: %s", hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID())
+		klog.Warningf("commonRangerProceedFilter unknown share type for %s:%s:%s: %s", dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID())
 		return false
 	}
 	keyStr := key.(string)
 	if keyStr != compareKey {
-		klog.V(4).Infof("commonRangerProceedFilter skipping %s as it does not match %s for %s:%s:%s", keyStr, compareKey, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID())
+		klog.V(4).Infof("commonRangerProceedFilter skipping %s as it does not match %s for %s:%s:%s", keyStr, compareKey, dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID())
 		return false
 	}
 	return true
 }
 
-func commonUpsertRanger(hpv *hostPathVolume, key, value interface{}) error {
-	proceed := commonRangerProceedFilter(hpv, key)
+func commonUpsertRanger(dv *driverVolume, key, value interface{}) error {
+	proceed := commonRangerProceedFilter(dv, key)
 	if !proceed {
 		return nil
 	}
 
 	payload, _ := value.(Payload)
-	klog.V(4).Infof("commonUpsertRanger key %s hpv %#v", key, hpv)
-	podPath := hpv.GetTargetPath()
+	klog.V(4).Infof("commonUpsertRanger key %s dv %#v", key, dv)
+	podPath := dv.GetTargetPath()
 	// So, what to do with error handling.  Errors with filesystem operations
 	// will almost always not be intermittent, but most likely the result of the
 	// host filesystem either being full or compromised in some long running fashion, so tight-loop retry, like we
@@ -250,7 +250,7 @@ func commonUpsertRanger(hpv *hostPathVolume, key, value interface{}) error {
 	// currently this driver does not support overlaying over directories with files.  Either the directory in the
 	// container image must be empty, or the directory does not exist, and is created for the Pod's container as
 	// part of provisioning the container.
-	if err := commonOSRemove(podPath, fmt.Sprintf("commonUpsertRanger key %s volid %s share id %s pod name %s", key, hpv.GetVolID(), hpv.GetSharedDataId(), hpv.GetPodName())); err != nil {
+	if err := commonOSRemove(podPath, fmt.Sprintf("commonUpsertRanger key %s volid %s share id %s pod name %s", key, dv.GetVolID(), dv.GetSharedDataId(), dv.GetPodName())); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(podPath, os.ModePerm); err != nil {
@@ -259,7 +259,7 @@ func commonUpsertRanger(hpv *hostPathVolume, key, value interface{}) error {
 	if payload.ByteData != nil {
 		for dataKey, dataValue := range payload.ByteData {
 			podFilePath := filepath.Join(podPath, dataKey)
-			klog.V(4).Infof("commonUpsertRanger create/update file %s key %s volid %s share id %s pod name %s", podFilePath, key, hpv.GetVolID(), hpv.GetSharedDataId(), hpv.GetPodName())
+			klog.V(4).Infof("commonUpsertRanger create/update file %s key %s volid %s share id %s pod name %s", podFilePath, key, dv.GetVolID(), dv.GetSharedDataId(), dv.GetPodName())
 			if err := ioutil.WriteFile(podFilePath, dataValue, 0644); err != nil {
 				return err
 			}
@@ -269,7 +269,7 @@ func commonUpsertRanger(hpv *hostPathVolume, key, value interface{}) error {
 	if payload.StringData != nil {
 		for dataKey, dataValue := range payload.StringData {
 			podFilePath := filepath.Join(podPath, dataKey)
-			klog.V(4).Infof("commonUpsertRanger create/update file %s key %s volid %s share id %s pod name %s", podFilePath, key, hpv.GetVolID(), hpv.GetSharedDataId(), hpv.GetPodName())
+			klog.V(4).Infof("commonUpsertRanger create/update file %s key %s volid %s share id %s pod name %s", podFilePath, key, dv.GetVolID(), dv.GetSharedDataId(), dv.GetPodName())
 			content := []byte(dataValue)
 			if err := ioutil.WriteFile(podFilePath, content, 0644); err != nil {
 				return err
@@ -301,14 +301,14 @@ func commonOSRemove(dir, dbg string) error {
 
 }
 
-func commonDeleteRanger(hpv *hostPathVolume, key interface{}) bool {
-	proceed := commonRangerProceedFilter(hpv, key)
+func commonDeleteRanger(dv *driverVolume, key interface{}) bool {
+	proceed := commonRangerProceedFilter(dv, key)
 	if !proceed {
 		// even though we are aborting, return true to continue to next entry in ranger list
 		return true
 	}
 	klog.V(4).Infof("common delete ranger key %s", key)
-	commonOSRemove(hpv.GetTargetPath(), fmt.Sprintf("commonDeleteRanger %s", key))
+	commonOSRemove(dv.GetTargetPath(), fmt.Sprintf("commonDeleteRanger %s", key))
 	klog.V(4).Infof("common delete ranger returning key %s", key)
 	return true
 }
@@ -322,22 +322,22 @@ func (r *innerShareDeleteRanger) Range(key, value interface{}) bool {
 	volID := key.(string)
 	// painful debug has shown you cannot trust the value that comes in, you have to refetch,
 	// unless the map only has 1 entry in it
-	var hpv *hostPathVolume
+	var dv *driverVolume
 	klog.V(4).Infof("innerShareDeleteRanger key %q\n incoming share id %s",
 		key,
 		r.shareId)
-	hpvObj, ok := hostPathVolumes.Load(key)
+	dvObj, ok := volumes.Load(key)
 	if !ok {
 		klog.V(0).Infof("innerShareDeleteRanger how the hell can we not load key %s from the range list", key)
 		// continue to the next entry, skip this one
 		return true
 	} else {
-		hpv, _ = hpvObj.(*hostPathVolume)
+		dv, _ = dvObj.(*driverVolume)
 	}
-	if hpv.GetVolID() == volID && hpv.GetSharedDataId() == r.shareId {
-		klog.V(4).Infof("innerShareDeleteRanger shareid %s kind %s", r.shareId, hpv.GetSharedDataKind())
-		targetPath = hpv.GetTargetPath()
-		volID = hpv.GetVolID()
+	if dv.GetVolID() == volID && dv.GetSharedDataId() == r.shareId {
+		klog.V(4).Infof("innerShareDeleteRanger shareid %s kind %s", r.shareId, dv.GetSharedDataKind())
+		targetPath = dv.GetTargetPath()
+		volID = dv.GetVolID()
 		if len(volID) > 0 && len(targetPath) > 0 {
 			err := commonOSRemove(targetPath, fmt.Sprintf("innerShareDeleteRanger shareID id %s", r.shareId))
 			if err != nil {
@@ -359,7 +359,7 @@ func shareDeleteRanger(key interface{}) bool {
 		shareId: shareId,
 	}
 
-	hostPathVolumes.Range(ranger.Range)
+	volumes.Range(ranger.Range)
 	klog.V(4).Infof("shareDeleteRanger returning share id %s", shareId)
 	return true
 }
@@ -380,29 +380,29 @@ func (r *innerShareUpdateRanger) Range(key, value interface{}) bool {
 	volID := key.(string)
 	// painful debug has shown you cannot trust the value that comes in, you have to refetch,
 	// unless the map only has 1 entry in it
-	var hpv *hostPathVolume
+	var dv *driverVolume
 	klog.V(4).Infof("innerShareUpdateRanger key %q\n incoming share id %s",
 		key,
 		r.shareId)
-	hpvObj, ok := hostPathVolumes.Load(key)
+	dvObj, ok := volumes.Load(key)
 	if !ok {
 		klog.V(0).Infof("innerShareUpdateRanger how the hell can we not load key %s from the range list", key)
 		// continue to the next entry, skip this one
 		return true
 	} else {
-		hpv, _ = hpvObj.(*hostPathVolume)
+		dv, _ = dvObj.(*driverVolume)
 	}
-	if hpv.GetVolID() == volID && hpv.GetSharedDataId() == r.shareId {
-		klog.V(4).Infof("innerShareUpdateRanger MATCH inner ranger key %q\n hpv vol id %s\n incoming share id %s\n hpv share id %s", key, hpv.GetVolID(), r.shareId, hpv.GetSharedDataId())
-		a, err := client.ExecuteSAR(r.shareId, hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetPodSA(), hpv.GetSharedDataKind())
+	if dv.GetVolID() == volID && dv.GetSharedDataId() == r.shareId {
+		klog.V(4).Infof("innerShareUpdateRanger MATCH inner ranger key %q\n dv vol id %s\n incoming share id %s\n dv share id %s", key, dv.GetVolID(), r.shareId, dv.GetSharedDataId())
+		a, err := client.ExecuteSAR(r.shareId, dv.GetPodNamespace(), dv.GetPodName(), dv.GetPodSA(), dv.GetSharedDataKind())
 		allowed := a && err == nil
 
 		if allowed {
 			klog.V(0).Infof("innerShareUpdateRanger pod %s:%s has permissions for secretShare %s",
-				hpv.GetPodNamespace(), hpv.GetPodName(), r.shareId)
+				dv.GetPodNamespace(), dv.GetPodName(), r.shareId)
 		} else {
 			klog.V(0).Infof("innerShareUpdateRanger pod %s:%s does not permission for secretShare %s",
-				hpv.GetPodNamespace(), hpv.GetPodName(), r.shareId)
+				dv.GetPodNamespace(), dv.GetPodName(), r.shareId)
 		}
 
 		switch {
@@ -440,8 +440,8 @@ func (r *innerShareUpdateRanger) Range(key, value interface{}) bool {
 			}
 		}
 
-		r.oldTargetPath = hpv.GetTargetPath()
-		r.volID = hpv.GetVolID()
+		r.oldTargetPath = dv.GetTargetPath()
+		r.volID = dv.GetVolID()
 
 		if !allowed {
 			err := commonOSRemove(r.oldTargetPath, "lostPermissions")
@@ -456,10 +456,10 @@ func (r *innerShareUpdateRanger) Range(key, value interface{}) bool {
 			return false
 		}
 
-		commonUpsertRanger(hpv, r.sharedItemKey, r.sharedItem)
+		commonUpsertRanger(dv, r.sharedItemKey, r.sharedItem)
 
 	}
-	klog.V(4).Infof("innerShareUpdateRanger NO MATCH inner ranger key %q\n hpv vol id %s\n incoming share id %s\n hpv share id %s", key, hpv.GetVolID(), r.shareId, hpv.GetSharedDataId())
+	klog.V(4).Infof("innerShareUpdateRanger NO MATCH inner ranger key %q\n dv vol id %s\n incoming share id %s\n dv share id %s", key, dv.GetVolID(), r.shareId, dv.GetSharedDataId())
 	return true
 }
 
@@ -477,24 +477,24 @@ func shareUpdateRanger(key, value interface{}) bool {
 		secret:    sok,
 		configmap: cmok,
 	}
-	hostPathVolumes.Range(rangerObj.Range)
+	volumes.Range(rangerObj.Range)
 
 	klog.V(4).Infof("shareUpdateRanger key %s value %#v inner ranger %#v inner ranger", key, value, rangerObj)
 	return true
 }
 
-func mapBackingResourceToPod(hpv *hostPathVolume) error {
+func mapBackingResourceToPod(dv *driverVolume) error {
 	klog.V(4).Infof("mapBackingResourceToPod")
-	switch hpv.GetSharedDataKind() {
+	switch dv.GetSharedDataKind() {
 	case consts.ResourceReferenceTypeConfigMap:
-		klog.V(4).Infof("mapBackingResourceToPod postlock %s configmap", hpv.GetVolID())
+		klog.V(4).Infof("mapBackingResourceToPod postlock %s configmap", dv.GetVolID())
 		upsertRangerCM := func(key, value interface{}) bool {
 			cm, _ := value.(*corev1.ConfigMap)
 			payload := Payload{
 				StringData: cm.Data,
 				ByteData:   cm.BinaryData,
 			}
-			err := commonUpsertRanger(hpv, key, payload)
+			err := commonUpsertRanger(dv, key, payload)
 			if err != nil {
 				ProcessFileSystemError(cm, err)
 			}
@@ -508,9 +508,9 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 		// we call the upsert ranger inline in case there are filesystem problems initially, so
 		// we can return the error back to volume provisioning, where the kubelet will retry at
 		// a controlled frequency
-		sharedConfigMap := client.GetSharedConfigMap(hpv.GetSharedDataId())
+		sharedConfigMap := client.GetSharedConfigMap(dv.GetSharedDataId())
 		if sharedConfigMap == nil {
-			klog.V(4).Infof("mapBackingResourceToPod for pod volume %s:%s:%s share %s no longer exists", hpv.GetPodNamespace(), hpv.GetPodName(), hpv.GetVolID(), hpv.GetSharedDataId())
+			klog.V(4).Infof("mapBackingResourceToPod for pod volume %s:%s:%s share %s no longer exists", dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID(), dv.GetSharedDataId())
 			return nil
 		}
 		cmNamespace := sharedConfigMap.Spec.ConfigMapRef.Namespace
@@ -523,28 +523,28 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 				ByteData:   cm.BinaryData,
 			}
 
-			upsertError := commonUpsertRanger(hpv, comboKey, payload)
+			upsertError := commonUpsertRanger(dv, comboKey, payload)
 			if upsertError != nil {
 				ProcessFileSystemError(cm, upsertError)
 				return upsertError
 			}
 		}
-		if hpv.IsRefresh() {
-			objcache.RegisterConfigMapUpsertCallback(hpv.GetVolID(), comboKey, upsertRangerCM)
+		if dv.IsRefresh() {
+			objcache.RegisterConfigMapUpsertCallback(dv.GetVolID(), comboKey, upsertRangerCM)
 		}
 		deleteRangerCM := func(key, value interface{}) bool {
-			return commonDeleteRanger(hpv, key)
+			return commonDeleteRanger(dv, key)
 		}
 		//we should register delete callbacks regardless of any per volume refresh setting to account for removed permissions
-		objcache.RegisterConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerCM)
+		objcache.RegisterConfigMapDeleteCallback(dv.GetVolID(), deleteRangerCM)
 	case consts.ResourceReferenceTypeSecret:
-		klog.V(4).Infof("mapBackingResourceToPod postlock %s secret", hpv.GetVolID())
+		klog.V(4).Infof("mapBackingResourceToPod postlock %s secret", dv.GetVolID())
 		upsertRangerSec := func(key, value interface{}) bool {
 			s, _ := value.(*corev1.Secret)
 			payload := Payload{
 				ByteData: s.Data,
 			}
-			err := commonUpsertRanger(hpv, key, payload)
+			err := commonUpsertRanger(dv, key, payload)
 			if err != nil {
 				ProcessFileSystemError(s, err)
 			}
@@ -557,7 +557,7 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 		// we call the upsert ranger inline in case there are filesystem problems initially,  so
 		// we can return the error back to volume provisioning, where the kubelet will retry at
 		// a controlled frequency
-		sharedSecret := client.GetSharedSecret(hpv.GetSharedDataId())
+		sharedSecret := client.GetSharedSecret(dv.GetSharedDataId())
 		sNamespace := sharedSecret.Spec.SecretRef.Namespace
 		sName := sharedSecret.Spec.SecretRef.Name
 		comboKey := objcache.BuildKey(sNamespace, sName)
@@ -567,71 +567,71 @@ func mapBackingResourceToPod(hpv *hostPathVolume) error {
 				ByteData: s.Data,
 			}
 
-			upsertError := commonUpsertRanger(hpv, comboKey, payload)
+			upsertError := commonUpsertRanger(dv, comboKey, payload)
 			if upsertError != nil {
 				ProcessFileSystemError(s, upsertError)
 				return upsertError
 			}
 		}
-		if hpv.IsRefresh() {
-			objcache.RegisterSecretUpsertCallback(hpv.GetVolID(), comboKey, upsertRangerSec)
+		if dv.IsRefresh() {
+			objcache.RegisterSecretUpsertCallback(dv.GetVolID(), comboKey, upsertRangerSec)
 		}
 		deleteRangerSec := func(key, value interface{}) bool {
-			return commonDeleteRanger(hpv, key)
+			return commonDeleteRanger(dv, key)
 		}
 		//we should register delete callbacks regardless of any per volume refresh setting to account for removed permissions
-		objcache.RegisterSecretDeleteCallback(hpv.GetVolID(), deleteRangerSec)
+		objcache.RegisterSecretDeleteCallback(dv.GetVolID(), deleteRangerSec)
 	default:
-		return fmt.Errorf("invalid share backing resource kind %s", hpv.GetSharedDataKind())
+		return fmt.Errorf("invalid share backing resource kind %s", dv.GetSharedDataKind())
 	}
 	return nil
 }
 
-func (hp *hostPath) mapVolumeToPod(hpv *hostPathVolume) error {
+func (d *driver) mapVolumeToPod(dv *driverVolume) error {
 	klog.V(4).Infof("mapVolumeToPod calling mapBackingResourceToPod")
 
-	err := mapBackingResourceToPod(hpv)
+	err := mapBackingResourceToPod(dv)
 	if err != nil {
 		return err
 	}
-	hp.registerRangers(hpv)
+	d.registerRangers(dv)
 
 	return nil
 }
 
-func (hp *hostPath) registerRangers(hpv *hostPathVolume) {
+func (d *driver) registerRangers(dv *driverVolume) {
 	deleteRangerShare := func(key, value interface{}) bool {
 		return shareDeleteRanger(key)
 	}
 	updateRangerShare := func(key, value interface{}) bool {
 		return shareUpdateRanger(key, value)
 	}
-	switch hpv.GetSharedDataKind() {
+	switch dv.GetSharedDataKind() {
 	case consts.ResourceReferenceTypeSecret:
-		objcache.RegisterSharedSecretUpdateCallback(hpv.GetVolID(), hpv.GetSharedDataId(), updateRangerShare)
-		objcache.RegisteredSharedSecretDeleteCallback(hpv.GetVolID(), deleteRangerShare)
+		objcache.RegisterSharedSecretUpdateCallback(dv.GetVolID(), dv.GetSharedDataId(), updateRangerShare)
+		objcache.RegisteredSharedSecretDeleteCallback(dv.GetVolID(), deleteRangerShare)
 	case consts.ResourceReferenceTypeConfigMap:
-		objcache.RegisterSharedConfigMapUpdateCallback(hpv.GetVolID(), hpv.GetSharedDataId(), updateRangerShare)
-		objcache.RegisterSharedConfigMapDeleteCallback(hpv.GetVolID(), deleteRangerShare)
+		objcache.RegisterSharedConfigMapUpdateCallback(dv.GetVolID(), dv.GetSharedDataId(), updateRangerShare)
+		objcache.RegisterSharedConfigMapDeleteCallback(dv.GetVolID(), deleteRangerShare)
 	}
 
 }
 
-// createVolume create the directory for the hostpath volume.
+// createVolume create the directory for the csidriver volume.
 // It returns the volume path or err if one occurs.
-func (hp *hostPath) createHostpathVolume(volID, targetPath string, refresh bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*hostPathVolume, error) {
+func (d *driver) createVolume(volID, targetPath string, refresh bool, volCtx map[string]string, cmShare *sharev1alpha1.SharedConfigMap, sShare *sharev1alpha1.SharedSecret, cap int64, volAccessType accessType) (*driverVolume, error) {
 	if cmShare != nil && sShare != nil {
 		return nil, fmt.Errorf("cannot store both SharedConfigMap and SharedSecret in a volume")
 	}
 	if cmShare == nil && sShare == nil {
 		return nil, fmt.Errorf("have to provide either a SharedConfigMap or SharedSecret to a volume")
 	}
-	hpv := hp.getHostpathVolume(volID)
-	if hpv != nil {
-		klog.V(0).Infof("createHostpathVolume: create call came in for volume %s that we have already created; returning previously created instance", volID)
-		return hpv, nil
+	dv := d.getVolume(volID)
+	if dv != nil {
+		klog.V(0).Infof("createVolume: create call came in for volume %s that we have already created; returning previously created instance", volID)
+		return dv, nil
 	}
-	anchorDir, bindDir := hp.getVolumePath(volID, volCtx)
+	anchorDir, bindDir := d.getVolumePath(volID, volCtx)
 	switch volAccessType {
 	case mountAccess:
 		err := os.MkdirAll(anchorDir, 0777)
@@ -643,27 +643,27 @@ func (hp *hostPath) createHostpathVolume(volID, targetPath string, refresh bool,
 	}
 
 	podNamespace, podName, podUID, podSA := getPodDetails(volCtx)
-	hostpathVol := CreateHPV(volID)
-	hostpathVol.SetVolSize(cap)
-	hostpathVol.SetVolPathAnchorDir(anchorDir)
-	hostpathVol.SetVolPathBindMountDir(bindDir)
-	hostpathVol.SetVolAccessType(volAccessType)
-	hostpathVol.SetTargetPath(targetPath)
-	hostpathVol.SetPodNamespace(podNamespace)
-	hostpathVol.SetPodName(podName)
-	hostpathVol.SetPodUID(podUID)
-	hostpathVol.SetPodSA(podSA)
-	hostpathVol.SetRefresh(refresh)
+	vol := CreateDV(volID)
+	vol.SetVolSize(cap)
+	vol.SetVolPathAnchorDir(anchorDir)
+	vol.SetVolPathBindMountDir(bindDir)
+	vol.SetVolAccessType(volAccessType)
+	vol.SetTargetPath(targetPath)
+	vol.SetPodNamespace(podNamespace)
+	vol.SetPodName(podName)
+	vol.SetPodUID(podUID)
+	vol.SetPodSA(podSA)
+	vol.SetRefresh(refresh)
 	switch {
 	case cmShare != nil:
-		hostpathVol.SetSharedDataKind(string(consts.ResourceReferenceTypeConfigMap))
-		hostpathVol.SetSharedDataId(cmShare.Name)
+		vol.SetSharedDataKind(string(consts.ResourceReferenceTypeConfigMap))
+		vol.SetSharedDataId(cmShare.Name)
 	case sShare != nil:
-		hostpathVol.SetSharedDataKind(string(consts.ResourceReferenceTypeSecret))
-		hostpathVol.SetSharedDataId(sShare.Name)
+		vol.SetSharedDataKind(string(consts.ResourceReferenceTypeSecret))
+		vol.SetSharedDataId(sShare.Name)
 	}
 
-	return hostpathVol, nil
+	return vol, nil
 }
 
 func isDirEmpty(name string) (bool, error) {
@@ -691,10 +691,10 @@ func deleteIfEmpty(name string) {
 	}
 }
 
-func (hp *hostPath) innerDeleteHostpathVolume(top string) {
+func (d *driver) innerDeleteVolume(top string) {
 	// reminder, path is filepath.Join(DataRoot, [anchor-dir | bind-dir], volID, podNamespace, podName, podUID, podSA)
 	// delete SA dir
-	klog.V(4).Infof("innerDeleteHostpathVolume %s", top)
+	klog.V(4).Infof("innerDeleteVolume %s", top)
 	err := os.RemoveAll(top)
 	if err != nil {
 		klog.Warningf("error deleting %s: %s", top, err.Error())
@@ -708,14 +708,14 @@ func (hp *hostPath) innerDeleteHostpathVolume(top string) {
 	}
 }
 
-// deleteVolume deletes the directory for the hostpath volume.
-func (hp *hostPath) deleteHostpathVolume(volID string) error {
-	klog.V(4).Infof("deleting hostpath volume: %s", volID)
+// deleteVolume deletes the directory for the csidriver volume.
+func (d *driver) deleteVolume(volID string) error {
+	klog.V(4).Infof("deleting csidriver volume: %s", volID)
 
-	if hpv := hp.getHostpathVolume(volID); hpv != nil {
+	if dv := d.getVolume(volID); dv != nil {
 		klog.V(4).Infof("found volume: %s", volID)
-		os.RemoveAll(hpv.GetTargetPath())
-		remHPV(volID)
+		os.RemoveAll(dv.GetTargetPath())
+		remV(volID)
 	}
 	objcache.UnregisterSecretUpsertCallback(volID)
 	objcache.UnregisterSecretDeleteCallback(volID)
@@ -728,10 +728,10 @@ func (hp *hostPath) deleteHostpathVolume(volID string) error {
 	return nil
 }
 
-func (hp *hostPath) loadVolsFromDisk() error {
+func (d *driver) loadVolsFromDisk() error {
 	klog.V(2).Infof("loadVolsFromDisk")
 	defer klog.V(2).Infof("loadVolsFromDisk exit")
-	return filepath.Walk(hp.volMapRoot, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(d.volMapRoot, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
 			return nil
 		}
@@ -742,7 +742,7 @@ func (hp *hostPath) loadVolsFromDisk() error {
 		if info.IsDir() {
 			return nil
 		}
-		fileName := filepath.Join(hp.volMapRoot, info.Name())
+		fileName := filepath.Join(d.volMapRoot, info.Name())
 		dataFile, oerr := os.Open(fileName)
 		if oerr != nil {
 			klog.V(0).Infof("loadVolsFromDisk error opening file %s: %s", fileName, err.Error())
@@ -750,26 +750,26 @@ func (hp *hostPath) loadVolsFromDisk() error {
 			return nil
 		}
 		dataDecoder := json.NewDecoder(dataFile)
-		hpv := &hostPathVolume{}
-		err = dataDecoder.Decode(hpv)
+		dv := &driverVolume{}
+		err = dataDecoder.Decode(dv)
 		if err != nil {
 			klog.V(0).Infof("loadVolsFromDisk error decoding file %s: %s", fileName, err.Error())
 			// continue to next file
 			return nil
 		}
-		if hpv == nil {
+		if dv == nil {
 			klog.V(0).Infof("loadVolsFromDisk nil but no error for file %s", fileName)
 			// continue to next file
 			return nil
 		}
-		hpv.Lock = &sync.Mutex{}
-		if filepath.Base(fileName) != hpv.GetVolID() {
-			klog.Warningf("loadVolsFromDisk file %s had vol id %s - corrupted !!!", hpv.GetVolID())
+		dv.Lock = &sync.Mutex{}
+		if filepath.Base(fileName) != dv.GetVolID() {
+			klog.Warningf("loadVolsFromDisk file %s had vol id %s - corrupted !!!", dv.GetVolID())
 			return nil
 		}
-		klog.V(2).Infof("loadVolsFromDisk storing with key %s hpv %#v", hpv.GetVolID(), hpv)
-		setHPV(hpv.GetVolID(), hpv)
-		hp.registerRangers(hpv)
+		klog.V(2).Infof("loadVolsFromDisk storing with key %s dv %#v", dv.GetVolID(), dv)
+		setDPV(dv.GetVolID(), dv)
+		d.registerRangers(dv)
 
 		return nil
 	})
@@ -777,9 +777,9 @@ func (hp *hostPath) loadVolsFromDisk() error {
 
 // Prune inspects all the volumes stored on disk and checks if their associated pods still exists.  If not, the volume
 // file in question is deleted from disk.
-func (hp *hostPath) Prune(kubeClient kubernetes.Interface) {
-	filesToPrune := map[string]hostPathVolume{}
-	filepath.Walk(hp.volMapRoot, func(path string, info os.FileInfo, err error) error {
+func (d *driver) Prune(kubeClient kubernetes.Interface) {
+	filesToPrune := map[string]driverVolume{}
+	filepath.Walk(d.volMapRoot, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
 			return nil
 		}
@@ -791,7 +791,7 @@ func (hp *hostPath) Prune(kubeClient kubernetes.Interface) {
 		if info.IsDir() {
 			return nil
 		}
-		fileName := filepath.Join(hp.volMapRoot, info.Name())
+		fileName := filepath.Join(d.volMapRoot, info.Name())
 		dataFile, oerr := os.Open(fileName)
 		if oerr != nil {
 			klog.V(0).Infof("loadVolsFromDisk error opening file %s: %s", fileName, err.Error())
@@ -799,23 +799,23 @@ func (hp *hostPath) Prune(kubeClient kubernetes.Interface) {
 			return nil
 		}
 		dataDecoder := json.NewDecoder(dataFile)
-		hpv := &hostPathVolume{}
-		err = dataDecoder.Decode(hpv)
+		dv := &driverVolume{}
+		err = dataDecoder.Decode(dv)
 		if err != nil {
 			klog.V(0).Infof("loadVolsFromDisk error decoding file %s: %s", fileName, err.Error())
 			// continue to next file
 			return nil
 		}
-		if hpv == nil {
+		if dv == nil {
 			klog.V(0).Infof("loadVolsFromDisk nil but no error for file %s", fileName)
 			// continue to next file
 			return nil
 		}
-		hpv.Lock = &sync.Mutex{}
-		_, err = kubeClient.CoreV1().Pods(hpv.GetPodNamespace()).Get(context.TODO(), hpv.GetPodName(), metav1.GetOptions{})
+		dv.Lock = &sync.Mutex{}
+		_, err = kubeClient.CoreV1().Pods(dv.GetPodNamespace()).Get(context.TODO(), dv.GetPodName(), metav1.GetOptions{})
 		if err != nil && kerrors.IsNotFound(err) {
-			klog.V(2).Infof("pruner: hpv %q: %s", fileName, err.Error())
-			filesToPrune[fileName] = *hpv
+			klog.V(2).Infof("pruner: dv %q: %s", fileName, err.Error())
+			filesToPrune[fileName] = *dv
 		}
 		return nil
 	})
@@ -823,19 +823,19 @@ func (hp *hostPath) Prune(kubeClient kubernetes.Interface) {
 		return
 	}
 	// a bit paranoid, but not deleting files in the walk loop in case that can mess up filepath.Walk's iteration logic
-	for file, hpv := range filesToPrune {
+	for file, dv := range filesToPrune {
 		err := os.Remove(file)
 		if err != nil {
 			klog.Warningf("pruner: unable to prune file %q: %s", file, err.Error())
 			continue
 		}
 		klog.V(2).Infof("pruner: removed volume file %q with missing pod from disk", file)
-		if hp.mounter != nil {
-			err = hp.mounter.Unmount(hpv.GetVolPathAnchorDir())
+		if d.mounter != nil {
+			err = d.mounter.Unmount(dv.GetVolPathAnchorDir())
 			if err != nil {
-				klog.Warningf("pruner: issue unmounting for volume %s mount id %s: %s", hpv.GetVolID(), hpv.GetVolPathAnchorDir(), err.Error())
+				klog.Warningf("pruner: issue unmounting for volume %s mount id %s: %s", dv.GetVolID(), dv.GetVolPathAnchorDir(), err.Error())
 			} else {
-				klog.V(2).Infof("pruner: successfully unmounted volume %s mount id %s", hpv.GetVolID(), hpv.GetVolPathAnchorDir())
+				klog.V(2).Infof("pruner: successfully unmounted volume %s mount id %s", dv.GetVolID(), dv.GetVolPathAnchorDir())
 			}
 		}
 	}

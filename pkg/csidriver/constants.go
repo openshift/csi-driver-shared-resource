@@ -1,4 +1,4 @@
-package hostpath
+package csidriver
 
 type accessType int
 
@@ -9,7 +9,7 @@ const (
 	storageCapacityGB                  = storageCapacityMB * 1024
 	storageCapacityTB                  = storageCapacityGB * 1024
 	maxStorageCapacity                 = storageCapacityTB
-	TopologyKeyNode                    = "topology.hostpath.csi/node"
+	TopologyKeyNode                    = "topology.csidriver.csi/node"
 	CSIPodName                         = "csi.storage.k8s.io/pod.name"
 	CSIPodNamespace                    = "csi.storage.k8s.io/pod.namespace"
 	CSIPodUID                          = "csi.storage.k8s.io/pod.uid"

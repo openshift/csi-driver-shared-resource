@@ -20,7 +20,7 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
-	"github.com/openshift/csi-driver-shared-resource/pkg/hostpath"
+	"github.com/openshift/csi-driver-shared-resource/pkg/csidriver"
 
 	operatorv1 "github.com/openshift/api/operator/v1"
 )
@@ -70,9 +70,9 @@ var rootCmd = &cobra.Command{
 			client.SetShareClient(shareClient)
 		}
 
-		driver, err := hostpath.NewHostPathDriver(
-			hostpath.DataRoot,
-			hostpath.VolumeMapRoot,
+		driver, err := csidriver.NewCSIDriver(
+			csidriver.DataRoot,
+			csidriver.VolumeMapRoot,
 			driverName,
 			nodeID,
 			endPoint,
