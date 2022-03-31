@@ -7,7 +7,7 @@ require (
 	github.com/kubernetes-csi/csi-lib-utils v0.7.0
 	github.com/openshift/api v0.0.0-20211007134530-4cb30f221b89
 	github.com/openshift/client-go v0.0.0-20211007143529-7ab6242249ff
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.11.1
 	github.com/prometheus/client_model v0.2.0
 	github.com/prometheus/common v0.26.0
 	github.com/spf13/cobra v1.1.1
