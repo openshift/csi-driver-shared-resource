@@ -50,6 +50,8 @@ const (
 	secretvalue2    = "secretvalue2"
 	configmapkey1   = "configmapkey1"
 	configmapvalue1 = "configmapvalue1"
+	configmapkey2   = "z-configmapkey2" // make sure this is alphabetically after any atomic writer files
+	configmapvalue2 = "configmapvalue2"
 )
 
 // the actual Mounter from k8s/util requires sudo privileges to run, so for the pruner related tests we create a fake
@@ -801,7 +803,7 @@ func primeConfigMapVolume(t *testing.T, d CSIDriver, targetPath string, share *s
 			Name:      "configmap1",
 			Namespace: "namespace",
 		},
-		Data: map[string]string{configmapkey1: configmapvalue1},
+		Data: map[string]string{configmapkey1: configmapvalue1, configmapkey2: configmapvalue2},
 	}
 
 	cache.UpdateSharedConfigMap(share)
@@ -825,14 +827,23 @@ func findSharedItems(t *testing.T, dir string) (bool, bool) {
 		if info == nil {
 			return nil
 		}
-		t.Logf("found file %s dir flag %v", info.Name(), info.IsDir())
-		if err == nil && strings.Contains(info.Name(), secretkey1) {
+		searchName := info.Name()
+		if info.Mode()&os.ModeSymlink != 0 {
+			if linkName, err := os.Readlink(info.Name()); err == nil {
+				searchName = linkName
+			}
+		}
+		t.Logf("found file %s dir flag %v", searchName, info.IsDir())
+		if err == nil && strings.Contains(searchName, secretkey1) {
 			foundSecret = true
 		}
-		if err == nil && strings.Contains(info.Name(), secretkey2) {
+		if err == nil && strings.Contains(searchName, secretkey2) {
 			foundSecret = true
 		}
-		if err == nil && strings.Contains(info.Name(), configmapkey1) {
+		if err == nil && strings.Contains(searchName, configmapkey1) {
+			foundConfigMap = true
+		}
+		if err == nil && strings.Contains(searchName, configmapkey2) {
 			foundConfigMap = true
 		}
 		return nil

@@ -22,18 +22,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"k8s.io/utils/mount"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
+	atomic "k8s.io/kubernetes/pkg/volume/util"
+	"k8s.io/utils/mount"
 
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
@@ -244,26 +245,24 @@ func commonUpsertRanger(dv *driverVolume, key, value interface{}) error {
 	// TODO: prometheus metrics/alerts may be desired here, though some due diligence on what k8s level metrics/alerts
 	// around host filesystem issues might already exist would be warranted with such an exploration/effort
 
-	// Next, on an update we first nuke any existing directory and then recreate it to simplify handling the case where
-	// the keys in the secret/configmap have changed such that some keys have been removed, which would translate
-	// in files having to be removed. commonOSRemove will handle shares mounted off of shares.  And a reminder,
-	// currently this driver does not support overlaying over directories with files.  Either the directory in the
-	// container image must be empty, or the directory does not exist, and is created for the Pod's container as
-	// part of provisioning the container.
-	if err := commonOSRemove(podPath, fmt.Sprintf("commonUpsertRanger key %s volid %s share id %s pod name %s", key, dv.GetVolID(), dv.GetSharedDataId(), dv.GetPodName())); err != nil {
+	// NOTE: atomic_writer handles any pruning of secret/configmap keys that were present before, but are no longer
+	// present
+	if err := os.MkdirAll(podPath, os.ModePerm); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(podPath, os.ModePerm); err != nil {
+	podFile := map[string]atomic.FileProjection{}
+	aw, err := atomic.NewAtomicWriter(podPath, "shared-resource-csi-driver")
+	if err != nil {
 		return err
 	}
 	if payload.ByteData != nil {
 		for dataKey, dataValue := range payload.ByteData {
 			podFilePath := filepath.Join(podPath, dataKey)
 			klog.V(4).Infof("commonUpsertRanger create/update file %s key %s volid %s share id %s pod name %s", podFilePath, key, dv.GetVolID(), dv.GetSharedDataId(), dv.GetPodName())
-			if err := ioutil.WriteFile(podFilePath, dataValue, 0644); err != nil {
-				return err
+			podFile[dataKey] = atomic.FileProjection{
+				Data: dataValue,
+				Mode: 0644,
 			}
-
 		}
 	}
 	if payload.StringData != nil {
@@ -271,9 +270,15 @@ func commonUpsertRanger(dv *driverVolume, key, value interface{}) error {
 			podFilePath := filepath.Join(podPath, dataKey)
 			klog.V(4).Infof("commonUpsertRanger create/update file %s key %s volid %s share id %s pod name %s", podFilePath, key, dv.GetVolID(), dv.GetSharedDataId(), dv.GetPodName())
 			content := []byte(dataValue)
-			if err := ioutil.WriteFile(podFilePath, content, 0644); err != nil {
-				return err
+			podFile[dataKey] = atomic.FileProjection{
+				Data: content,
+				Mode: 0644,
 			}
+		}
+	}
+	if len(podFile) > 0 {
+		if err = aw.Write(podFile); err != nil {
+			return err
 		}
 	}
 	klog.V(4).Infof("common upsert ranger returning key %s", key)
@@ -285,20 +290,45 @@ func commonOSRemove(dir, dbg string) error {
 	defer klog.V(4).Infof("commonOSRemove completed delete attempt for dir %q", dir)
 	// we cannot do a os.RemoveAll on the mount point, so we remove all on each file system entity
 	// off of the potential mount point
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if info == nil {
-			return nil
+	dirFile, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer dirFile.Close()
+	dirEntries, err := dirFile.ReadDir(-1)
+	if err != nil {
+		return err
+	}
+	// we have to unlink the key from our configmap/secret first with the atomic writer symlinks
+	for _, dirEntry := range dirEntries {
+		if dirEntry.Type()&os.ModeSymlink != 0 && !strings.HasPrefix(dirEntry.Name(), "..") {
+			// unlink our secret/configmap key
+			if err = syscall.Unlink(filepath.Join(dir, dirEntry.Name())); err != nil {
+				klog.Errorf("commonOSRemove encountered an error: %s", err.Error())
+				return err
+			}
 		}
-		// since we do not support mounting on existing content, a dir can only mean a share
-		// has been mounted as a separate dir in our share, so skip
-		if info.IsDir() {
-			return nil
-		}
-		fileName := filepath.Join(dir, info.Name())
-		klog.V(4).Infof("commonOSRemove going to delete file %s", fileName)
-		return os.RemoveAll(fileName)
-	})
+	}
+	// we then unlink the symlink from atomic writer that start with ".."
+	for _, dirEntry := range dirEntries {
+		if dirEntry.Type()&os.ModeSymlink != 0 && strings.HasPrefix(dirEntry.Name(), "..") {
+			if err = syscall.Unlink(filepath.Join(dir, dirEntry.Name())); err != nil {
+				klog.Errorf("commonOSRemove encountered an error: %s", err.Error())
+				return err
+			}
 
+		}
+		// then we delete any non symlinks
+		if dirEntry.Type()&os.ModeSymlink == 0 {
+			fileName := filepath.Join(dir, dirEntry.Name())
+			klog.V(4).Infof("commonOSRemove going to delete file %s", fileName)
+			if err = os.RemoveAll(fileName); err != nil {
+				klog.Errorf("commonOSRemove encountered an error: %s", err.Error())
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func commonDeleteRanger(dv *driverVolume, key interface{}) bool {
