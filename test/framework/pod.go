@@ -29,6 +29,7 @@ const (
 func CreateTestPod(t *TestArgs) {
 	t.T.Logf("%s: start create test pod %s", time.Now().String(), t.Name)
 	truVal := true
+	falVal := false
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      t.Name,
@@ -50,12 +51,22 @@ func CreateTestPod(t *TestArgs) {
 			Containers: []corev1.Container{
 				{
 					Name:    containerName,
-					Image:   "registry.redhat.io/ubi8/ubi",
+					Image:   "quay.io/redhat-developer/test-build-simples2i:latest",
 					Command: []string{"sleep", "1000000"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      "my-csi-volume",
 							MountPath: "/data",
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: &falVal,
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+						RunAsNonRoot: &truVal,
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
 						},
 					},
 				},
@@ -198,7 +209,7 @@ func ExecPod(t *TestArgs) {
 		err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
 			req := restClient.Post().Resource("pods").Namespace(t.Name).Name(t.Name).SubResource("exec").
 				Param("container", containerName).Param("stdout", "true").Param("stderr", "true").
-				Param("command", "ls").Param("command", "-laRZ").Param("command", startingPoint)
+				Param("command", "ls").Param("command", "-laR").Param("command", startingPoint)
 
 			out := &bytes.Buffer{}
 			errOut := &bytes.Buffer{}
