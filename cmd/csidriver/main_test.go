@@ -59,7 +59,7 @@ func backgroundRun_watchForConfigChanges(t *testing.T, cfgFilePath string, doneC
 // configuration file has changed.
 func TestMain_exitWhenConfigChanges(t *testing.T) {
 	// original configuration file path, using the same than testing configs
-	cfgFilePath := "../test/config/config.yaml"
+	cfgFilePath := "../../test/config/config.yaml"
 
 	// creating a temporary file, making sure it's deleted when test is done
 	tmpFile, err := ioutil.TempFile("/tmp", "csi-driver-config-")

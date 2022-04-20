@@ -64,8 +64,12 @@ verify: ## Run verifications. Example: make verify
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
-	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go build $(GOFLAGS) -o _output/csi-driver-shared-resource ./cmd
+	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go build $(GOFLAGS) -o _output/csi-driver-shared-resource ./cmd/csidriver
 .PHONY: build
+
+build-webhook: ## Build the executable. Example: make build
+	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go build $(GOFLAGS) -o _output/csi-driver-shared-resource-webhook ./cmd/webhook
+.PHONY: build-webhook
 
 build-image: ## Build the images and push them to the remote registry. Example: make build-image
 	rm -rf _output
@@ -78,6 +82,12 @@ build-mustgather-image: ## Build the customer must gather images and push them t
 	$(CONTAINER_RUNTIME) build -f Dockerfile.mustgather -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource-mustgather:$(TAG) .
 	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource-mustgather:$(TAG)
 .PHONY: build-mustgather-image
+
+build-webhook-image: ## Build the customer must gather images and push them to the remote registry. Example: make build-mustgather-image
+	rm -rf _output
+	$(CONTAINER_RUNTIME) build -f Dockerfile.webhook -t $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource-webhook:$(TAG) .
+	$(CONTAINER_RUNTIME) push $(REGISTRY)/$(REPOSITORY)/origin-csi-driver-shared-resource-webhook:$(TAG)
+.PHONY: build-webhook-image
 
 clean: ## Clean up the workspace. Example: make clean
 	rm -rf _output
