@@ -34,8 +34,8 @@ NOTE: see [CSI Volume Specifics](docs/csi.md) for restrictions around these feat
 ## Getting Started
 
 The maintenance of the related API objects and the deployment of this CSI driver are handled via the [Openshift CSI Driver for Shared Resources Operator](https://github.com/openshift/csi-driver-shared-resource-operator)
-when you are using a Tech Preview OpenShift Cluster in 4.10.  The 4.10 release docs are not out yet with 4.10 still under development,
-but these [4.9 docs](https://docs.openshift.com/container-platform/4.9/post_installation_configuration/cluster-tasks.html#post-install-tp-tasks) are 
+when you are using a Tech Preview OpenShift Cluster in 4.10.  The 4.10 release docs are [here](https://docs.openshift.com/container-platform/4.10/storage/container_storage_interface/ephemeral-storage-shared-resource-csi-driver-operator.html),
+and these [4.10 docs](https://docs.openshift.com/container-platform/4.10/post_installation_configuration/cluster-tasks.html#post-install-tp-tasks) are 
 sufficient for explaining how to turn on Tech Preview features after install.
 
 For running on a 4.10 cluster which is *NOT* a Tech Preview cluster, you must employ the methodology described in the [Local Devlopment](#local-development)
