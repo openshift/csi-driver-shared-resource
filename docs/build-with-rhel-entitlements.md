@@ -1,6 +1,14 @@
 # BuildConfig example
 
-From the root directory, create/apply the various API objects defined in the YAML files in the `./examples` directory.
+As noted in this repositories [main README](../README.md#getting-started), Shared Resources are currently only available
+on 'TechPreviewNoUpgrade' clusters.  So, unless you are employing [local development](../README.md#local-development)
+you can convert your cluster to Tech Preview via:
+
+```shell
+kubectl patch featuregate cluster --type='merge' -p '{"spec":{"featureSet":"TechPreviewNoUpgrade"}}' 
+```
+
+Then, from the root directory, create/apply the various API objects defined in the YAML files in the `./examples` directory.
 There are two examples there, where both use [the same namespace](../examples/00-namespace.yaml).
 
 This document describes the [OpenShift Builds with Red Hat Entitlements](../examples/build-with-rhel-entitlements) example.

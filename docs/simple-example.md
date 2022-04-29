@@ -1,6 +1,14 @@
 # Simple Example
 
-From the root directory, create/apply the various API objects defined in the YAML files in the `./examples` directory.
+As noted in this repositories [main README](../README.md#getting-started), Shared Resources are currently only available
+on 'TechPreviewNoUpgrade' clusters.  So, unless you are employing [local development](../README.md#local-development)
+you can convert your cluster to Tech Preview via:
+
+```shell
+kubectl patch featuregate cluster --type='merge' -p '{"spec":{"featureSet":"TechPreviewNoUpgrade"}}' 
+```
+
+Then, from the root directory, create/apply the various API objects defined in the YAML files in the `./examples` directory.
 There are two examples there, where both use [the same namespace](../examples/00-namespace.yaml).
 
 This document describes the [simple Pod example](../examples/simple).
@@ -14,6 +22,10 @@ To run this example, execute:
 ```shell
 $ kubectl apply -R -f ./examples
 ```
+
+NOTE: if you are running against a cluster with some form of `Pod` security, and you as a user do not have permissions to 
+use `Volumes` of type `csi`, nor does the `ServiceAccount` of the `Pod` (`default` with our example at this time), 
+the creation of the test `Pod` will be rejected.
 
 Ensure the `my-csi-app` Pod comes up in `Running` state.
 
@@ -37,11 +49,6 @@ lrwxrwxrwx    1 root     root            11 Apr 14 14:37 key1 -> ..data/key1
 lrwxrwxrwx    1 root     root            11 Apr 14 14:37 key2 -> ..data/key2
 / # 
 ```
-
-**NOTE**: You'll notice that the driver has created subdirectories off of the `volumeMount` specified in our example `Pod`.
-One subdirectory for the type (`configsmaps` or `secrets`), and one whose name is a concatenation of the `namespace` and
-`name` of the `ConfigMap` or `Secret` being mounted.  As noted in the high level feature list above, new features that allow
-some control on how the files are laid out should be coming.
 
 Now, if you inspect the contents of that `ConfigMap`, you'll see keys in the `data` map that
 correspond to the 2 files created:
