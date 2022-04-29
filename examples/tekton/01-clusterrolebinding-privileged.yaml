@@ -1,0 +1,14 @@
+# When https://issues.redhat.com/browse/STOR-828 is implemented in OpenShift, and the Shared Resource CSI Driver can be
+# deemed safe for restricted users, the referenced ClusterRole and these bindings can be removed.
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: shared-resource-node-privileged-binding-default
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: my-csi-app-namespace
+roleRef:
+  kind: ClusterRole
+  name: my-shared-resource-privileged-role
+  apiGroup: rbac.authorization.k8s.io

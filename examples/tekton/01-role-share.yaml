@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: shared-resource-my-share-tekton
+  namespace: my-csi-app-namespace
+rules:
+  - apiGroups:
+      - sharedresource.openshift.io
+    resources:
+      - sharedsecrets
+    resourceNames:
+      - my-share-tekton
+    verbs:
+      - use

@@ -1,0 +1,9 @@
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: my-taskrun-volume
+  namespace: my-csi-app-namespace
+spec:
+  serviceAccountName: default
+  taskRef:
+    name: my-task-volume
