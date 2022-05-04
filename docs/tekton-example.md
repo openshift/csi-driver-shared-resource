@@ -1,4 +1,4 @@
-# Simple Example
+# Tekton Example
 
 As noted in this repositories [main README](../README.md#getting-started), Shared Resources are currently only available
 on 'TechPreviewNoUpgrade' clusters.  So, unless you are employing [local development](../README.md#local-development)
@@ -11,11 +11,16 @@ kubectl patch featuregate cluster --type='merge' -p '{"spec":{"featureSet":"Tech
 Then, from the root directory, create/apply the various API objects defined in the YAML files in the `./examples` directory.
 There are two examples there, where both use [the same namespace](../examples/00-namespace.yaml).
 
-This document describes the [simple Pod example](../examples/simple).
+This document describes the [Tekton example](../examples/tekton).
 
-The example is an application `Pod`, along with `SharedConfigMap`, `Role`, and `RoleBinding` definitions
-needed to illustrate the mounting of one of the API types (in this instance a `ConfigMap` from the `openshift-config`
-namespace) into the `Pod`.
+For help on how to install the OpenShift Tekton offering, OpenShift Pipelies, look [here](https://docs.openshift.com/container-platform/4.10/cicd/pipelines/installing-pipelines.html).
+
+This example includes `Task` and `TaskRun` [Tekton](https://github.com/tektoncd/pipeline) instances to leverage a mounted `SharedSecret`.
+There are also various RBAC definitions that allow both
+- the mounting of the `SharedSecret` specifically
+- the use of `Volumes` of the `csi` type, if some form of Pod security is active on your cluster (since the Tekton controller
+is the 'user' that creates the `Pod` from the `TaskRun`, we have to add permissions to use `csi` typed `Volumes` to the 
+`ServiceAccount` of the `TaskRun`)
  
 To run this example, execute:
 
@@ -31,41 +36,24 @@ Ensure the `my-csi-app` Pod comes up in `Running` state.
 
 Then, if you want to validate the volume, inspect the application pod `my-csi-app-pod`.
 
-To verify, go back into the `Pod` named `my-csi-app-pod` and list the contents:
-
-  ```shell
-  $ kubectl exec  -n my-csi-app-namespace -it my-csi-app-pod /bin/sh
-  / # ls -lR /data
-  ```
-
-You should see contents like:
+To verify, go back into the `TaskRun` named `my-csi-app-pod` and check the logs with the Tekton CLI `tkn`:
 
 ```shell
-/ # ls -lR /data 
-ls -lR /data 
-/data:
-total 0
-lrwxrwxrwx    1 root     root            11 Apr 14 14:37 key1 -> ..data/key1
-lrwxrwxrwx    1 root     root            11 Apr 14 14:37 key2 -> ..data/key2
-/ # 
-```
+$ tkn taskrun logs -f my-taskrun-volume
+````
 
-Now, if you inspect the contents of that `ConfigMap`, you'll see keys in the `data` map that
-correspond to the 2 files created:
+You should see output like:
 
 ```shell
-$ oc get cm my-config -o yaml
-apiVersion: v1
-data:
-  key1: config1
-  key2: config2
-kind: ConfigMap
-metadata:
-  creationTimestamp: "2022-04-14T14:01:13Z"
-  name: my-config
-  namespace: my-csi-app-namespace
-  resourceVersion: "35201"
-  uid: fec12a32-79fc-44ef-b1dd-965b72041bbe
+[list] total 0
+[list] drwxrwxrwt. 3 root root 120 Apr 29 17:57 .
+[list] dr-xr-xr-x. 1 root root  99 Apr 29 17:57 ..
+[list] drwxr-xr-x. 2 root root  80 Apr 29 17:57 ..2022_04_29_17_57_36.1098027060
+[list] lrwxrwxrwx. 1 root root  32 Apr 29 17:57 ..data -> ..2022_04_29_17_57_36.1098027060
+[list] lrwxrwxrwx. 1 root root  11 Apr 29 17:57 key1 -> ..data/key1
+[list] lrwxrwxrwx. 1 root root  11 Apr 29 17:57 key2 -> ..data/key2
+
+[show-cannot-update] /tekton/scripts/script-1-lngp7: line 3: /data/foo: Read-only file system
 ```
 
 How `Secrets` and `ConfigMaps` are stored on disk mirror the storage for

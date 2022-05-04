@@ -1,0 +1,32 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: my-task-volume
+  namespace: my-csi-app-namespace
+  annotations:
+    tekton.dev/pipelines.minVersion: "0.17.0"
+spec:
+  description: >-
+    Demonstrate use of Shared Resource CSI Driver from Tekton
+  steps:
+    - name: list
+      image: registry.redhat.io/ubi8/ubi
+      script: |
+        ls -la /data
+      volumeMounts:
+        - name: my-shared-resource-volume
+          mountPath: /data
+    - name: show-cannot-update
+      image: registry.redhat.io/ubi8/ubi
+      script: |
+        echo "foo" > /data/foo || true
+      volumeMounts:
+        - name: my-shared-resource-volume
+          mountPath: /data
+  volumes:
+    - name: my-shared-resource-volume
+      csi:
+        readOnly: true
+        driver: csi.sharedresource.openshift.io
+        volumeAttributes:
+          sharedSecret: my-share-tekton
