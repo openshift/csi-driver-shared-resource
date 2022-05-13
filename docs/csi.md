@@ -14,3 +14,5 @@ If this driver allowed both read-only and read-write, there is in fact no way to
 - the `FSType` field is ignored.  This driver by design only supports `tmpfs`, with a different mount performed for each `Volume`, in order to defer all SELinux concerns to the kubelet.
 - the `NodePublishSecretRef` field is ignored.  The CSI `NodePublishVolume` and `NodeUnpublishVolume` flows gate the permission evaluation required for the `Volume`
   by performing `SubjectAccessReviews` against the reference `SharedConfigMap` OR `SharedSecret` instance, using the `serviceAccount` of the `Pod` as the subject.
+- Similar to what is noted for the upstream "Secrets Store CSI Driver", because of the use of atomic writer, neither `Secret` or `ConfigMap` content is rotated when using 'subPath' volume mounts.
+  The upstream driver documentation has a good explanation as to the details [here](https://secrets-store-csi-driver.sigs.k8s.io/known-limitations.html#secrets-not-rotated-when-using-subpath-volume-mount)
