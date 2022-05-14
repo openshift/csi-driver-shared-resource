@@ -45,6 +45,4 @@ spec:
 1) If the inverse on order of precedence gains favor as users start using this driver in earnest, we'll 
 look into ways of providing that pattern.
 
-2) This repository's maintainers are well aware of the "atomic writer" concept in upstream Kubernetes for coordinating
-a Pod's access to secret volumes with the system's attempt to update them.  Such support is not yet integrated with
-this driver, but we have plans to do so in a future release.
+2) The k8s "atomic writer" with its symbollic linking approach is employed when updating `Secret` or `ConfigMap` content.
