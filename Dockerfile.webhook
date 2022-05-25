@@ -5,5 +5,4 @@ RUN make build-webhook
 
 FROM registry.ci.openshift.org/ocp/4.11:base
 COPY --from=builder /go/src/github.com/openshift/csi-driver-shared-resource/_output/csi-driver-shared-resource-webhook /usr/bin/
-ENTRYPOINT []
-CMD ["/usr/bin/csi-driver-shared-resource-webhook"]
+ENTRYPOINT ["/usr/bin/csi-driver-shared-resource-webhook"]
