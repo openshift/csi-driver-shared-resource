@@ -88,6 +88,19 @@ func TestTwoSharesSeparateMountPaths(t *testing.T) {
 	coreTestTwoSharesSeparateMountPaths(testArgs)
 }
 
+func TestRejectPodWithReadOnlyFalseSharedVolume(t *testing.T) {
+	testArgs := &framework.TestArgs{
+		T:            t,
+		TestReadOnly: true,
+	}
+	prep(testArgs)
+	framework.CreateTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	framework.CreateShareRelatedRBAC(testArgs)
+	framework.CreateShare(testArgs)
+	framework.CreateTestPod(testArgs)
+}
+
 /* a consequence of read only volume mounts is that we no longer support inherited mount paths
 across separate shares in that mode.  The sub path mount encounters read only file system errors.
 

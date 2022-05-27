@@ -26,8 +26,10 @@ type TestArgs struct {
 	SecondShare                        bool
 	SecondShareSubDir                  bool
 	DaemonSetUp                        bool
+	WebhookUp                          bool
 	TestPodUp                          bool
 	NoRefresh                          bool
+	TestReadOnly                       bool
 	TestDuration                       time.Duration
 }
 

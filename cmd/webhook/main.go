@@ -1,10 +1,18 @@
 package main
 
 import (
-	"flag"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
+	"strconv"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/csidriver"
+	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/dispatcher"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -12,18 +20,75 @@ const (
 )
 
 var (
-	listenAddress = flag.String("listen", "0.0.0.0", "listen address")
-	listenPort    = flag.String("port", "5000", "port to listen on")
+	useTLS        bool
+	tlsCert       string
+	tlsKey        string
+	caCert        string
+	listenAddress string
+	listenPort    int
+	testHooks     bool
 )
 
-func index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "<h1>The CSI Shared Resource webhook is under development<h1>")
+var CmdWebhook = &cobra.Command{
+	Use:     "csi-driver-shared-resource-webhook",
+	Version: "0.0.1",
+	Short:   "",
+	Long:    ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		startServer()
+	},
 }
-func main() {
-	flag.Parse()
-	http.HandleFunc("/"+WebhookName, index)
-	server := &http.Server{
-		Addr: net.JoinHostPort(*listenAddress, *listenPort),
+
+func init() {
+	CmdWebhook.Flags().BoolVar(&useTLS, "tls", false, "Use TLS? Must specify -tlskey, -tlscert, -cacert")
+	CmdWebhook.Flags().StringVar(&tlsCert, "tlscert", "", "File containing the x509 Certificate for HTTPS")
+	CmdWebhook.Flags().StringVar(&tlsKey, "tlskey", "", "File containing the x509 private key")
+	CmdWebhook.Flags().StringVar(&caCert, "cacert", "", "File containing the x509 CA cert for HTTPS")
+	CmdWebhook.Flags().StringVar(&listenAddress, "listen", "0.0.0.0", "Listen address")
+	CmdWebhook.Flags().IntVar(&listenPort, "port", 5000, "Secure port that the webhook listens on")
+	CmdWebhook.Flags().BoolVar(&testHooks, "testHooks", false, "Test webhook URI uniqueness and quit")
+}
+
+func startServer() {
+	webhook := csidriver.NewWebhook()
+	dispatcher := dispatcher.NewDispatcher(webhook)
+	http.HandleFunc(webhook.GetURI(), dispatcher.HandleRequest)
+
+	if testHooks {
+		os.Exit(0)
+	} else {
+		fmt.Printf("HTTP server running at: %s", net.JoinHostPort(listenAddress, strconv.Itoa(listenPort)))
 	}
-	server.ListenAndServe()
+
+	server := &http.Server{
+		Addr: net.JoinHostPort(listenAddress, strconv.Itoa(listenPort)),
+	}
+	var err error
+	if useTLS {
+		cafile, err := ioutil.ReadFile(caCert)
+		if err != nil {
+			fmt.Printf("Couldn't read CA cert file: %s", err.Error())
+			os.Exit(1)
+		}
+		certpool := x509.NewCertPool()
+		certpool.AppendCertsFromPEM(cafile)
+
+		server.TLSConfig = &tls.Config{
+			RootCAs: certpool,
+		}
+		err = server.ListenAndServeTLS(tlsCert, tlsKey)
+	} else {
+		err = server.ListenAndServe()
+	}
+	if err != nil {
+		fmt.Printf("Error serving connection: %s", err.Error())
+		os.Exit(1)
+	}
+}
+
+func main() {
+	if err := CmdWebhook.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

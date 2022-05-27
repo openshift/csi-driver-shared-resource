@@ -10,9 +10,15 @@ import (
 func prep(t *framework.TestArgs) {
 	framework.SetupClientsOutsideTestNamespace(t)
 	t.DaemonSetUp = true
+	t.WebhookUp = true
 	err := framework.WaitForDaemonSet(t)
 	if err != nil {
 		t.MessageString = fmt.Sprintf("csi driver daemon not up: %s", err.Error())
+		framework.LogAndDebugTestError(t)
+	}
+	err = framework.WaitForWebhook(t)
+	if err != nil {
+		t.MessageString = fmt.Sprintf("csi driver webhook not up: %s", err.Error())
 		framework.LogAndDebugTestError(t)
 	}
 }

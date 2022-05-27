@@ -43,15 +43,16 @@ func WaitForDaemonSet(t *TestArgs) error {
 	})
 	podClient = kubeClient.CoreV1().Pods(client.DefaultNamespace)
 	err = wait.PollImmediate(10*time.Second, 2*time.Minute, func() (bool, error) {
-		podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
+		podList, err := podClient.List(context.TODO(), metav1.ListOptions{LabelSelector: "app=shared-resource-csi-driver-node"})
+
 		if err != nil {
-			t.T.Logf("%s: error listing pods: %s\n", time.Now().String(), err.Error())
+			t.T.Logf("%s: error listing shared-resource-csi-driver-node pods: %s\n", time.Now().String(), err.Error())
 			return false, nil
 		}
 
 		if t.DaemonSetUp {
 			if podList.Items == nil || len(podList.Items) < daemonSetReplicas {
-				t.T.Logf("%s: number of pods not yet at %d", time.Now().String(), daemonSetReplicas)
+				t.T.Logf("%s: number of shared-resource-csi-driver-node pods not yet at %d", time.Now().String(), daemonSetReplicas)
 				return false, nil
 			}
 			podCount := 0
@@ -62,7 +63,7 @@ func WaitForDaemonSet(t *TestArgs) error {
 					continue
 				}
 				if pod.Status.Phase != corev1.PodRunning || pod.DeletionTimestamp != nil {
-					t.T.Logf("%s: pod %s in phase %s with deletion timestamp %v\n", time.Now().String(), pod.Name, pod.Status.Phase, pod.DeletionTimestamp)
+					t.T.Logf("%s: shared-resource-csi-driver-node pod %s in phase %s with deletion timestamp %v\n", time.Now().String(), pod.Name, pod.Status.Phase, pod.DeletionTimestamp)
 					return false, nil
 				}
 				if podCount < daemonSetReplicas {
@@ -73,7 +74,7 @@ func WaitForDaemonSet(t *TestArgs) error {
 			t.T.Logf("%s: all 3 daemonset pods are running", time.Now().String())
 		} else {
 			if podList.Items == nil || len(podList.Items) == 0 {
-				t.T.Logf("%s: pod list emtpy so daemonset is down", time.Now().String())
+				t.T.Logf("%s: shared-resource-csi-driver-node pod list emtpy so daemonset is down", time.Now().String())
 				return true, nil
 			}
 			for _, pod := range podList.Items {
