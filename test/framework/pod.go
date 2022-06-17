@@ -41,7 +41,6 @@ func CreateTestPod(t *TestArgs) {
 					Name: "my-csi-volume",
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
-							ReadOnly:         &truVal,
 							Driver:           string(operatorv1.SharedResourcesCSIDriver),
 							VolumeAttributes: map[string]string{"sharedConfigMap": t.Name},
 						},
@@ -74,6 +73,9 @@ func CreateTestPod(t *TestArgs) {
 			ServiceAccountName: "default",
 		},
 	}
+	if !t.TestReadOnly {
+		pod.Spec.Volumes[0].VolumeSource.CSI.ReadOnly = &truVal
+	}
 	if t.NoRefresh {
 		pod.Spec.Volumes[0].VolumeSource.CSI.VolumeAttributes[csidriver.RefreshResource] = "false"
 	}
@@ -102,7 +104,13 @@ func CreateTestPod(t *TestArgs) {
 	_, err := podClient.Create(context.TODO(), pod, metav1.CreateOptions{})
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.MessageString = fmt.Sprintf("error creating test pod: %s", err.Error())
-		LogAndDebugTestError(t)
+		// if test is TestReadOnly volume(ReadOnly false) Pod is not created as it is not allowed by the csisharedresource webhook
+		if t.TestReadOnly && kerrors.IsForbidden(err) {
+			t.T.Logf("%s: admission webhook pod.csi.sharedresource.openshift.io denied the request. Not allowed to create pod %s with ReadOnly false SharedResourceCSIVolume", time.Now().String(), t.Name)
+			return
+		} else {
+			LogAndDebugTestError(t)
+		}
 	}
 
 	t.T.Logf("%s: end create test pod %s", time.Now().String(), t.Name)
