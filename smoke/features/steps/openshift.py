@@ -55,7 +55,7 @@ class Openshift(object):
     def is_resource_in(self, resource_type):
         output, exit_code = self.cmd.run(f'oc get {resource_type}')
         if exit_code != 0:
-            print("Resource not found")
+            print(f"Resource not found")
             return False
         return True
 
@@ -311,5 +311,6 @@ class Openshift(object):
     
     def shell_cmd(self, cmd, param):
         output, exit_status = self.cmd.run(f'sh {cmd} {param}')
-        exit_status | should.be_equal_to(0)
+        if exit_status != 0:
+            print(f"Error occured please look into the response")
         return output
