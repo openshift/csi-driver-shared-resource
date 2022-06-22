@@ -119,9 +119,12 @@ def create_rbac(context, shared_resource):
 @when(u'creates a pod {pod_name} with a CSI volume citing the shared resource csi driver with read only {permission} and requesting the previously defined {shared_resource} in the Pod CSI volume\'s volume attributes')
 def create_pod(context, pod_name, shared_resource, permission):
     namespace = Project().current_project()
+    expOut = "pod with ReadOnly false"
     print(f"creating pod {pod_name} within namespace: {namespace}")
     podFile = "./smoke/features/data/pod.sh"
-    oc.shell_cmd(podFile, shared_resource + " " + permission)
+    output = oc.shell_cmd(podFile, shared_resource + permission)
+    if expOut in output:
+        print(f"ERROR: server not allowed to schedule a pod with ReadOnly false SharedResourceCSIVolume, ensure to set readonly to true")
 
 @when(u'edits configMap {share_config} data {value} from the first project')
 def edit_configmap_with_data(context, share_config, value):
@@ -211,3 +214,7 @@ def remove_data_with_permission_removal(context, pod_name):
     output = oc.exec_not_in_pod(pod_name, cmd, True, 60)
     if not output:
         print(f"mounted data removed successfully.")
+
+@then(u'pod should not get created')
+def get_pod(context):
+    oc.is_resource_in("pod")

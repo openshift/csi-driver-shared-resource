@@ -41,7 +41,7 @@ Feature: SharedSecrets and SharedConfigMap
             | "openshift_csi_share_mount_failures_total" |
             | "openshift_csi_share_mount_requests_total" |
         Then the metrics value for configured resources should be "1"
-    
+
     @automated @slowest
     Scenario: shared resource data gets removed if permission removed : CSI-01-TC03
         Given user has created resource type with shared resource
@@ -65,9 +65,19 @@ Feature: SharedSecrets and SharedConfigMap
         And creates a pod "my-csi-app-check" with a CSI volume citing the shared resource csi driver with read only true and requesting the previously defined "sharedsecret" in the Pod CSI volume's volume attributes
         And edits secret "my-secret" data from the first project
         Then pod "my-csi-app-check" in the second project should mount the data "hostpath" available in the "my-secret"
-    
+
+    @automated
+    Scenario: Pod does not create if readonly set to false : CSI-01-TC05
+        Given user has cluster scoped level permission to create CRD "sharedsecrets.sharedresource.openshift.io"
+        When user creates the secret "my-secret" in a given namespace 
+        And defines shared secret "my-shared-secret" that references the "my-secret" secret from the first project to share across all namespace
+        And creates another project that will access the cluster scoped shared secret that references the "my-secret" created in the first project
+        And RBAC for the service account to use the "sharedsecret" in its pod
+        And creates a pod "my-csi-app-check" with a CSI volume citing the shared resource csi driver with read only false and requesting the previously defined "sharedsecret" in the Pod CSI volume's volume attributes
+        Then pod should not get created
+
     @manual
-    Scenario: Openshift buildconfig uses shared resource for rhel entitlement subscription : CSI-01-TC05
+    Scenario: Openshift buildconfig uses shared resource for rhel entitlement subscription : CSI-01-TC06
         Given user has created openshift cluster using pull secret that has valid Red Hat subscription which helps in installing Red Hat RPMs
         Then log onto openshift console of the created cluster
         And click on "Openshift Cluster Manager" link
