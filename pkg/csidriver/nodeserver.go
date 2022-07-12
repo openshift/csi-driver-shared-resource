@@ -28,6 +28,7 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
+	"github.com/openshift/csi-driver-shared-resource/pkg/util"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -197,6 +198,22 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	if !req.GetReadonly() {
 		return nil, status.Error(codes.InvalidArgument, "The Shared Resource CSI driver requires all volume requests to set read-only to 'true'")
 	}
+	_, sShareExists := req.VolumeContext["SharedSecretShareKey"]
+	_, cmShareExists := req.VolumeContext["SharedConfigMapShareKey"]
+
+	if sShareExists && cmShareExists {
+		if !util.IsAuthorizedSharedResource(cmShare.Kind, cmShare.ObjectMeta.Name, cmShare.Spec.ConfigMapRef.Name, cmShare.Spec.ConfigMapRef.Namespace) {
+			return nil, status.Error(codes.InvalidArgument, "Shared configMap with prefix 'openshift-' is not allowed, unless listed under OCP pre-populated shared resource")
+		}
+		if !util.IsAuthorizedSharedResource(sShare.Kind, sShare.ObjectMeta.Name, sShare.Spec.SecretRef.Name, sShare.Spec.SecretRef.Namespace) {
+			return nil, status.Error(codes.InvalidArgument, "Shared secret with prefix 'openshift-' is not allowed, unless listed under OCP pre-populated shared resource")
+		}
+	} else if sShareExists && !util.IsAuthorizedSharedResource(sShare.Kind, sShare.ObjectMeta.Name, sShare.Spec.SecretRef.Name, sShare.Spec.SecretRef.Namespace) {
+		return nil, status.Error(codes.InvalidArgument, "Shared secret with prefix 'openshift-' is not allowed, unless listed under OCP pre-populated shared resource")
+	} else if cmShareExists && !util.IsAuthorizedSharedResource(cmShare.Kind, cmShare.ObjectMeta.Name, cmShare.Spec.ConfigMapRef.Name, cmShare.Spec.ConfigMapRef.Namespace) {
+		return nil, status.Error(codes.InvalidArgument, "Shared configMap with prefix 'openshift-' is not allowed, unless listed under OCP pre-populated shared resource")
+	}
+
 	attrib := req.GetVolumeContext()
 	refresh := true
 	refreshStr, rok := attrib[RefreshResource]

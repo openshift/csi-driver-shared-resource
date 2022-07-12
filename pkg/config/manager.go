@@ -64,6 +64,64 @@ func (m *Manager) LoadConfig() (*Config, error) {
 	return &cfg, nil
 }
 
+// LoadSharedConfigMaps read the local configuration file, make sure the current contents are summed, so we can
+// assert if there are changes later on.
+func (m *Manager) LoadSharedConfigMaps() (*SharedConfigMaps, error) {
+	shCfg := NewSharedConfigMaps()
+
+	if _, err := os.Stat(m.cfgFilePath); os.IsNotExist(err) {
+		klog.Info("Configuration file is not found, using default values!")
+		return &shCfg, nil
+	}
+
+	// in the case of issues to read the mounted file, and in case of errors marshaling to the
+	// destination struct, this method will surface those errors directly, and we may want to create
+	// means to differentiate the error scenarios
+	klog.Infof("Loading configuration-file '%s'", m.cfgFilePath)
+	payload, err := ioutil.ReadFile(m.cfgFilePath)
+	if err != nil {
+		return nil, err
+	}
+	sum := md5.Sum(payload)
+	m.md5sum = hex.EncodeToString(sum[:])
+
+	// overwriting attributes found on the configuration file with the defaults
+	if err = yaml.Unmarshal(payload, &shCfg); err != nil {
+		return nil, err
+	}
+	LoadedSharedConfigMaps = shCfg
+	return &shCfg, nil
+}
+
+// LoadSharedSecrets read the local configuration file, make sure the current contents are summed, so we can
+// assert if there are changes later on.
+func (m *Manager) LoadSharedSecrets() (*SharedSecrets, error) {
+	shSecretCfg := NewSharedSecrets()
+
+	if _, err := os.Stat(m.cfgFilePath); os.IsNotExist(err) {
+		klog.Info("Configuration file is not found, using default values!")
+		return &shSecretCfg, nil
+	}
+
+	// in the case of issues to read the mounted file, and in case of errors marshaling to the
+	// destination struct, this method will surface those errors directly, and we may want to create
+	// means to differentiate the error scenarios
+	klog.Infof("Loading configuration-file '%s'", m.cfgFilePath)
+	payload, err := ioutil.ReadFile(m.cfgFilePath)
+	if err != nil {
+		return nil, err
+	}
+	sum := md5.Sum(payload)
+	m.md5sum = hex.EncodeToString(sum[:])
+
+	// overwriting attributes found on the configuration file with the defaults
+	if err = yaml.Unmarshal(payload, &shSecretCfg); err != nil {
+		return nil, err
+	}
+	LoadedSharedSecrets = shSecretCfg
+	return &shSecretCfg, nil
+}
+
 // NewManager instantiate the manager.
 func NewManager(cfgFilePath string) *Manager {
 	return &Manager{cfgFilePath: cfgFilePath}

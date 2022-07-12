@@ -28,12 +28,11 @@ import (
 var (
 	version string // driver version
 
-	cfgFilePath       string // path to configuration file
-	endPoint          string // CSI driver API endpoint for Kubernetes kubelet
-	driverName        string // name of the CSI driver, registered in the cluster
-	nodeID            string // current Kubernetes node identifier
-	maxVolumesPerNode int64  // maximum amount of volumes per node, i.e. per driver instance
-
+	cfgFilePath          []string // path to configuration file
+	endPoint             string   // CSI driver API endpoint for Kubernetes kubelet
+	driverName           string   // name of the CSI driver, registered in the cluster
+	nodeID               string   // current Kubernetes node identifier
+	maxVolumesPerNode    int64    // maximum amount of volumes per node, i.e. per driver instance
 	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
 	onlyOneSignalHandler = make(chan struct{})
 )
@@ -45,18 +44,36 @@ var rootCmd = &cobra.Command{
 	Long:    ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
-
-		cfgManager := config.NewManager(cfgFilePath)
+		cfgManager := config.NewManager(cfgFilePath[0])
 		cfg, err := cfgManager.LoadConfig()
 		if err != nil {
-			fmt.Printf("Failed to load configuration file '%s': %s", cfgFilePath, err.Error())
+			fmt.Printf("Failed to load configuration file '%s': %s", cfgFilePath[0], err.Error())
+			os.Exit(1)
+		}
+		shCfgManager := config.NewManager(cfgFilePath[1])
+		shCfg, err := shCfgManager.LoadSharedConfigMaps()
+		if err != nil {
+			fmt.Printf("Failed to load shared configuration file '%s': %s", cfgFilePath[1], err.Error())
+			os.Exit(1)
+		}
+		shSecretCfgManager := config.NewManager(cfgFilePath[2])
+		shSecretCfg, err := shSecretCfgManager.LoadSharedSecrets()
+		if err != nil {
+			fmt.Printf("Failed to load shared secret configuration file '%s': %s", cfgFilePath[2], err.Error())
 			os.Exit(1)
 		}
 
 		if !cfg.RefreshResources {
 			fmt.Println("Refresh-Resources disabled")
-
 		}
+		if len(shCfg.AuthorizedSharedResources) == 0 && len(shSecretCfg.AuthorizedSharedResources) == 0 {
+			fmt.Println("None of the shared resources are listed to be created with prefix openshift-")
+		} else if len(shCfg.AuthorizedSharedResources) == 0 || len(shSecretCfg.AuthorizedSharedResources) == 0 {
+			fmt.Println("Either shared config or shared secret resources are not listed to be created with prefix openshift-")
+		} else {
+			fmt.Println("Shared resources are valid to be created with prefix openshift-")
+		}
+
 		if kubeClient, err := loadKubernetesClientset(); err != nil {
 			fmt.Printf("Failed to load Kubernetes API client: %s", err.Error())
 			os.Exit(1)
@@ -111,6 +128,8 @@ var rootCmd = &cobra.Command{
 
 		go runOperator(c, cfg)
 		go watchForConfigChanges(cfgManager)
+		go watchForConfigChanges(shCfgManager)
+		go watchForConfigChanges(shSecretCfgManager)
 		driver.Run()
 		prunerDone <- struct{}{}
 	},
@@ -129,7 +148,7 @@ func init() {
 	cobra.OnInitialize()
 	rootCmd.Flags().AddGoFlagSet(flag.CommandLine)
 
-	rootCmd.Flags().StringVar(&cfgFilePath, "config", "/var/run/configmaps/config/config.yaml", "configuration file path")
+	rootCmd.Flags().StringSliceVar(&cfgFilePath, "config", []string{"/var/run/configmaps/config/config.yaml", "/var/run/configmaps/config/sharedconfigmap-list.yaml", "/var/run/configmaps/config/sharedsecret-list.yaml"}, "configuration file path")
 	rootCmd.Flags().StringVar(&endPoint, "endpoint", "unix:///csi/csi.sock", "CSI endpoint")
 	rootCmd.Flags().StringVar(&driverName, "drivername", string(operatorv1.SharedResourcesCSIDriver), "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")

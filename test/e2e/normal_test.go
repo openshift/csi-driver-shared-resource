@@ -88,6 +88,13 @@ func TestTwoSharesSeparateMountPaths(t *testing.T) {
 	coreTestTwoSharesSeparateMountPaths(testArgs)
 }
 
+func TestAuthourizedSharedSecretWithOpenshiftPrefix(t *testing.T) {
+	testArgs := &framework.TestArgs{
+		T: t,
+	}
+	framework.CreateShareSecretWithOpenshiftPrefix(testArgs)
+}
+
 func TestRejectPodWithReadOnlyFalseSharedVolume(t *testing.T) {
 	testArgs := &framework.TestArgs{
 		T:            t,
