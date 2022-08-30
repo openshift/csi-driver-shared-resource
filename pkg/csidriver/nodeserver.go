@@ -314,14 +314,9 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 
 func (ns *nodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 
-	topology := &csi.Topology{
-		Segments: map[string]string{TopologyKeyNode: ns.nodeID},
-	}
-
 	return &csi.NodeGetInfoResponse{
 		NodeId:             ns.nodeID,
 		MaxVolumesPerNode:  ns.maxVolumesPerNode,
-		AccessibleTopology: topology,
 	}, nil
 }
 
