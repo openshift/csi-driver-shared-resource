@@ -315,8 +315,8 @@ func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstag
 func (ns *nodeServer) NodeGetInfo(ctx context.Context, req *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 
 	return &csi.NodeGetInfoResponse{
-		NodeId:             ns.nodeID,
-		MaxVolumesPerNode:  ns.maxVolumesPerNode,
+		NodeId:            ns.nodeID,
+		MaxVolumesPerNode: ns.maxVolumesPerNode,
 	}, nil
 }
 
