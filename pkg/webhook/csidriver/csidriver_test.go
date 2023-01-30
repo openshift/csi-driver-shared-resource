@@ -126,7 +126,7 @@ func TestAuthorize(t *testing.T) {
 			Operation: tc.operation,
 		}
 
-		hook := NewWebhook()
+		hook := NewWebhook(nil)
 		req := admissionctl.Request{
 			AdmissionRequest: Request,
 		}

@@ -9,6 +9,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"golang.org/x/net/context"
 
 	authorizationv1 "k8s.io/api/authorization/v1"
@@ -66,12 +67,16 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 	if err != nil {
 		return nil, "", "", err
 	}
+	if err != nil {
+		return nil, "", "", err
+	}
 	ns := &nodeServer{
 		nodeID:            "node1",
 		maxVolumesPerNode: 0,
 		mounter:           mount.NewFakeMounter([]mount.MountPoint{}),
 		readWriteMounter:  &ReadWriteMany{},
 		d:                 d,
+		rn:                config.SetupNameReservation(),
 	}
 	return ns, tmpDir, volPathTmpDir, nil
 }
@@ -448,6 +453,29 @@ func TestNodePublishVolume(t *testing.T) {
 				},
 			},
 			expectedMsg: "The Shared Resource CSI driver requires all volume requests to set read-only to",
+		},
+		{
+			name:    "share name starts with openshift- and is not in reserved name list",
+			cmShare: validSharedConfigMap,
+			reactor: acceptReactorFunc,
+			nodePublishVolReq: csi.NodePublishVolumeRequest{
+				VolumeId:   "testvolid1",
+				TargetPath: getTestTargetPath(t),
+				VolumeCapability: &csi.VolumeCapability{
+					AccessType: &csi.VolumeCapability_Mount{
+						Mount: &csi.VolumeCapability_MountVolume{},
+					},
+				},
+				VolumeContext: map[string]string{
+					CSIEphemeral:            "true",
+					CSIPodName:              "name1",
+					CSIPodNamespace:         "namespace1",
+					CSIPodUID:               "uid1",
+					CSIPodSA:                "sa1",
+					SharedConfigMapShareKey: "openshift-foo",
+				},
+			},
+			expectedMsg: "violates the OpenShift reserved name list",
 		},
 		{
 			name:    "inputs are OK for configmap",

@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -16,6 +14,7 @@ import (
 	"k8s.io/utils/mount"
 
 	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
+	"github.com/openshift/csi-driver-shared-resource/cmd/util"
 	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
@@ -34,8 +33,6 @@ var (
 	nodeID            string // current Kubernetes node identifier
 	maxVolumesPerNode int64  // maximum amount of volumes per node, i.e. per driver instance
 
-	shutdownSignals      = []os.Signal{os.Interrupt, syscall.SIGTERM}
-	onlyOneSignalHandler = make(chan struct{})
 )
 
 var rootCmd = &cobra.Command{
@@ -109,9 +106,11 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
-		go runOperator(c, cfg)
+		rn := config.SetupNameReservation()
+		stopCh := util.SetupSignalHandler()
+		go runOperator(c, stopCh)
 		go watchForConfigChanges(cfgManager)
-		driver.Run()
+		driver.Run(rn)
 		prunerDone <- struct{}{}
 	},
 }
@@ -155,8 +154,7 @@ func loadSharedresourceClientset() (sharev1clientset.Interface, error) {
 
 // runOperator based on the informed configuration, it will spawn and run the Controller, until
 // trapping OS signals.
-func runOperator(c *controller.Controller, cfg *config.Config) {
-	stopCh := setupSignalHandler()
+func runOperator(c *controller.Controller, stopCh <-chan struct{}) {
 	err := c.Run(stopCh)
 	if err != nil {
 		fmt.Printf("Controller exited: %s", err.Error())
@@ -174,23 +172,4 @@ func watchForConfigChanges(mgr *config.Manager) {
 		}
 		time.Sleep(3 * time.Second)
 	}
-}
-
-// setupSignalHandler registered for SIGTERM and SIGINT. A stop channel is returned
-// which is closed on one of these signals. If a second signal is caught, the program
-// is terminated with exit code 1.
-func setupSignalHandler() (stopCh <-chan struct{}) {
-	close(onlyOneSignalHandler) // panics when called twice
-
-	stop := make(chan struct{})
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, shutdownSignals...)
-	go func() {
-		<-c
-		close(stop)
-		<-c
-		os.Exit(1) // second signal. Exit directly.
-	}()
-
-	return stop
 }
