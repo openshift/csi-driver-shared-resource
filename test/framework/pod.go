@@ -28,6 +28,17 @@ const (
 
 func CreateTestPod(t *TestArgs) {
 	t.T.Logf("%s: start create test pod %s", time.Now().String(), t.Name)
+	saErr := wait.PollImmediate(1*time.Second, 1*time.Minute, func() (done bool, err error) {
+		_, e := kubeClient.CoreV1().ServiceAccounts(t.Name).Get(context.TODO(), "default", metav1.GetOptions{})
+		if e != nil {
+			t.T.Logf("default SA not available yet: %s", e.Error())
+			return false, nil
+		}
+		return true, nil
+	})
+	if saErr != nil {
+		t.T.Logf("default SA for namespace %s not available ever after a minute from namespace creation", t.Name)
+	}
 	truVal := true
 	falVal := false
 	pod := &corev1.Pod{
