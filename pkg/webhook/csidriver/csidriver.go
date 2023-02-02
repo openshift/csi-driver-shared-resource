@@ -57,28 +57,21 @@ func (s *SharedResourcesCSIDriverWebhook) Validate(req admissionctl.Request) boo
 
 // Authorized implements Webhook interface
 func (s *SharedResourcesCSIDriverWebhook) Authorized(request admissionctl.Request) admissionctl.Response {
-	pod, perr := s.renderPod(request)
-	ss, sserr := s.renderSharedSecret(request)
-	sc, scerr := s.renderSharedConfigMap(request)
+	var pod *corev1.Pod
+	var ss *sharev1alpha1.SharedSecret
+	var sc *sharev1alpha1.SharedConfigMap
+	var err error
 
-	if perr != nil && sserr != nil && scerr != nil {
-		klog.Error(perr, "Couldn't render a Pod from the incoming request")
-		klog.Error(sserr, "Couldn't render a SharedSecret from the incoming request")
-		klog.Error(scerr, "Couldn't render a SharedConfigMap from the incoming request")
-		return admissionctl.Errored(http.StatusBadRequest, perr)
-	}
-
-	switch {
-	case pod != nil && perr == nil:
+	if pod, err = s.renderPod(request); err == nil {
 		return s.authorizePod(request, pod)
-	case ss != nil && sserr == nil:
+	}
+	if ss, err = s.renderSharedSecret(request); err == nil {
 		return s.authorizeSharedSecret(request, ss)
-	case sc != nil && scerr == nil:
+	}
+	if sc, err = s.renderSharedConfigMap(request); err == nil {
 		return s.authorizeSharedConfigMap(request, sc)
 	}
-	ret := admissionctl.Allowed("type we are unconcerned with")
-	ret.UID = request.AdmissionRequest.UID
-	return ret
+	return admissionctl.Errored(http.StatusBadRequest, fmt.Errorf("Could not render a Pod, SharedSecret, nor SharedConfigMap from %s", request.Kind.String()))
 }
 
 func (s *SharedResourcesCSIDriverWebhook) authorizePod(request admissionctl.Request, pod *corev1.Pod) admissionctl.Response {
@@ -110,7 +103,7 @@ func (s *SharedResourcesCSIDriverWebhook) authorizeSharedSecret(request admissio
 		ret.UID = request.AdmissionRequest.UID
 		return ret
 	}
-	ret = admissionctl.Denied(fmt.Sprintf("Not allowed to create SharedSecret with name %s as it violates the reserved names list", ss.Name))
+	ret = admissionctl.Denied(fmt.Sprintf("Not allowed to create SharedSecret with name %q as it violates the reserved names list", ss.Name))
 	ret.UID = request.AdmissionRequest.UID
 	return ret
 }
@@ -124,7 +117,7 @@ func (s *SharedResourcesCSIDriverWebhook) authorizeSharedConfigMap(request admis
 		ret.UID = request.AdmissionRequest.UID
 		return ret
 	}
-	ret = admissionctl.Denied(fmt.Sprintf("Not allowed to create SharedConfigMap with name %s as it violates the reserved names list", scm.Name))
+	ret = admissionctl.Denied(fmt.Sprintf("Not allowed to create SharedConfigMap with name %q as it violates the reserved names list", scm.Name))
 	ret.UID = request.AdmissionRequest.UID
 	return ret
 

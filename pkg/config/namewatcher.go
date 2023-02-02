@@ -22,10 +22,10 @@ func SetupNameReservation() *ReservedNames {
 	rn := &ReservedNames{}
 	sharedSecretReservations := os.Getenv(sharedSecretReservedNamesEnvVarName)
 	rn.currentSecretNames = parseEnvVar(sharedSecretReservations, sharedSecretReservedNamesEnvVarName)
-	klog.Infof("reserved shared secret env %s and map %#v", sharedSecretReservations, rn.currentSecretNames)
+	klog.Infof("Loaded reserved shared secret from environment variable %s and data %#v", sharedSecretReservations, rn.currentSecretNames)
 	sharedConfigMapReservations := os.Getenv(sharedConfigMapReservedNamesEnvVarName)
 	rn.currentConfigMapNames = parseEnvVar(sharedConfigMapReservations, sharedConfigMapReservedNamesEnvVarName)
-	klog.Infof("reserved shared configmap env %s and map %#v", sharedConfigMapReservations, rn.currentConfigMapNames)
+	klog.Infof("Loaded reserved shared configmap information from environment variable %s and data %#v", sharedConfigMapReservations, rn.currentConfigMapNames)
 	return rn
 }
 
@@ -34,7 +34,7 @@ func parseEnvVar(val, envvarName string) map[string]types.NamespacedName {
 	entries := strings.Split(val, ";")
 	for _, entry := range entries {
 		a := strings.Split(entry, ":")
-		if len(a) < 3 {
+		if len(a) != 3 {
 			if len(entry) > 0 {
 				klog.Warningf("env var %s has bad entry %s", envvarName, entry)
 			}
@@ -60,8 +60,7 @@ func (rn *ReservedNames) ValidateSharedConfigMapOpenShiftName(shareName, refName
 }
 
 func startsWithOpenShift(shareName string) bool {
-	if strings.HasPrefix(shareName, "openshift-") ||
-		strings.HasPrefix(shareName, "openshift_") {
+	if strings.HasPrefix(shareName, "openshift") {
 		return true
 	}
 	return false

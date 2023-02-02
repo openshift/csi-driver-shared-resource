@@ -67,9 +67,6 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 	if err != nil {
 		return nil, "", "", err
 	}
-	if err != nil {
-		return nil, "", "", err
-	}
 	ns := &nodeServer{
 		nodeID:            "node1",
 		maxVolumesPerNode: 0,
