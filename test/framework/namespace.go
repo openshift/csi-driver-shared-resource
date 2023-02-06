@@ -54,11 +54,25 @@ func CleanupTestNamespaceAndClusterScopedResources(t *TestArgs) {
 	}
 	err = shareClient.SharedresourceV1alpha1().SharedSecrets().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
-		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
+		t.T.Fatalf("error deleting share %s: %s", t.SecondName, err.Error())
 	}
 	err = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Delete(context.TODO(), t.SecondName, metav1.DeleteOptions{})
 	if err != nil && !kerrors.IsNotFound(err) {
-		t.T.Fatalf("error deleting share %s: %s", t.Name, err.Error())
+		t.T.Fatalf("error deleting share %s: %s", t.SecondName, err.Error())
+	}
+	if len(t.ShareNameOverride) > 0 {
+		err = shareClient.SharedresourceV1alpha1().SharedSecrets().Delete(context.TODO(), t.ShareNameOverride, metav1.DeleteOptions{})
+		if err != nil && !kerrors.IsNotFound(err) {
+			t.T.Fatalf("error deleting share %s: %s", t.ShareNameOverride, err.Error())
+		}
+		err = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Delete(context.TODO(), t.ShareNameOverride, metav1.DeleteOptions{})
+		if err != nil && !kerrors.IsNotFound(err) {
+			t.T.Fatalf("error deleting share %s: %s", t.ShareNameOverride, err.Error())
+		}
+	}
+	err = shareClient.SharedresourceV1alpha1().SharedSecrets().Delete(context.TODO(), "openshift-etc-pki-entitlement", metav1.DeleteOptions{})
+	if err != nil && !kerrors.IsNotFound(err) {
+		t.T.Fatalf("error deleting share openshift-etc-pki-entitlement: %s", err.Error())
 	}
 	// try to clean up pods in test namespace individually to avoid weird k8s timing issues
 	podList, _ := kubeClient.CoreV1().Pods(t.Name).List(context.TODO(), metav1.ListOptions{})

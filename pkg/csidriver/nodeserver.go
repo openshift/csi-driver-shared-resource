@@ -26,6 +26,7 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 	"golang.org/x/net/context"
@@ -46,15 +47,17 @@ type nodeServer struct {
 	d                 CSIDriver
 	readWriteMounter  FileSystemMounter
 	mounter           mount.Interface
+	rn                *config.ReservedNames
 }
 
-func NewNodeServer(d *driver) *nodeServer {
+func NewNodeServer(d *driver, rn *config.ReservedNames) *nodeServer {
 	return &nodeServer{
 		nodeID:            d.nodeID,
 		maxVolumesPerNode: d.maxVolumesPerNode,
 		d:                 d,
 		mounter:           mount.New(""),
 		readWriteMounter:  &ReadWriteMany{},
+		rn:                rn,
 	}
 }
 
@@ -102,6 +105,16 @@ func (ns *nodeServer) validateShare(req *csi.NodePublishVolumeRequest) (*sharev1
 	if sShare == nil && cmShare == nil {
 		return nil, nil, status.Errorf(codes.InvalidArgument,
 			"volumeAttributes did not reference a valid SharedSecret or SharedConfigMap")
+	}
+
+	// check reserve name list
+	if cmok && !ns.rn.ValidateSharedConfigMapOpenShiftName(configMapShareName, cmShare.Spec.ConfigMapRef.Namespace, cmShare.Spec.ConfigMapRef.Name) {
+		return nil, nil, status.Errorf(codes.InvalidArgument,
+			"share %s violates the OpenShift reserved name list", configMapShareName)
+	}
+	if sok && !ns.rn.ValidateSharedSecretOpenShiftName(secretShareName, sShare.Spec.SecretRef.Namespace, sShare.Spec.SecretRef.Name) {
+		return nil, nil, status.Errorf(codes.InvalidArgument,
+			"share %s violates the OpenShift reserved name list", secretShareName)
 	}
 
 	podNamespace, podName, _, podSA := getPodDetails(req.GetVolumeContext())

@@ -13,9 +13,13 @@ import (
 
 func CreateShare(t *TestArgs) {
 	t.T.Logf("%s: start create share %s", time.Now().String(), t.Name)
+	shareName := t.Name
+	if len(t.ShareNameOverride) > 0 {
+		shareName = t.ShareNameOverride
+	}
 	share := &shareapi.SharedConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: t.Name,
+			Name: shareName,
 		},
 		Spec: shareapi.SharedConfigMapSpec{
 			ConfigMapRef: shareapi.SharedConfigMapReference{
@@ -25,6 +29,15 @@ func CreateShare(t *TestArgs) {
 		},
 	}
 	_, err := shareClient.SharedresourceV1alpha1().SharedConfigMaps().Create(context.TODO(), share, metav1.CreateOptions{})
+	if err == nil && t.TestShareCreateRejected {
+		dumpCSIPods(t)
+		time.Sleep(5 * time.Second)
+		t.T.Fatalf("share %s creation incorrectly allowed", shareName)
+	}
+	if err != nil && t.TestShareCreateRejected {
+		t.T.Logf("TestShareCreateRejected got error %s on creation of %s", err.Error(), shareName)
+		return
+	}
 	if err != nil && !kerrors.IsAlreadyExists(err) {
 		t.T.Fatalf("error creating test share: %s", err.Error())
 	}
@@ -50,8 +63,32 @@ func CreateShare(t *TestArgs) {
 	}
 }
 
+func CreateReservedOpenShiftShare(t *TestArgs) {
+	share := &shareapi.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "openshift-etc-pki-entitlement",
+		},
+		Spec: shareapi.SharedSecretSpec{
+			SecretRef: shareapi.SharedSecretReference{
+				Name:      "etc-pki-entitlement",
+				Namespace: "openshift-config-managed",
+			},
+		},
+	}
+	_, err := shareClient.SharedresourceV1alpha1().SharedSecrets().Create(context.TODO(), share, metav1.CreateOptions{})
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		dumpCSIPods(t)
+		time.Sleep(5 * time.Second)
+		t.T.Fatalf("share %s creation incorrectly prevented: %s", share.Name, err.Error())
+	}
+
+}
+
 func ChangeShare(t *TestArgs) {
 	name := t.Name
+	if len(t.ShareNameOverride) > 0 {
+		name = t.ShareNameOverride
+	}
 	t.T.Logf("%s: start change share %s", time.Now().String(), name)
 	share, err := shareClient.SharedresourceV1alpha1().SharedConfigMaps().Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
@@ -67,6 +104,9 @@ func ChangeShare(t *TestArgs) {
 
 func DeleteShare(t *TestArgs) {
 	name := t.Name
+	if len(t.ShareNameOverride) > 0 {
+		name = t.ShareNameOverride
+	}
 	if len(t.ShareToDelete) > 0 {
 		name = t.ShareToDelete
 	}

@@ -14,6 +14,7 @@ var (
 type TestArgs struct {
 	T                                  *testing.T
 	Name                               string
+	ShareNameOverride                  string
 	SecondName                         string
 	ChangeName                         string
 	SearchString                       string
@@ -30,6 +31,7 @@ type TestArgs struct {
 	TestPodUp                          bool
 	NoRefresh                          bool
 	TestReadOnly                       bool
+	TestShareCreateRejected            bool
 	TestDuration                       time.Duration
 }
 

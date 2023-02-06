@@ -104,7 +104,7 @@ type CSIDriver interface {
 	deleteVolume(volID string) error
 	getVolumePath(volID string, volCtx map[string]string) (string, string)
 	mapVolumeToPod(dv *driverVolume) error
-	Run()
+	Run(rn *config.ReservedNames)
 	GetRoot() string
 	GetVolMapRoot() string
 	Prune(kubeClient kubernetes.Interface)
@@ -170,13 +170,13 @@ func (d *driver) GetVolMapRoot() string {
 	return d.volMapRoot
 }
 
-func (d *driver) Run() {
+func (d *driver) Run(rn *config.ReservedNames) {
 	// Create GRPC servers
 	d.ids = NewIdentityServer(d.name, d.version)
 
 	// the node-server will be on always-read-only mode when the object-cache is being populated
 	// directly
-	d.ns = NewNodeServer(d)
+	d.ns = NewNodeServer(d, rn)
 
 	s := NewNonBlockingGRPCServer()
 	s.Start(d.endpoint, d.ids, d.ns)

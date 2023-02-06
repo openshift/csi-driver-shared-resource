@@ -10,9 +10,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/csidriver"
 	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/dispatcher"
 	"github.com/spf13/cobra"
+
+	"k8s.io/klog/v2"
 )
 
 const (
@@ -29,17 +32,20 @@ var (
 	testHooks     bool
 )
 
-var CmdWebhook = &cobra.Command{
-	Use:     "csi-driver-shared-resource-webhook",
-	Version: "0.0.1",
-	Short:   "",
-	Long:    ``,
-	Run: func(cmd *cobra.Command, args []string) {
-		startServer()
-	},
-}
+var (
+	CmdWebhook = &cobra.Command{
+		Use:     "csi-driver-shared-resource-webhook",
+		Version: "0.0.1",
+		Short:   "",
+		Long:    ``,
+		Run: func(cmd *cobra.Command, args []string) {
+			startServer()
+		},
+	}
+)
 
 func init() {
+	klog.InitFlags(nil)
 	CmdWebhook.Flags().BoolVar(&useTLS, "tls", false, "Use TLS? Must specify -tlskey, -tlscert, -cacert")
 	CmdWebhook.Flags().StringVar(&tlsCert, "tlscert", "", "File containing the x509 Certificate for HTTPS")
 	CmdWebhook.Flags().StringVar(&tlsKey, "tlskey", "", "File containing the x509 private key")
@@ -50,7 +56,7 @@ func init() {
 }
 
 func startServer() {
-	webhook := csidriver.NewWebhook()
+	webhook := csidriver.NewWebhook(config.SetupNameReservation())
 	dispatcher := dispatcher.NewDispatcher(webhook)
 	http.HandleFunc(webhook.GetURI(), dispatcher.HandleRequest)
 
@@ -63,9 +69,11 @@ func startServer() {
 	server := &http.Server{
 		Addr: net.JoinHostPort(listenAddress, strconv.Itoa(listenPort)),
 	}
+	//TODO do we want to explore signal handling / graceful shutdown for the webhook, with some wrapper around the http server
 	var err error
 	if useTLS {
-		cafile, err := ioutil.ReadFile(caCert)
+		var cafile []byte
+		cafile, err = ioutil.ReadFile(caCert)
 		if err != nil {
 			fmt.Printf("Couldn't read CA cert file: %s", err.Error())
 			os.Exit(1)
