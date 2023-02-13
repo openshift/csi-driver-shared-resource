@@ -19,4 +19,11 @@ for pod in "${pods[@]}"; do
   oc rsync -c hostpath -n ${cdsrNamespace} "$pod":/csi-volumes-map ${object_collection_path}/"$pod"
 done
 
+echo "openshift/shared-resources-must-gather" > must-gather/version
+if [[ ! -z $OS_GIT_VERSION ]] ; then
+  echo "${OS_GIT_VERSION}" >> must-gather/version
+else
+  echo "4.13" >> must-gather/version
+fi
+
 exit 0
