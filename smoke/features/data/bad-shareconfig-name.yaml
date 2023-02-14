@@ -1,0 +1,8 @@
+apiVersion: sharedresource.openshift.io/v1alpha1
+kind: SharedConfigMap
+metadata:
+  name: openshift-foo
+spec:
+  configMapRef:
+    name: my-config
+    namespace: my-csi-app-namespace
