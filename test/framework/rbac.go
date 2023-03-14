@@ -37,17 +37,23 @@ func createShareRole(t *TestArgs) {
 }
 
 func createShareRoleBinding(t *TestArgs) {
+	subject := rbacv1.Subject{
+		Kind:      "ServiceAccount",
+		Namespace: t.Name,
+		Name:      "default",
+	}
+	if t.TestGroupRBACOnly {
+		subject.Kind = "Group"
+		subject.Name = "system:serviceaccounts"
+		subject.Namespace = ""
+	}
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      t.Name,
 			Namespace: t.Name,
 		},
 		Subjects: []rbacv1.Subject{
-			{
-				Kind:      "ServiceAccount",
-				Name:      "default",
-				Namespace: t.Name,
-			},
+			subject,
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
