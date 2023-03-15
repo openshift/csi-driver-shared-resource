@@ -61,6 +61,7 @@ test-e2e-disruptive: test-e2e
 verify: ## Run verifications. Example: make verify
 	go vet ./cmd/... ./pkg/... ./test/...
 	gofmt -w ./cmd/ ./pkg/ ./test/
+	hack/verify-imports.sh
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
@@ -97,6 +98,14 @@ vendor: ## Vendor Go dependencies. Example: make vendor
 	go mod tidy
 	go mod vendor
 .PHONY: vendor
+
+imports: ## Organize imports in go files using goio. Example: make imports
+	go run ./vendor/github.com/go-imports-organizer/goio
+.PHONY: imports
+
+verify-imports: ## Run import verifications. Example: make verify-imports
+	hack/verify-imports.sh
+.PHONY: verify-imports
 
 help: ## Print this help. Example: make help
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)

@@ -48,6 +48,17 @@ github.com/fvbommel/sortorder
 # github.com/go-errors/errors v1.0.1
 ## explicit
 github.com/go-errors/errors
+# github.com/go-imports-organizer/goio v1.3.2
+## explicit; go 1.19
+github.com/go-imports-organizer/goio
+github.com/go-imports-organizer/goio/pkg/api/v1alpha1
+github.com/go-imports-organizer/goio/pkg/config
+github.com/go-imports-organizer/goio/pkg/excludes
+github.com/go-imports-organizer/goio/pkg/groups
+github.com/go-imports-organizer/goio/pkg/imports
+github.com/go-imports-organizer/goio/pkg/module
+github.com/go-imports-organizer/goio/pkg/sorter
+github.com/go-imports-organizer/goio/pkg/version
 # github.com/go-logr/logr v1.2.3
 ## explicit; go 1.16
 github.com/go-logr/logr
@@ -231,6 +242,12 @@ go.starlark.net/resolve
 go.starlark.net/starlark
 go.starlark.net/starlarkstruct
 go.starlark.net/syntax
+# golang.org/x/mod v0.9.0
+## explicit; go 1.17
+golang.org/x/mod/internal/lazyregexp
+golang.org/x/mod/modfile
+golang.org/x/mod/module
+golang.org/x/mod/semver
 # golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10
 ## explicit; go 1.17
 golang.org/x/net/context
