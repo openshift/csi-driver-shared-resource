@@ -32,6 +32,7 @@ type TestArgs struct {
 	NoRefresh                          bool
 	TestReadOnly                       bool
 	TestShareCreateRejected            bool
+	TestGroupRBACOnly                  bool
 	TestDuration                       time.Duration
 }
 

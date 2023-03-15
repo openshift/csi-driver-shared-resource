@@ -135,6 +135,9 @@ func ExecuteSAR(shareName, podNamespace, podName, podSA string, kind consts.Reso
 		Spec: authorizationv1.SubjectAccessReviewSpec{
 			ResourceAttributes: resourceAttributes,
 			User:               fmt.Sprintf("system:serviceaccount:%s:%s", podNamespace, podSA),
+			// adding the standard SA group to allow for RBAC based on that group; otherwise,
+			// the SAR will not pass
+			Groups: []string{"system:serviceaccounts"},
 		}}
 
 	resp, err := sarClient.Create(context.TODO(), sar, metav1.CreateOptions{})

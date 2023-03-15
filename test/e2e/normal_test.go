@@ -67,6 +67,18 @@ func TestBasicNoRefresh(t *testing.T) {
 	basicShareSetupAndVerification(testArgs)
 }
 
+func TestBasicGroupRBAC(t *testing.T) {
+	testArgs := &framework.TestArgs{
+		T:                 t,
+		NoRefresh:         false,
+		TestGroupRBACOnly: true,
+	}
+	prep(testArgs)
+	framework.CreateTestNamespace(testArgs)
+	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	basicShareSetupAndVerification(testArgs)
+}
+
 func TestBasicThenNoShareThenShareReadWrite(t *testing.T) {
 	testArgs := &framework.TestArgs{
 		T: t,
