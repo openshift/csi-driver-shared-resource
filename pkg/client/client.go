@@ -8,10 +8,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
-	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
-	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
-
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -25,6 +21,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/record"
+
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
 
 const (

@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"net/http"
 
-	operatorv1 "github.com/openshift/api/operator/v1"
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
-	"github.com/openshift/csi-driver-shared-resource/pkg/config"
+	admissionctl "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
-	admissionctl "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	operatorv1 "github.com/openshift/api/operator/v1"
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 )
 
 // VolumeSourceType represents a volume source type

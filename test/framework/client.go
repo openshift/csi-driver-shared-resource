@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	shareset "github.com/openshift/client-go/sharedresource/clientset/versioned"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 

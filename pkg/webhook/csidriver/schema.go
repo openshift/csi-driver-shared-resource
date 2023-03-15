@@ -17,13 +17,14 @@ limitations under the License.
 package csidriver
 
 import (
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 )
 
 var (

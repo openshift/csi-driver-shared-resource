@@ -13,15 +13,15 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/utils/mount"
 
+	operatorv1 "github.com/openshift/api/operator/v1"
 	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
+
 	"github.com/openshift/csi-driver-shared-resource/cmd/util"
 	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
 	"github.com/openshift/csi-driver-shared-resource/pkg/csidriver"
-
-	operatorv1 "github.com/openshift/api/operator/v1"
 )
 
 var (

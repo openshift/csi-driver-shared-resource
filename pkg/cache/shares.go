@@ -3,11 +3,12 @@ package cache
 import (
 	"sync"
 
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog/v2"
+
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 /*

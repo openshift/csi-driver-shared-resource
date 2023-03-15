@@ -5,10 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )
 
 var webhookSetReplicas = 1

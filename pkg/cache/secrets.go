@@ -1,13 +1,13 @@
 package cache
 
 import (
-	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 )
 
 /*

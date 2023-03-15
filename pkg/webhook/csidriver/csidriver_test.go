@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"testing"
 
-	operatorv1 "github.com/openshift/api/operator/v1"
+	admissionctl "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	v1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	admissionctl "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	operatorv1 "github.com/openshift/api/operator/v1"
 )
 
 var (
