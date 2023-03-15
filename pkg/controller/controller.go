@@ -14,11 +14,11 @@ import (
 	"k8s.io/klog/v2"
 
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
+
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
-
-	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
 )
 
 const (

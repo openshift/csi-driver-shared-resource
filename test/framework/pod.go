@@ -16,10 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	kubexec "k8s.io/kubectl/pkg/cmd/exec"
 
+	operatorv1 "github.com/openshift/api/operator/v1"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/csidriver"
-
-	operatorv1 "github.com/openshift/api/operator/v1"
 )
 
 const (

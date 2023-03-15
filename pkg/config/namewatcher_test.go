@@ -1,9 +1,10 @@
 package config
 
 import (
-	"k8s.io/apimachinery/pkg/types"
 	"os"
 	"testing"
+
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestValidateSharedSecretOpenShiftName(t *testing.T) {

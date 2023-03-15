@@ -39,6 +39,7 @@ import (
 	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	fakeshareclientset "github.com/openshift/client-go/sharedresource/clientset/versioned/fake"
 	shareinformer "github.com/openshift/client-go/sharedresource/informers/externalversions"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 )

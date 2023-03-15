@@ -10,12 +10,14 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/csidriver"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
+	admissionctl "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
-	admissionctl "sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/csidriver"
 )
 
 const validContentType string = "application/json"

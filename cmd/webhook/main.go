@@ -10,12 +10,13 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/openshift/csi-driver-shared-resource/pkg/config"
-	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/csidriver"
-	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/dispatcher"
 	"github.com/spf13/cobra"
 
 	"k8s.io/klog/v2"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
+	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/csidriver"
+	"github.com/openshift/csi-driver-shared-resource/pkg/webhook/dispatcher"
 )
 
 const (

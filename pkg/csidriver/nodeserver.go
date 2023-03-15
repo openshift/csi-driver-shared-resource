@@ -24,17 +24,19 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	"github.com/openshift/csi-driver-shared-resource/pkg/config"
-	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
-	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"k8s.io/klog/v2"
 	"k8s.io/utils/mount"
+
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
+	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
+	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
 )
 
 var (

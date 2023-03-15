@@ -7,9 +7,6 @@ import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"golang.org/x/net/context"
 
 	authorizationv1 "k8s.io/api/authorization/v1"
@@ -21,6 +18,11 @@ import (
 	fakekubeclientset "k8s.io/client-go/kubernetes/fake"
 	fakekubetesting "k8s.io/client-go/testing"
 	"k8s.io/utils/mount"
+
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 )
 
 type fakeSharedSecretLister struct {

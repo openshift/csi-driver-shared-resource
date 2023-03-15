@@ -8,6 +8,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	shareapi "github.com/openshift/api/sharedresource/v1alpha1"
+
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
 )
 

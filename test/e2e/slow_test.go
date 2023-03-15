@@ -4,9 +4,10 @@
 package e2e
 
 import (
-	"github.com/openshift/csi-driver-shared-resource/test/framework"
 	"testing"
 	"time"
+
+	"github.com/openshift/csi-driver-shared-resource/test/framework"
 )
 
 // this requires up to a 22 minute delay for 2 separate relist
