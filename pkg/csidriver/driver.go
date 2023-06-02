@@ -278,7 +278,7 @@ func commonUpsertRanger(dv *driverVolume, key, value interface{}) error {
 		}
 	}
 	if len(podFile) > 0 {
-		if err = aw.Write(podFile); err != nil {
+		if err = aw.Write(podFile, nil); err != nil {
 			return err
 		}
 	}

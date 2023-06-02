@@ -129,10 +129,8 @@ func (s *SharedResourcesCSIDriverWebhook) authorizeSharedConfigMap(request admis
 // If the request includes an OldObject (from an update or deletion), it will be
 // preferred, otherwise, the Object will be preferred.
 func (s *SharedResourcesCSIDriverWebhook) renderPod(request admissionctl.Request) (*corev1.Pod, error) {
-	decoder, err := admissionctl.NewDecoder(scheme)
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	decoder := admissionctl.NewDecoder(scheme)
 	pod := &corev1.Pod{}
 	if len(request.OldObject.Raw) > 0 {
 		err = decoder.DecodeRaw(request.OldObject, pod)
@@ -144,10 +142,8 @@ func (s *SharedResourcesCSIDriverWebhook) renderPod(request admissionctl.Request
 }
 
 func (s *SharedResourcesCSIDriverWebhook) renderSharedSecret(request admissionctl.Request) (*sharev1alpha1.SharedSecret, error) {
-	decoder, err := admissionctl.NewDecoder(scheme)
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	decoder := admissionctl.NewDecoder(scheme)
 	sharedSecret := &sharev1alpha1.SharedSecret{}
 	if len(request.OldObject.Raw) > 0 {
 		err = decoder.DecodeRaw(request.OldObject, sharedSecret)
@@ -159,10 +155,8 @@ func (s *SharedResourcesCSIDriverWebhook) renderSharedSecret(request admissionct
 }
 
 func (s *SharedResourcesCSIDriverWebhook) renderSharedConfigMap(request admissionctl.Request) (*sharev1alpha1.SharedConfigMap, error) {
-	decoder, err := admissionctl.NewDecoder(scheme)
-	if err != nil {
-		return nil, err
-	}
+	var err error
+	decoder := admissionctl.NewDecoder(scheme)
 	sharedConfigMap := &sharev1alpha1.SharedConfigMap{}
 	if len(request.OldObject.Raw) > 0 {
 		err = decoder.DecodeRaw(request.OldObject, sharedConfigMap)
