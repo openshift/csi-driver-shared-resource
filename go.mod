@@ -3,26 +3,26 @@ module github.com/openshift/csi-driver-shared-resource
 go 1.19
 
 require (
-	github.com/container-storage-interface/spec v1.7.0
-	github.com/go-imports-organizer/goio v1.3.2
-	github.com/kubernetes-csi/csi-lib-utils v0.7.0
-	github.com/openshift/api v0.0.0-20230531161518-2346bf94f19e
-	github.com/openshift/client-go v0.0.0-20230503144108-75015d2347cb
-	github.com/prometheus/client_golang v1.15.1
+	github.com/container-storage-interface/spec v1.8.0
+	github.com/go-imports-organizer/goio v1.3.3
+	github.com/kubernetes-csi/csi-lib-utils v0.14.0
+	github.com/openshift/api v0.0.0-20230711095040-ca06f4a23b64
+	github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404
+	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
-	github.com/prometheus/common v0.42.0
-	github.com/spf13/cobra v1.6.0
+	github.com/prometheus/common v0.44.0
+	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/net v0.10.0
-	google.golang.org/grpc v1.51.0
+	golang.org/x/net v0.12.0
+	google.golang.org/grpc v1.56.2
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.27.2
-	k8s.io/apimachinery v0.27.2
-	k8s.io/client-go v0.27.2
-	k8s.io/klog/v2 v2.90.1
-	k8s.io/kubectl v0.27.1
-	k8s.io/kubernetes v1.27.1
-	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
+	k8s.io/api v0.27.3
+	k8s.io/apimachinery v0.27.3
+	k8s.io/client-go v1.5.2
+	k8s.io/klog/v2 v2.100.1
+	k8s.io/kubectl v0.27.3
+	k8s.io/kubernetes v1.27.3
+	k8s.io/utils v0.0.0-20230711102312-30195339c3c7
 	sigs.k8s.io/controller-runtime v0.15.0
 )
 
@@ -55,7 +55,7 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/liggitt/tabwriter v0.0.0-20181228230101-89fcab3d43de // indirect
@@ -72,29 +72,29 @@ require (
 	github.com/opencontainers/selinux v1.10.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/procfs v0.9.0 // indirect
+	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xlab/treeprint v1.1.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
-	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/oauth2 v0.5.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/term v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/mod v0.10.0 // indirect
+	golang.org/x/oauth2 v0.8.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/term v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect
+	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/apiserver v0.27.1 // indirect
-	k8s.io/cli-runtime v0.27.1 // indirect
-	k8s.io/cloud-provider v0.27.1 // indirect
-	k8s.io/component-base v0.27.2 // indirect
-	k8s.io/component-helpers v0.27.1 // indirect
+	k8s.io/apiserver v0.27.3 // indirect
+	k8s.io/cli-runtime v0.27.3 // indirect
+	k8s.io/cloud-provider v0.27.3 // indirect
+	k8s.io/component-base v0.27.3 // indirect
+	k8s.io/component-helpers v0.27.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
-	k8s.io/mount-utils v0.27.1 // indirect
+	k8s.io/mount-utils v0.27.3 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.13.2 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.14.1 // indirect
@@ -104,32 +104,32 @@ require (
 
 replace (
 	// these are needed since k8s.io/kubernetes cites v0.0.0 for these in its go.mod
-	k8s.io/api => k8s.io/api v0.27.1
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.27.1
-	k8s.io/apimachinery => k8s.io/apimachinery v0.27.1
-	k8s.io/apiserver => k8s.io/apiserver v0.27.1
-	k8s.io/cli-runtime => k8s.io/cli-runtime v0.27.1
-	k8s.io/client-go => k8s.io/client-go v0.27.1
-	k8s.io/cloud-provider => k8s.io/cloud-provider v0.27.1
-	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.27.1
-	k8s.io/code-generator => k8s.io/code-generator v0.27.1
-	k8s.io/component-base => k8s.io/component-base v0.27.1
-	k8s.io/component-helpers => k8s.io/component-helpers v0.27.1
-	k8s.io/controller-manager => k8s.io/controller-manager v0.27.1
-	k8s.io/cri-api => k8s.io/cri-api v0.27.1
-	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.27.1
+	k8s.io/api => k8s.io/api v0.27.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.27.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.27.3
+	k8s.io/apiserver => k8s.io/apiserver v0.27.3
+	k8s.io/cli-runtime => k8s.io/cli-runtime v0.27.3
+	k8s.io/client-go => k8s.io/client-go v0.27.3
+	k8s.io/cloud-provider => k8s.io/cloud-provider v0.27.3
+	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.27.3
+	k8s.io/code-generator => k8s.io/code-generator v0.27.3
+	k8s.io/component-base => k8s.io/component-base v0.27.3
+	k8s.io/component-helpers => k8s.io/component-helpers v0.27.3
+	k8s.io/controller-manager => k8s.io/controller-manager v0.27.3
+	k8s.io/cri-api => k8s.io/cri-api v0.27.3
+	k8s.io/csi-translation-lib => k8s.io/csi-translation-lib v0.27.3
 	// Fix "go: k8s.io/dynamic-resource-allocation@v0.0.0: invalid version: unknown revision v0.0.0"
-	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.27.1
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.27.1
-	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.27.1
-	k8s.io/kube-proxy => k8s.io/kube-proxy v0.27.1
-	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.27.1
-	k8s.io/kubectl => k8s.io/kubectl v0.27.1
-	k8s.io/kubelet => k8s.io/kubelet v0.27.1
-	k8s.io/kubernetes => k8s.io/kubernetes v1.27.1
-	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.27.1
-	k8s.io/metrics => k8s.io/metrics v0.27.1
-	k8s.io/mount-utils => k8s.io/mount-utils v0.27.1
-	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.27.1
-	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.27.1
+	k8s.io/dynamic-resource-allocation => k8s.io/dynamic-resource-allocation v0.27.3
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.27.3
+	k8s.io/kube-controller-manager => k8s.io/kube-controller-manager v0.27.3
+	k8s.io/kube-proxy => k8s.io/kube-proxy v0.27.3
+	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.27.3
+	k8s.io/kubectl => k8s.io/kubectl v0.27.3
+	k8s.io/kubelet => k8s.io/kubelet v0.27.3
+	k8s.io/kubernetes => k8s.io/kubernetes v1.27.3
+	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.27.3
+	k8s.io/metrics => k8s.io/metrics v0.27.3
+	k8s.io/mount-utils => k8s.io/mount-utils v0.27.3
+	k8s.io/pod-security-admission => k8s.io/pod-security-admission v0.27.3
+	k8s.io/sample-apiserver => k8s.io/sample-apiserver v0.27.3
 )

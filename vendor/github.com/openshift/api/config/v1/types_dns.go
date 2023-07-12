@@ -57,7 +57,7 @@ type DNSSpec struct {
 	// infrastructure provider for DNS.
 	// When omitted, this means the user has no opinion and the platform is left
 	// to choose reasonable defaults. These defaults are subject to change over time.
-	// +openshift:enable:FeatureSets=TechPreviewNoUpgrade
+	// +openshift:enable:FeatureSets=CustomNoUpgrade;TechPreviewNoUpgrade
 	// +optional
 	Platform DNSPlatformSpec `json:"platform,omitempty"`
 }
@@ -130,7 +130,7 @@ type AWSDNSSpec struct {
 	// privateZoneIAMRole contains the ARN of an IAM role that should be assumed when performing
 	// operations on the cluster's private hosted zone specified in the cluster DNS config.
 	// When left empty, no role should be assumed.
-	// +kubebuilder:validation:Pattern:=`^arn:(aws|aws-cn|aws-us-gov):iam:[0-9]{12}:role\/.*$`
+	// +kubebuilder:validation:Pattern:=`^arn:(aws|aws-cn|aws-us-gov):iam::[0-9]{12}:role\/.*$`
 	// +optional
 	PrivateZoneIAMRole string `json:"privateZoneIAMRole"`
 }
