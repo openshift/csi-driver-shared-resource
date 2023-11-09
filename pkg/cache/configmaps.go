@@ -46,7 +46,7 @@ func UpsertConfigMap(configmap *corev1.ConfigMap) {
 	sharecConfigMapList := client.ListSharedConfigMap()
 	for _, share := range sharecConfigMapList {
 		if share.Spec.ConfigMapRef.Namespace == configmap.Namespace && share.Spec.ConfigMapRef.Name == configmap.Name {
-			shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
+			shareConfigMapsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 		}
 	}
 	// otherwise process any share that arrived after the configmap
