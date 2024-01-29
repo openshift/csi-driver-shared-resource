@@ -3,4 +3,8 @@
 # https://docs.snyk.io/snyk-cli/commands/ignore
 exclude:
   global:
-    - vendor/**
+    # all yamls, including the pod ones, in our examples directory are simply samples for users trying shared resources out; these artifacts are not created by any of the images
+    - examples/**
+    # this pod.yaml in apimachinery is just another sample that is never created by our images; you'll see it creates the pod "some-name" in the default namespace
+    - vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
+    - unpacked_remote_sources/cachito-gomod-with-deps/app/vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
