@@ -1,9 +1,9 @@
 reviewers:
 - otaviof
-- coreydaley
+- sayan-biswas
 approvers:
 - adambkaplan
 - gabemontero
-- coreydaley
+- sayan-biswas
 component: Storage
 subcomponent: Shared Resource CSI Driver
