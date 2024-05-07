@@ -94,7 +94,7 @@ v4.10 or higher, and enable the
      volumes:
        - name: shared-config
          csi:
-           readOnly: true
+           readOnly: true # required to be true
            driver: csi.sharedresource.openshift.io
            volumeAttributes:
              sharedConfigMap: share-default-config
@@ -120,6 +120,7 @@ See also:
 - Survival of shared resource data with CSI driver restarts/upgrades.
 - Multiple `SharedSecret`/`SharedConfig` volumes within a `Pod`. Also supports
   nested volume mounts within a container.
+- Reserve a cluster-scoped share name to a specific `Secret` or `ConfigMap`.
 
 The following CSI interfaces are implemented:
 

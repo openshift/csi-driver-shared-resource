@@ -67,6 +67,7 @@ func startsWithOpenShift(shareName string) bool {
 }
 
 func innerValidate(shareName, refNamespace, refName string, ok bool, v types.NamespacedName) bool {
+	// TODO: Make this configurable, do not skip reservation logic if resource share name does not start with "openshift*".
 	if !startsWithOpenShift(shareName) {
 		return true
 	}
