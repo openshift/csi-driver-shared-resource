@@ -95,3 +95,48 @@ in real time.
 
 Conversely, if the kubelet is still in a retry cycle trying to launch a Pod with a `SharedConfigMap` or `SharedSecret` reference, if now resolved permission issues were the only thing preventing
 a mount, the mount should then succeed.  Of course, as kubelet retry vs. controller re-list is the polling mechanism, and it is more frequent, the change in results would be more immediate in this case.
+
+# Other Secret Providers/Operators
+
+The Shared Resource CSI driver has similar features and technical capabilities as
+other "secrets operator" projects. This CSI driver is complementary to many of these
+projects, especially those designed to fetch secrets from external providers such as
+HashiCorp Vault, AWS, Azure, and other cloud provider secret storage.
+
+## Can't I use the External Secrets Operator to share resources in my cluster?
+
+For Secrets, yes. The [External Secrets Operator](https://external-secrets.io) can
+share Secrets through its [Kubernetes provider](https://external-secrets.io/latest/provider/kubernetes/).
+However, there are several technical differences between this and External Secrets
+operator - see the "Feature Comparison" section below.
+
+## Can I share resources with the Secret Store CSI Driver?
+
+Not at present. Like this project, the [Secret Store CSI Driver](https://secrets-store-csi-driver.sigs.k8s.io)
+allows secrets to be synced and mounted with `CSI` volumes. A separate [provider](https://secrets-store-csi-driver.sigs.k8s.io/providers)
+is responsible for fetching and syncing the referenced data. As of this writing, no
+provider syncs data that explicitly exists within a Kubernetes cluster.
+
+Early in this project's history, we considered implementing a provider for the
+Secret Store CSI Driver. This was declined in favor of the current RBAC model and
+implementing the CSI interfaces required for `Ephemeral` volume lifecycle mode.
+
+## Can I deploy the Shared Resource CSI Driver and Secret Store CSI Driver on the same cluster?
+
+Yes. The Shared Resource CSI Driver can be deployed side by side with any other CSI
+driver, or other tools that sync external data onto a cluster.
+
+## Feature Comparison
+
+| Feature | Shared Resources | External Secrets | Secret Store CSI |
+| ------- | ---------------- | ---------------- | ---------------- |
+| Share Secrets | ✅  | ✅ | ✅ External |
+| Share ConfigMaps | ✅ | ❌ | ❌ |
+| Share in same Kubernetes Cluster | ✅ | ✅ | ❌ External |
+| Share across Kubernetes Clusters | ❌ | ✅ | ✅ External |
+| Sync data | ✅ Resource watching | ✅ Polling | ✅ Alpha feature |
+| Mount with "mirror" `Secret` object | ❌ | ✅ | ✅ Optional |
+| Mount in pods with CSI volume | ✅ | ❌ | ✅ |
+| Share subset of keys in `Secret` | ❌ | ✅ | ✅ Provider specific |
+| Control access to `Secret` data with RBAC by Namespace | ✅ | ✅ | ✅ |
+| Control access to `Secret` data with RBAC by User/ServiceAccount | ✅ | ❌ | ❌ |
