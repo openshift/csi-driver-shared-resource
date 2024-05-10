@@ -28,7 +28,7 @@ ifeq ($(TARGET_GOARCH), amd64)
 	RACE = -race
 endif
 
-GOFLAGS ?= -a -mod=vendor $(RACE)
+GOFLAGS ?= -a -mod=vendor -buildvcs=false $(RACE)
 
 .DEFAULT_GOAL := help
 
