@@ -21,7 +21,20 @@ v4.10 or higher, and enable the
 
 ## How To Use
 
-1. Create a `Secret` or `ConfigMap` that you wish to share in a "source" namespace.
+Typically there are two individuals/personas involved when sharing resources:
+
+- A "resource owner" - a platform engineer or other person granted the 
+  [admin role](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles)
+  in multiple application namespaces. This could also be a cluster administrator.
+- A "resource consumer" - an application developer who is granted the
+  [edit role](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#user-facing-roles)
+  in a namespace.
+
+Sharing resources is done as follows:
+
+1. The resource owner creates a `Secret` or `ConfigMap` to be shared in a
+   "source" namespace. This could also be created by a controller or other system
+   component.
 
    ```yaml
    apiVersion: v1
@@ -33,7 +46,8 @@ v4.10 or higher, and enable the
      config.txt: "Hello world!"
    ```
 
-2. Create a `SharedSecret` or `SharedConfigMap` instance to make your resource shareable:
+2. The resource owner creates a `SharedSecret` or `SharedConfigMap` instance to
+   make the resource shareable:
 
    ```yaml
    apiVersion: sharedresource.openshift.io/v1alpha1
@@ -46,7 +60,8 @@ v4.10 or higher, and enable the
        namespace: default
    ```
 
-3. Grant the desired `SeviceAccount` in the "target" namespace permission to use the shared resource above:
+3. The resource owner grants the desired `SeviceAccount` in the "target"
+   namespace permission to use the shared resource above:
 
    ```yaml
    ---
@@ -80,7 +95,8 @@ v4.10 or higher, and enable the
        namespace: app-namespace
    ```
 
-4. Mount the shared resource into a `Pod` (or other resource that accepts `CSI` Volumes):
+4. The resource consumer mounts the shared resource into a `Pod` (or other
+   resource that accepts `CSI` Volumes):
 
    ```yaml
    apiVersion: v1
@@ -125,7 +141,8 @@ See also:
 The following CSI interfaces are implemented:
 
 - **Identity Service**: GetPluginInfo, GetPluginCapabilities, Probe
-- **Node Service**: NodeGetInfo, NodeGetCapabilities, NodePublishVolume, NodeUnpublishVolume
+- **Node Service**: NodeGetInfo, NodeGetCapabilities, NodePublishVolume,
+  NodeUnpublishVolume
 - **Controller Service**: _not implemented_.
 
 NOTE: see [CSI Volume Specifics](docs/csi.md) for restrictions around these features for read-only Volumes.
