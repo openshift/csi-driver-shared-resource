@@ -1,11 +1,22 @@
-FROM registry.access.redhat.com/ubi9/go-toolset:1.20.12 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset:1.21.11-7 AS builder
 WORKDIR /go/src/github.com/openshift/csi-driver-shared-resource
 COPY . .
 RUN rm -rf /go/src/github.com/openshift/csi-driver-shared-resource/examples
 RUN rm -f /go/src/github.com/openshift/csi-driver-shared-resource/vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 RUN make build
 
-FROM registry.access.redhat.com/ubi9/ubi:9.4
+FROM registry.access.redhat.com/ubi9/ubi:9.4-1181
 COPY --from=builder /go/src/github.com/openshift/csi-driver-shared-resource/_output/csi-driver-shared-resource /usr/bin/
 ENTRYPOINT []
 CMD ["/usr/bin/csi-driver-shared-resource"]
+
+LABEL \
+	com.redhat.component="openshift-builds-shared-resource" \
+	name="openshift-builds/csi-driver-shared-resource" \
+	version="v1.1.0" \
+	summary="Red Hat OpenShift Builds Shared Resource" \
+	maintainer="openshift-builds@redhat.com" \
+	description="Red Hat OpenShift Builds CSI Driver Shared Resource" \
+	io.k8s.description="Red Hat OpenShift Builds CSI Driver Shared Resource" \
+	io.k8s.display-name="Red Hat OpenShift Builds Shared Resource" \
+	io.openshift.tags="builds,shared-resources,csi-driver"
