@@ -27,6 +27,8 @@ spec:
     value: .
   - name: revision
     value: '{{revision}}'
+  - name: hermetic
+    value: "true"
   pipelineSpec:
     finally:
     - name: show-sbom
