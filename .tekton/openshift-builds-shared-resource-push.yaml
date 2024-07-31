@@ -29,8 +29,6 @@ spec:
     value: '{{revision}}'
   - name: output-image
     value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds/openshift-builds-shared-resource:{{revision}}
-  - name: image-expires-after
-    value: 5d
   - name: dockerfile
     value: .konflux/shared-resource/Dockerfile
   - name: build-source-image
