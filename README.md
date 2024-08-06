@@ -46,8 +46,7 @@ Sharing resources is done as follows:
      config.txt: "Hello world!"
    ```
 
-2. The resource owner creates a `SharedSecret` or `SharedConfigMap` instance to
-   make the resource shareable:
+2. The resource owner should create a corresponding `SharedSecret` or `SharedConfigMap` instance to make the resource shareable:
 
    ```yaml
    apiVersion: sharedresource.openshift.io/v1alpha1
@@ -60,7 +59,43 @@ Sharing resources is done as follows:
        namespace: default
    ```
 
-3. The resource owner grants the desired `SeviceAccount` in the "target"
+3. The resource owner then creates a `Clusterrole` and `Clusterrolebinding` to grant permission 
+to the `ServiceAccount` of `csi-driver-shared-resource` to access 
+the given resources.
+
+   ```yaml
+   ---
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: ClusterRole
+   metadata:
+     name: shared-resource-secret-configmap-share-watch-sar-create
+   rules:
+     - apiGroups: [""]
+       resources: ["configmaps"]
+       resourceNames: ["shared-config"]
+       verbs: ["get", "list", "watch"]
+     - apiGroups: ["sharedresource.openshift.io"]
+       resources: ["sharedconfigmaps", "sharedsecrets"]
+       verbs: ["get", "list", "watch"]
+     - apiGroups: ["authorization.k8s.io"]
+       resources: ["subjectaccessreviews"]
+       verbs: ["create"]
+   ---
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: shared-resource-secret-configmap-share-watch-sar-create
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: ClusterRole
+      name: shared-resource-secret-configmap-share-watch-sar-create
+    subjects:
+    - kind: ServiceAccount
+      name: csi-driver-shared-resource
+      namespace: openshift-builds
+    ```
+
+4. The resource owner grants the desired `SeviceAccount` in the "target"
    namespace permission to use the shared resource above:
 
    ```yaml
@@ -95,7 +130,7 @@ Sharing resources is done as follows:
        namespace: app-namespace
    ```
 
-4. The resource consumer mounts the shared resource into a `Pod` (or other
+5. The resource consumer mounts the shared resource into a `Pod` (or other
    resource that accepts `CSI` Volumes):
 
    ```yaml
