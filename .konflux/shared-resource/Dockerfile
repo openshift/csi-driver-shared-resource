@@ -15,7 +15,7 @@ RUN rm -f /vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 
 RUN CGO_ENABLED=0 GO111MODULE=on go build -a -mod=vendor -o openshift-builds-shared-resource ./cmd/csidriver
 
-FROM registry.access.redhat.com/ubi9/ubi@sha256:1ee4d8c50d14d9c9e9229d9a039d793fcbc9aa803806d194c957a397cf1d2b17
+FROM registry.access.redhat.com/ubi9/ubi@sha256:5ae30df1cf22d3f805b031eaf88218f6e084049cb30a8d22361f2a4f13eaa511
 
 COPY --from=builder /opt/app-root/src/openshift-builds-shared-resource .
 COPY LICENSE /licenses/
