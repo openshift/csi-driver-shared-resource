@@ -8,7 +8,7 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "pull_request" &&
-      target_branch == "builds-1.1" &&
+      target_branch == "builds-1.2" &&
       (
         files.all.exists(x, x.matches('go.mod|go.sum|.konflux/shared-resource/Dockerfile')) ||
         files.all.exists(x, x.matches('pkg/csidriver|pkg/config|pkg/cache|pkg/consts|pkg/controller|pkg/metrics|cmd/csidriver|cmd/util')) ||
@@ -16,8 +16,8 @@ metadata:
       )
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: openshift-builds-1-1
-    appstudio.openshift.io/component: openshift-builds-shared-resource-1-1
+    appstudio.openshift.io/application: openshift-builds-1-2
+    appstudio.openshift.io/component: openshift-builds-shared-resource-1-2
     pipelines.appstudio.openshift.io/type: build
   name: openshift-builds-shared-resource-on-pull-request
   namespace: rh-openshift-builds-tenant
@@ -28,7 +28,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds-shared-resource-1-1:on-pr-{{revision}}
+    value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds-shared-resource-1-2:on-pr-{{revision}}
   - name: image-expires-after
     value: 5d
   - name: dockerfile
@@ -118,6 +118,9 @@ spec:
         type: string
       - default:
           - linux/x86_64
+          - linux/arm64
+          - linux/ppc64le
+          - linux/s390x
         description: List of platforms to build the container images on. The available
           set of values is determined by the configuration of the multi-platform-controller.
         name: build-platforms
