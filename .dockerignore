@@ -1,0 +1,10 @@
+/**
+!go.mod
+!go.sum
+!LICENSE
+!/config
+!/cmd
+!/internal
+!/pkg
+!/vendor
+!/must-gather
