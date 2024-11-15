@@ -41,97 +41,98 @@ Sharing resources is done as follows:
    kind: ConfigMap
    metadata:
      name: shared-config
-     namespace: default # This can be any desired "source" namespace
+     namespace: test-share-source # This can be any desired "source" namespace
    data:
      config.txt: "Hello world!"
    ```
 
-2. The resource owner should create a corresponding `SharedSecret` or `SharedConfigMap` instance to make the resource shareable:
+2. The resource owner creates a corresponding `SharedSecret` or `SharedConfigMap` instance to
+   make the resource shareable. The resource owner should also create a `ClusterRole` that grants
+   subjects permission to `use` the referenced shared resource.
 
    ```yaml
+   ---
    apiVersion: sharedresource.openshift.io/v1alpha1
    kind: SharedConfigMap
    metadata:
-     name: share-default-config
+     name: share-test-config
    spec:
      configMapRef:
        name: shared-config
-       namespace: default
-   ```
-
-3. The resource owner then creates a `Clusterrole` and `Clusterrolebinding` to grant permission 
-to the `ServiceAccount` of `csi-driver-shared-resource` to access 
-the given resources.
-
-   ```yaml
+       namespace: test-share-source # The "source" namespace"
    ---
    apiVersion: rbac.authorization.k8s.io/v1
    kind: ClusterRole
    metadata:
-     name: shared-resource-secret-configmap-share-watch-sar-create
-   rules:
-     - apiGroups: [""]
-       resources: ["configmaps"]
-       resourceNames: ["shared-config"]
-       verbs: ["get", "list", "watch"]
-     - apiGroups: ["sharedresource.openshift.io"]
-       resources: ["sharedconfigmaps", "sharedsecrets"]
-       verbs: ["get", "list", "watch"]
-     - apiGroups: ["authorization.k8s.io"]
-       resources: ["subjectaccessreviews"]
-       verbs: ["create"]
-   ---
-    apiVersion: rbac.authorization.k8s.io/v1
-    kind: ClusterRoleBinding
-    metadata:
-      name: shared-resource-secret-configmap-share-watch-sar-create
-    roleRef:
-      apiGroup: rbac.authorization.k8s.io
-      kind: ClusterRole
-      name: shared-resource-secret-configmap-share-watch-sar-create
-    subjects:
-    - kind: ServiceAccount
-      name: csi-driver-shared-resource
-      namespace: openshift-builds
-    ```
-
-4. The resource owner grants the desired `SeviceAccount` in the "target"
-   namespace permission to use the shared resource above:
-
-   ```yaml
-   ---
-   apiVersion: rbac.authorization.k8s.io/v1
-   kind: Role
-   metadata:
-     name: use-shared-default-config
-     namespace: app-namespace # This is the "target" namespace
+     name: shared-configmap-use-share-test-config
    rules:
      - apiGroups:
          - sharedresource.openshift.io
        resources:
          - sharedconfigmaps
        resourceNames:
-         - share-default-config
+         - share-test-config
        verbs:
          - use
+   ```
+
+3. The resource owner then creates a `Role` and `RoleBinding` in the source namespace that grants
+   the Shared Resource CSI driver permission to read and watch the referenced ConfigMap:
+
+   ```yaml
+   ---
+   apiVersion: rbac.authorization.k8s.io/v1
+   kind: Role
+   metadata:
+     name: shared-test-config
+     namespace: test-share-source # This is the source namespace
+   rules:
+     - apiGroups: [""]
+       resources: ["configmaps"]
+       resourceNames: ["shared-config"]
+       verbs: ["get", "list", "watch"]
+   ---
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: RoleBinding
+    metadata:
+      name: shared-test-config
+      namespace: test-share-source # This is the source namespace
+    roleRef:
+      apiGroup: rbac.authorization.k8s.io
+      kind: Role
+      name: shared-test-config
+    subjects:
+      # The service account for the Shared Resource CSI driver DaemonSet must be listed here.
+      # When deployed with Builds for OpenShift, the service account name is
+      # `csi-driver-shared-resource`, and the namespace is the same one where the Builds for
+      # OpenShift operator is deployed.
+      - kind: ServiceAccount
+        name: csi-driver-shared-resource
+        namespace: openshift-builds
+    ```
+
+4. Finally, the resource owner grants the desired `SeviceAccount` in the "target"
+   namespace permission to use the shared resource above:
+
+   ```yaml
    ---
    apiVersion: rbac.authorization.k8s.io/v1
    kind: RoleBinding
    metadata:
-     name: use-shared-default-config
+     name: use-shared-config
      namespace: app-namespace
    roleRef:
      apiGroup: rbac.authorization.k8s.io
-     kind: Role
-     name: use-shared-default-config
+     kind: ClusterRole
+     name: use-shared-config
    subjects:
      - kind: ServiceAccount
-       name: default
-       namespace: app-namespace
+       name: default # or other ServiceAccount specific to the application
+       namespace: app-namespace # This is the "target" namespace
    ```
 
-5. The resource consumer mounts the shared resource into a `Pod` (or other
-   resource that accepts `CSI` Volumes):
+5. The resource consumer mounts the shared resource into a `Pod` (or other resource that accepts
+   `CSI` Volumes):
 
    ```yaml
    apiVersion: v1
@@ -148,7 +149,7 @@ the given resources.
            readOnly: true # required to be true
            driver: csi.sharedresource.openshift.io
            volumeAttributes:
-             sharedConfigMap: share-default-config
+             sharedConfigMap: share-test-config # This must match the name of the SharedConfigMap
    ```
 
 See also:
