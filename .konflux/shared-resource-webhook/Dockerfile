@@ -1,10 +1,12 @@
 FROM registry.access.redhat.com/ubi9/go-toolset@sha256:6ec9c3ce36c929ff98c1e82a8b7fb6c79df766d1ad8009844b59d97da9afed43 AS builder
 
+ENV GOEXPERIMENT=strictfipsruntime
+
 COPY . .
 
 RUN rm -f /vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 
-RUN CGO_ENABLED=1 GO111MODULE=on go build -a -mod=vendor -buildvcs=false -ldflags="-s -w" -o openshift-builds-shared-resource-webhook ./cmd/webhook
+RUN CGO_ENABLED=1 GO111MODULE=on go build -a -mod=vendor -buildvcs=false -ldflags="-s -w" -tags="strictfipsruntime" -o openshift-builds-shared-resource-webhook ./cmd/webhook
 
 FROM registry.access.redhat.com/ubi9/ubi-micro@sha256:becdf7fff4509ee81df982000d0adef858a7ae7995dfb7d774b9ded6a461ebad
 
