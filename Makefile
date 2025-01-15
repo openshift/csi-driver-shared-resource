@@ -28,7 +28,7 @@ ifeq ($(TARGET_GOARCH), amd64)
 	RACE = -race
 endif
 
-GOFLAGS ?= -a -mod=vendor -buildvcs=false $(RACE)
+GOFLAGS ?= -a -mod=vendor -buildvcs=false -tags="strictfipsruntime" $(RACE)
 
 .DEFAULT_GOAL := help
 
@@ -65,11 +65,11 @@ verify: ## Run verifications. Example: make verify
 .PHONY: verify
 
 build: ## Build the executable. Example: make build
-	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go build $(GOFLAGS) -o _output/csi-driver-shared-resource ./cmd/csidriver
+	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) GOEXPERIMENT=strictfipsruntime CGO_ENABLED=1 go build $(GOFLAGS) -o _output/csi-driver-shared-resource ./cmd/csidriver
 .PHONY: build
 
 build-webhook: ## Build the executable. Example: make build
-	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) go build $(GOFLAGS) -o _output/csi-driver-shared-resource-webhook ./cmd/webhook
+	env GOOS=$(TARGET_GOOS) GOARCH=$(TARGET_GOARCH) GOEXPERIMENT=strictfipsruntime CGO_ENABLED=1 go build $(GOFLAGS) -o _output/csi-driver-shared-resource-webhook ./cmd/webhook
 .PHONY: build-webhook
 
 build-image: ## Build the images and push them to the remote registry. Example: make build-image
