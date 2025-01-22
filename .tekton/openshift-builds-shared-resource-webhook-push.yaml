@@ -35,12 +35,6 @@ spec:
     value: "true"
   - name: hermetic
     value: "true"
-  - name: build-platforms
-    value:
-      - linux/x86_64
-      - linux/arm64
-      - linux/ppc64le
-      - linux/s390x
   - name: prefetch-input
     value: '{"packages": [{"type": "gomod"}]}'
   pipelineSpec:
