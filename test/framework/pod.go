@@ -233,7 +233,7 @@ func ExecPod(t *TestArgs) {
 			out := &bytes.Buffer{}
 			errOut := &bytes.Buffer{}
 			remoteExecutor := kubexec.DefaultRemoteExecutor{}
-			err := remoteExecutor.Execute("POST", req.URL(), kubeConfig, nil, out, errOut, false, nil)
+			err := remoteExecutor.Execute(req.URL(), kubeConfig, nil, out, errOut, false, nil)
 
 			if err != nil {
 				t.T.Logf("%s: error with remote exec: %s, errOut: %s", time.Now().String(), err.Error(), errOut)
