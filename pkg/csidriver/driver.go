@@ -213,7 +213,7 @@ func commonRangerProceedFilter(dv *driverVolume, key interface{}) bool {
 		}
 		compareKey = objcache.BuildKey(sharedConfigMap.Spec.ConfigMapRef.Namespace, sharedConfigMap.Spec.ConfigMapRef.Name)
 	default:
-		klog.Warningf("commonRangerProceedFilter unknown share type for %s:%s:%s: %s", dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID())
+		klog.Warningf("commonRangerProceedFilter unknown share type for %s:%s:%s", dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID())
 		return false
 	}
 	keyStr := key.(string)
@@ -795,7 +795,7 @@ func (d *driver) loadVolsFromDisk() error {
 		}
 		dv.Lock = &sync.Mutex{}
 		if filepath.Base(fileName) != dv.GetVolID() {
-			klog.Warningf("loadVolsFromDisk file %s had vol id %s - corrupted !!!", dv.GetVolID())
+			klog.Warningf("loadVolsFromDisk file had vol id %s - corrupted !!!", dv.GetVolID())
 			return nil
 		}
 		klog.V(2).Infof("loadVolsFromDisk storing with key %s dv %#v", dv.GetVolID(), dv)
