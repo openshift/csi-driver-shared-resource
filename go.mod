@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/container-storage-interface/spec v1.8.0
-	github.com/go-imports-organizer/goio v1.3.3
+	github.com/go-imports-organizer/goio v1.5.0
 	github.com/kubernetes-csi/csi-lib-utils v0.14.0
 	github.com/openshift/api v0.0.0-20230711095040-ca06f4a23b64
 	github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404
@@ -79,7 +79,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
-	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/mod v0.21.0 // indirect
 	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
