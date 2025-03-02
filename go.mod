@@ -3,7 +3,7 @@ module github.com/openshift/csi-driver-shared-resource
 go 1.22.0
 
 require (
-	github.com/container-storage-interface/spec v1.8.0
+	github.com/container-storage-interface/spec v1.11.0
 	github.com/go-imports-organizer/goio v1.3.3
 	github.com/kubernetes-csi/csi-lib-utils v0.14.0
 	github.com/openshift/api v0.0.0-20230711095040-ca06f4a23b64
