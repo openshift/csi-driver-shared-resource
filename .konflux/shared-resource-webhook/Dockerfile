@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/go-toolset@sha256:6ec9c3ce36c929ff98c1e82a8b7fb6c79df766d1ad8009844b59d97da9afed43 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset@sha256:8a9e1465ae487fa2b4a94d2baa249a8d59fb3d7e6884a7b22c783f494f4cfb01 AS builder
 
 COPY . .
 
@@ -6,7 +6,7 @@ RUN rm -f /vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 
 RUN CGO_ENABLED=0 GO111MODULE=on go build -a -mod=vendor -o openshift-builds-shared-resource-webhook ./cmd/webhook
 
-FROM registry.access.redhat.com/ubi9/ubi-micro@sha256:f6e0a71b7e0875b54ea559c2e0a6478703268a8d4b8bdcf5d911d0dae76aef51
+FROM registry.redhat.io/ubi9/ubi-micro@sha256:dca8bc186bb579f36414c6ad28f1dbeda33e5cf0bd5fc1c51430cc578e25f819
 
 COPY --from=builder /opt/app-root/src/openshift-builds-shared-resource-webhook .
 COPY LICENSE /licenses/
