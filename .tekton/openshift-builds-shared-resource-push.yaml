@@ -8,17 +8,17 @@ metadata:
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" &&
-      target_branch == "master" &&
+      target_branch == "builds-1.4" &&
       (
         files.all.exists(x, x.matches('go.mod|go.sum|.konflux/shared-resource/Dockerfile')) ||
         files.all.exists(x, x.matches('pkg/csidriver|pkg/config|pkg/cache|pkg/consts|pkg/controller|pkg/metrics|cmd/csidriver|cmd/util')) ||
         files.all.exists(x, x.matches('.tekton/openshift-builds-shared-resource-push.yaml'))
       )
   labels:
-    appstudio.openshift.io/application: openshift-builds
-    appstudio.openshift.io/component: openshift-builds-shared-resource
+    appstudio.openshift.io/application: openshift-builds-1-4
+    appstudio.openshift.io/component: openshift-builds-shared-resource-1-4
     pipelines.appstudio.openshift.io/type: build
-  name: openshift-builds-shared-resource-on-push
+  name: openshift-builds-shared-resource-1-4-on-push
   namespace: rh-openshift-builds-tenant
 spec:
   params:
@@ -27,7 +27,7 @@ spec:
   - name: revision
     value: '{{revision}}'
   - name: output-image
-    value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds-shared-resource:{{revision}}
+    value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds-shared-resource-1-4:{{revision}}
   - name: dockerfile
     value: .konflux/shared-resource/Dockerfile
   - name: build-source-image
