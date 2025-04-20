@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/go-imports-organizer/goio v1.3.3
-	github.com/kubernetes-csi/csi-lib-utils v0.14.0
+	github.com/kubernetes-csi/csi-lib-utils v0.21.0
 	github.com/openshift/api v0.0.0-20230711095040-ca06f4a23b64
 	github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404
 	github.com/prometheus/client_golang v1.16.0
