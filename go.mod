@@ -13,7 +13,7 @@ require (
 	github.com/prometheus/common v0.44.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.40.0
 	google.golang.org/grpc v1.63.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.8
