@@ -23,7 +23,7 @@ require (
 	k8s.io/client-go v1.5.2
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.30.8
-	k8s.io/kubernetes v1.30.8
+	k8s.io/kubernetes v1.33.1
 	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 	sigs.k8s.io/controller-runtime v0.18.6
 )
@@ -133,7 +133,7 @@ replace (
 	k8s.io/kube-scheduler => k8s.io/kube-scheduler v0.30.8
 	k8s.io/kubectl => k8s.io/kubectl v0.30.8
 	k8s.io/kubelet => k8s.io/kubelet v0.30.8
-	k8s.io/kubernetes => k8s.io/kubernetes v1.30.8
+	k8s.io/kubernetes => k8s.io/kubernetes v1.33.1
 	k8s.io/legacy-cloud-providers => k8s.io/legacy-cloud-providers v0.30.8
 	k8s.io/metrics => k8s.io/metrics v0.30.8
 	k8s.io/mount-utils => k8s.io/mount-utils v0.30.8
