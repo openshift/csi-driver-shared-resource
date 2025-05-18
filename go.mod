@@ -9,7 +9,7 @@ require (
 	github.com/go-imports-organizer/goio v1.3.3
 	github.com/kubernetes-csi/csi-lib-utils v0.14.0
 	github.com/openshift/api v0.0.0-20250327202946-4521905c611e
-	github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404
+	github.com/openshift/client-go 9ea84fa6431b
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.55.0
