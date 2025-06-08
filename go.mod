@@ -24,7 +24,7 @@ require (
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.30.8
 	k8s.io/kubernetes v1.30.8
-	k8s.io/utils v0.0.0-20230726121419-3b25d923346b
+	k8s.io/utils 4c0f3b243397
 	sigs.k8s.io/controller-runtime v0.18.6
 )
 
