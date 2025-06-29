@@ -8,8 +8,8 @@ require (
 	github.com/container-storage-interface/spec v1.9.0
 	github.com/go-imports-organizer/goio v1.3.3
 	github.com/kubernetes-csi/csi-lib-utils v0.14.0
-	github.com/openshift/api v0.0.0-20250327202946-4521905c611e
-	github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404
+	github.com/openshift/api v0.0.0-20250620092249-a8cbc218cd2c
+	github.com/openshift/client-go v0.0.0-20250623095455-7b2007868c76
 	github.com/prometheus/client_golang v1.19.1
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.55.0
@@ -24,7 +24,7 @@ require (
 	k8s.io/klog/v2 v2.130.1
 	k8s.io/kubectl v0.32.3
 	k8s.io/kubernetes v1.32.3
-	k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
+	k8s.io/utils v0.0.0-20241210054802-24370beab758
 	sigs.k8s.io/controller-runtime v0.20.2
 )
 
@@ -101,10 +101,10 @@ require (
 	k8s.io/controller-manager v0.32.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // indirect
 	k8s.io/mount-utils v0.30.8 // indirect
-	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
+	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
 	sigs.k8s.io/kustomize/api v0.18.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.18.1 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.6.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
