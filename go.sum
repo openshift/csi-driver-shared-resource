@@ -157,8 +157,8 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/selinux v1.11.1 h1:nHFvthhM0qY8/m+vfhJylliSshm8G1jJ2jDMcgULaH8=
 github.com/opencontainers/selinux v1.11.1/go.mod h1:E5dMC3VPuVvVHDYmi78qvhJp8+M586T4DlDRYpFkyec=
-github.com/openshift/api v0.0.0-20250327202946-4521905c611e h1:RUKfJ9SPZF6NFoE2tVfymrCrztFG3sUTlz5YLGhFxN8=
-github.com/openshift/api v0.0.0-20250327202946-4521905c611e/go.mod h1:yk60tHAmHhtVpJQo3TwVYq2zpuP70iJIFDCmeKMIzPw=
+github.com/openshift/api v0.0.0-20250627132400-41708f612339 h1:yYOcb/3hIyYG94/M4YnSU/gzx6ybwrOQv5zyyCqvfwM=
+github.com/openshift/api v0.0.0-20250627132400-41708f612339/go.mod h1:yk60tHAmHhtVpJQo3TwVYq2zpuP70iJIFDCmeKMIzPw=
 github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404 h1:7Q/RkeK4UHpB25nu7z03tSFlWgWjcnAUbjwI1Ud22H4=
 github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404/go.mod h1:8Hq3t7Ba02Z0sjDGtTCARPXylxbOyzFrbwiqb1ViWMA=
 github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=
