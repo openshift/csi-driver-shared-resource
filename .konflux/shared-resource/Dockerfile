@@ -1,18 +1,20 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.23 AS builder
+FROM registry.redhat.io/ubi9/go-toolset:1.23 AS builder
+
+WORKDIR /opt/app-root/src
 
 ENV GOEXPERIMENT=strictfipsruntime
 
 COPY . .
 
-RUN rm -f /vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
+RUN rm -f ./vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 
 RUN CGO_ENABLED=1 GO111MODULE=on go build -a -mod=vendor -buildvcs=false -ldflags="-s -w" -tags="strictfipsruntime" -o openshift-builds-shared-resource ./cmd/csidriver
 
-FROM registry.redhat.io/ubi9@sha256:ea57285741f007e83f2ee20423c20b0cbcce0b59cc3da027c671692cc7efe4dd
+FROM registry.redhat.io/ubi9:9.6
 
 WORKDIR /
 
-COPY --from=builder /openshift-builds-shared-resource .
+COPY --from=builder /opt/app-root/src/openshift-builds-shared-resource .
 COPY LICENSE /licenses/
 
 ENTRYPOINT ["./openshift-builds-shared-resource"]
