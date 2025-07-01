@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9/go-toolset@sha256:8a9e1465ae487fa2b4a94d2baa249a8d59fb3d7e6884a7b22c783f494f4cfb01 AS builder
+FROM registry.access.redhat.com/ubi9/go-toolset@sha256:94ed5700c85822759e23cb1ddfa42f2485a56e709106e7060905588f62c46f22 AS builder
 
 COPY . .
 
