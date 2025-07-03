@@ -1,4 +1,4 @@
-FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.23 AS builder
+FROM registry.redhat.io/ubi9/go-toolset:1.23 AS builder
 
 ENV GOEXPERIMENT=strictfipsruntime
 
@@ -12,7 +12,7 @@ FROM registry.access.redhat.com/ubi9-minimal:9.6
 
 WORKDIR /
 
-COPY --from=builder /openshift-builds-shared-resource .
+COPY --from=builder /opt/app-root/src/openshift-builds-shared-resource .
 COPY LICENSE /licenses/
 
 ENTRYPOINT ["./openshift-builds-shared-resource"]
