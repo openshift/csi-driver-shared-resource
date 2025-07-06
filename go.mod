@@ -6,7 +6,7 @@ toolchain go1.23.3
 
 require (
 	github.com/container-storage-interface/spec v1.9.0
-	github.com/go-imports-organizer/goio v1.3.3
+	github.com/go-imports-organizer/goio v1.5.0
 	github.com/kubernetes-csi/csi-lib-utils v0.14.0
 	github.com/openshift/api v0.0.0-20250327202946-4521905c611e
 	github.com/openshift/client-go v0.0.0-20230705133330-7f808ad59404
