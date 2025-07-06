@@ -56,7 +56,7 @@ github.com/go-imports-organizer/goio/pkg/imports
 github.com/go-imports-organizer/goio/pkg/module
 github.com/go-imports-organizer/goio/pkg/sorter
 github.com/go-imports-organizer/goio/pkg/version
-# github.com/go-logr/logr v1.4.2
+# github.com/go-logr/logr v1.4.3
 ## explicit; go 1.18
 github.com/go-logr/logr
 # github.com/go-openapi/jsonpointer v0.21.0
