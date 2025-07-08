@@ -51,7 +51,8 @@ spec:
         value: main
       - name: pathInRepo
         value: /pipelines/konflux-build-multi-platform.yaml
-  taskRunTemplate: {}
+  taskRunTemplate:
+    serviceAccountName: build-pipeline-openshift-builds-shared-resource-webhook
   workspaces:
     - name: git-auth
       secret:
