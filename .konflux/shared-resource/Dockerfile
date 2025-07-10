@@ -1,4 +1,4 @@
-FROM registry.redhat.io/ubi9/go-toolset:1.23 AS builder
+FROM registry.redhat.io/ubi9/go-toolset:1.24 AS builder
 
 ENV GOEXPERIMENT=strictfipsruntime
 
