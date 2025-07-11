@@ -34,6 +34,8 @@ spec:
     value: "true"
   - name: hermetic
     value: "true"
+  - name: prefetch-dev-package-managers
+    value: "true"
   - name: build-platforms
     value:
       - linux/x86_64
@@ -41,7 +43,7 @@ spec:
       - linux/ppc64le
       - linux/s390x
   - name: prefetch-input
-    value: '{"packages": [{"type": "gomod"}]}'
+    value: '{"packages": [{"type": "gomod"},{"type": "rpm"}]}'
   pipelineRef:
     resolver: git
     params:
