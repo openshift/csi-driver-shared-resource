@@ -28,6 +28,8 @@ import (
 	"sync"
 	"syscall"
 
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -441,13 +443,14 @@ func (r *innerShareUpdateRanger) Range(key, value interface{}) bool {
 			sharedSecret := client.GetSharedSecret(r.shareId)
 			if sharedSecret == nil {
 				klog.Warningf("innerShareUpdateRanger unexpected not found on sharedSecret lister refresh: %s", r.shareId)
-				return false
+				return true // if the driver fails to get the source `Secret` for the 3rd volume, it logs a warning and returns `true`. This allows the loop to continue on to the 4th, 5th, and all subsequent volumes, updating them correctly.
 			}
 			r.sharedItemKey = objcache.BuildKey(sharedSecret.Spec.SecretRef.Namespace, sharedSecret.Spec.SecretRef.Name)
-			secretObj := client.GetSecret(sharedSecret.Spec.SecretRef.Namespace, sharedSecret.Spec.SecretRef.Name)
-			if secretObj == nil {
-				klog.Infof("innerShareUpdateRanger share %s could not retrieve shared item %s", r.shareId, r.sharedItemKey)
-				return false
+
+			secretObj, err := client.GetSecret(sharedSecret.Spec.SecretRef.Namespace, sharedSecret.Spec.SecretRef.Name)
+			if err != nil {
+				klog.Warningf("innerShareUpdateRanger share %s could not retrieve shared item %s: %v", r.shareId, r.sharedItemKey, err)
+				return true // Continue to next item
 			}
 			r.sharedItem = Payload{
 				ByteData:   secretObj.Data,
@@ -457,13 +460,14 @@ func (r *innerShareUpdateRanger) Range(key, value interface{}) bool {
 			sharedConfigMap := client.GetSharedConfigMap(r.shareId)
 			if sharedConfigMap == nil {
 				klog.Warningf("innerShareUpdateRanger unexpected not found on sharedConfigMap lister refresh: %s", r.shareId)
-				return false
+				return true 
 			}
 			r.sharedItemKey = objcache.BuildKey(sharedConfigMap.Spec.ConfigMapRef.Namespace, sharedConfigMap.Spec.ConfigMapRef.Name)
-			cmObj := client.GetConfigMap(sharedConfigMap.Spec.ConfigMapRef.Namespace, sharedConfigMap.Spec.ConfigMapRef.Name)
-			if cmObj == nil {
-				klog.Infof("innerShareUpdateRanger share %s could not retrieve shared item %s", r.shareId, r.sharedItemKey)
-				return false
+
+			cmObj, err := client.GetConfigMap(sharedConfigMap.Spec.ConfigMapRef.Namespace, sharedConfigMap.Spec.ConfigMapRef.Name)
+			if err != nil {
+				klog.Warningf("innerShareUpdateRanger share %s could not retrieve shared item %s: %v", r.shareId, r.sharedItemKey, err)
+				return true 
 			}
 			r.sharedItem = Payload{
 				StringData: cmObj.Data,
@@ -484,7 +488,7 @@ func (r *innerShareUpdateRanger) Range(key, value interface{}) bool {
 			objcache.UnregisterSecretDeleteCallback(r.volID)
 			objcache.UnregisterConfigMapDeleteCallback(r.volID)
 			objcache.UnregisterConfigMapUpsertCallback(r.volID)
-			return false
+			return false 
 		}
 
 		commonUpsertRanger(dv, r.sharedItemKey, r.sharedItem)
@@ -547,19 +551,27 @@ func mapBackingResourceToPod(dv *driverVolume) error {
 		cmNamespace := sharedConfigMap.Spec.ConfigMapRef.Namespace
 		cmName := sharedConfigMap.Spec.ConfigMapRef.Name
 		comboKey := objcache.BuildKey(cmNamespace, cmName)
-		cm := client.GetConfigMap(cmNamespace, cmName)
-		if cm != nil {
-			payload := Payload{
-				StringData: cm.Data,
-				ByteData:   cm.BinaryData,
-			}
 
-			upsertError := commonUpsertRanger(dv, comboKey, payload)
-			if upsertError != nil {
-				ProcessFileSystemError(cm, upsertError)
-				return upsertError
+		cm, err := client.GetConfigMap(cmNamespace, cmName)
+		if err != nil { // If the error is `Permission Denied, it returns a `PermissionDenied` error, which correctly fails the initial volume mount
+			if kerrors.IsForbidden(err) {
+				return status.Errorf(codes.PermissionDenied, "CSI driver does not have permission to get configmap %s/%s", cmNamespace, cmName)
 			}
+			klog.Warningf("could not retrieve configmap %s/%s: %v", cmNamespace, cmName, err)
+			return nil
 		}
+
+		payload := Payload{
+			StringData: cm.Data,
+			ByteData:   cm.BinaryData,
+		}
+
+		upsertError := commonUpsertRanger(dv, comboKey, payload)
+		if upsertError != nil {
+			ProcessFileSystemError(cm, upsertError)
+			return upsertError
+		}
+
 		if dv.IsRefresh() {
 			objcache.RegisterConfigMapUpsertCallback(dv.GetVolID(), comboKey, upsertRangerCM)
 		}
@@ -589,21 +601,33 @@ func mapBackingResourceToPod(dv *driverVolume) error {
 		// we can return the error back to volume provisioning, where the kubelet will retry at
 		// a controlled frequency
 		sharedSecret := client.GetSharedSecret(dv.GetSharedDataId())
+		if sharedSecret == nil {
+			klog.V(4).Infof("mapBackingResourceToPod for pod volume %s:%s:%s share %s no longer exists", dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID(), dv.GetSharedDataId())
+			return nil
+		}
 		sNamespace := sharedSecret.Spec.SecretRef.Namespace
 		sName := sharedSecret.Spec.SecretRef.Name
 		comboKey := objcache.BuildKey(sNamespace, sName)
-		s := client.GetSecret(sNamespace, sName)
-		if s != nil {
-			payload := Payload{
-				ByteData: s.Data,
-			}
 
-			upsertError := commonUpsertRanger(dv, comboKey, payload)
-			if upsertError != nil {
-				ProcessFileSystemError(s, upsertError)
-				return upsertError
+		s, err := client.GetSecret(sNamespace, sName)
+		if err != nil { // If the error is `Permission Denied, it returns a `PermissionDenied` error, which correctly fails the initial volume mount
+			if kerrors.IsForbidden(err) {
+				return status.Errorf(codes.PermissionDenied, "CSI driver does not have permission to get secret %s/%s", sNamespace, sName)
 			}
+			klog.Warningf("could not retrieve secret %s/%s: %v", sNamespace, sName, err)
+			return nil
 		}
+
+		payload := Payload{
+			ByteData: s.Data,
+		}
+		
+		upsertError := commonUpsertRanger(dv, comboKey, payload)
+		if upsertError != nil {
+			ProcessFileSystemError(s, upsertError)
+			return upsertError
+		}
+		
 		if dv.IsRefresh() {
 			objcache.RegisterSecretUpsertCallback(dv.GetVolID(), comboKey, upsertRangerSec)
 		}

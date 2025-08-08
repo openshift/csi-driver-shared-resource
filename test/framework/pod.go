@@ -412,3 +412,164 @@ func dumpTestPodEvents(t *TestArgs) {
 	}
 
 }
+
+// helper for the RBAC tests to create a pod mounting a SharedSecret.
+func CreatePodWithSharedSecret(t *TestArgs) {
+	ctx := context.TODO()
+	truVal := true
+	falVal := false
+
+	sharedSecretName := t.ShareNameOverride
+	if sharedSecretName == "" {
+		sharedSecretName = t.Name
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Name,
+		},
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: "my-csi-volume",
+					VolumeSource: corev1.VolumeSource{
+						CSI: &corev1.CSIVolumeSource{
+							Driver:   string(operatorv1.SharedResourcesCSIDriver),
+							ReadOnly: &truVal,
+							VolumeAttributes: map[string]string{"sharedSecret": sharedSecretName},
+						},
+					},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:    containerName,
+					Image:   "quay.io/redhat-developer/test-build-simples2i:latest",
+					Command: []string{"sleep", "1000000"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "my-csi-volume",
+							MountPath: "/data",
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: &falVal,
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+						RunAsNonRoot: &truVal,
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
+				},
+			},
+			ServiceAccountName: "default",
+		},
+	}
+
+	podClient := kubeClient.CoreV1().Pods(t.Name)
+	_, err := podClient.Create(ctx, pod, metav1.CreateOptions{})
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		t.MessageString = fmt.Sprintf("error creating test pod: %s", err.Error())
+		LogAndDebugTestError(t)
+	}
+
+	if t.TestPodUp {
+		err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
+			p, err := podClient.Get(ctx, t.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, nil
+			}
+			return p.Status.Phase == corev1.PodRunning, nil
+		})
+		if err != nil {
+			t.MessageString = "test pod did not reach running state"
+			LogAndDebugTestError(t)
+		}
+	} else {
+		mountFailed(t)
+	}
+}
+
+// helper for the RBAC tests to create a pod mounting a SharedConfigMap.
+func CreatePodWithSharedConfigMap(t *TestArgs) {
+	ctx := context.TODO()
+	truVal := true
+	falVal := false
+
+	sharedConfigMapName := t.ShareNameOverride
+	if sharedConfigMapName == "" {
+		sharedConfigMapName = t.Name
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      t.Name,
+			Namespace: t.Name,
+		},
+		Spec: corev1.PodSpec{
+			Volumes: []corev1.Volume{
+				{
+					Name: "my-csi-volume",
+					VolumeSource: corev1.VolumeSource{
+						CSI: &corev1.CSIVolumeSource{
+							Driver:   string(operatorv1.SharedResourcesCSIDriver),
+							ReadOnly: &truVal,
+							// CORRECTED: Use the actual shared configmap name
+							VolumeAttributes: map[string]string{"sharedConfigMap": sharedConfigMapName},
+						},
+					},
+				},
+			},
+			Containers: []corev1.Container{
+				{
+					Name:    containerName,
+					Image:   "quay.io/redhat-developer/test-build-simples2i:latest",
+					Command: []string{"sleep", "1000000"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "my-csi-volume",
+							MountPath: "/data",
+						},
+					},
+					SecurityContext: &corev1.SecurityContext{
+						AllowPrivilegeEscalation: &falVal,
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+						RunAsNonRoot: &truVal,
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
+				},
+			},
+			ServiceAccountName: "default",
+		},
+	}
+
+	podClient := kubeClient.CoreV1().Pods(t.Name)
+	_, err := podClient.Create(ctx, pod, metav1.CreateOptions{})
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		t.MessageString = fmt.Sprintf("error creating test pod: %s", err.Error())
+		LogAndDebugTestError(t)
+	}
+
+	if t.TestPodUp {
+		err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 30*time.Second, true, func(ctx context.Context) (bool, error) {
+			p, err := podClient.Get(ctx, t.Name, metav1.GetOptions{})
+			if err != nil {
+				return false, nil
+			}
+			return p.Status.Phase == corev1.PodRunning, nil
+		})
+		if err != nil {
+			t.MessageString = "test pod did not reach running state"
+			LogAndDebugTestError(t)
+		}
+	} else {
+		mountFailed(t)
+	}
+}

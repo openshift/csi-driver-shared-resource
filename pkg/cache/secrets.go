@@ -71,12 +71,12 @@ func RegisterSecretUpsertCallback(volID, sID string, f func(key, value interface
 	}
 	secretUpsertCallbacks.Store(volID, f)
 	ns, name, _ := SplitKey(sID)
-	s := client.GetSecret(ns, name)
-	if s != nil {
-		f(BuildKey(s.Namespace, s.Name), s)
-	} else {
-		klog.Warningf("not found on secret with key %s vol %s", sID, volID)
+	s, err := client.GetSecret(ns, name)
+	if err != nil {
+		klog.Warningf("could not get secret %s/%s for vol %s: %v", ns, name, volID, err)
+		return
 	}
+	f(BuildKey(s.Namespace, s.Name), s)
 }
 
 // UnregisterSecretUpsertCallback will be called as part of the kubelet sending a delete CSI volume request for a pod
