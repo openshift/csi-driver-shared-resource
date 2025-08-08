@@ -69,12 +69,12 @@ func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value inter
 	}
 	configmapUpsertCallbacks.Store(volID, f)
 	ns, name, _ := SplitKey(cmID)
-	cm := client.GetConfigMap(ns, name)
-	if cm != nil {
-		f(BuildKey(cm.Namespace, cm.Name), cm)
-	} else {
-		klog.Warningf("not found on get configmap for %s vol %s", cmID, volID)
+	cm, err := client.GetConfigMap(ns, name)
+	if err != nil {
+		klog.Warningf("could not get configmap %s/%s for vol %s: %v", ns, name, volID, err)
+		return
 	}
+	f(BuildKey(cm.Namespace, cm.Name), cm)
 }
 
 // UnregisterConfigMapUpsertCallback will be called as part of the kubelet sending a delete CSI volume request for a pod

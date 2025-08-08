@@ -124,3 +124,71 @@ func DeleteShare(t *TestArgs) {
 	}
 	t.T.Logf("%s: completed delete share %s", time.Now().String(), name)
 }
+
+func CreateTestSharedSecret(t *TestArgs, shareName, secretName, secretNamespace string) error {
+	share := &shareapi.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: shareName,
+		},
+		Spec: shareapi.SharedSecretSpec{
+			SecretRef: shareapi.SharedSecretReference{
+				Name:      secretName,
+				Namespace: secretNamespace,
+			},
+		},
+	}
+
+	t.T.Logf("Attempting to create SharedSecret %s...", share.Name)
+	_, err := shareClient.SharedresourceV1alpha1().SharedSecrets().Create(context.TODO(), share, metav1.CreateOptions{})
+
+	// Logging immediate result of the Create call, even if err is nil
+	t.T.Logf("API call to Create SharedSecret %s returned error: %v", share.Name, err)
+
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	// trying to get the resource right after creating it.
+	t.T.Logf("Immediately trying to GET SharedSecret %s after creation...", share.Name)
+	createdShare, getErr := shareClient.SharedresourceV1alpha1().SharedSecrets().Get(context.TODO(), share.Name, metav1.GetOptions{})
+	t.T.Logf("Immediate GET for SharedSecret %s returned error: %v", share.Name, getErr)
+	if getErr == nil {
+		t.T.Logf("Successfully got SharedSecret %s immediately after creation with UID: %s", createdShare.Name, createdShare.UID)
+	}
+
+	return nil
+}
+
+func CreateTestSharedConfigMap(t *TestArgs, shareName, cmName, cmNamespace string) error {
+	share := &shareapi.SharedConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: shareName,
+		},
+		Spec: shareapi.SharedConfigMapSpec{
+			ConfigMapRef: shareapi.SharedConfigMapReference{
+				Name:      cmName,
+				Namespace: cmNamespace,
+			},
+		},
+	}
+
+	t.T.Logf("Attempting to create SharedConfigMap %s...", share.Name)
+	_, err := shareClient.SharedresourceV1alpha1().SharedConfigMaps().Create(context.TODO(), share, metav1.CreateOptions{})
+
+	// Logging immediate result of the Create call, even if err is nil
+	t.T.Logf("API call to Create SharedConfigMap %s returned error: %v", share.Name, err)
+
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		return err
+	}
+
+	// trying to GET the resource right after creating it.
+	t.T.Logf("Immediately trying to GET SharedConfigMap %s after creation...", share.Name)
+	createdShare, getErr := shareClient.SharedresourceV1alpha1().SharedConfigMaps().Get(context.TODO(), share.Name, metav1.GetOptions{})
+	t.T.Logf("Immediate GET for SharedConfigMap %s returned error: %v", share.Name, getErr)
+	if getErr == nil {
+		t.T.Logf("Successfully got SharedConfigMap %s immediately after creation with UID: %s", createdShare.Name, createdShare.UID)
+	}
+
+	return nil
+}

@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.22-openshift-4.18 AS builder
+FROM registry.ci.openshift.org/ocp/builder:rhel-9-golang-1.24-openshift-4.20 AS builder
 WORKDIR /go/src/github.com/openshift/csi-driver-shared-resource
 # to make SAST/SNYK happy
 RUN rm -rf examples
