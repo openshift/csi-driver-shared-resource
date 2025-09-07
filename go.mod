@@ -1,8 +1,8 @@
 module github.com/openshift/csi-driver-shared-resource
 
-go 1.22.0
+go 1.24.0
 
-toolchain go1.23.3
+toolchain go1.24.6
 
 require (
 	github.com/container-storage-interface/spec v1.8.0
@@ -87,7 +87,7 @@ require (
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/term v0.28.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
-	golang.org/x/time v0.3.0 // indirect
+	golang.org/x/time v0.13.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240227224415-6ceb2ff114de // indirect
