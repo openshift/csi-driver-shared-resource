@@ -17,7 +17,7 @@ const (
 	maxGeneratedNameLength = maxNameLength - randomLength
 )
 
-func generateName(base string) string {
+func GenerateName(base string) string {
 	if len(base) > maxGeneratedNameLength {
 		base = base[:maxGeneratedNameLength]
 	}
@@ -26,7 +26,7 @@ func generateName(base string) string {
 }
 
 func CreateTestNamespace(t *TestArgs) string {
-	testNamespace := generateName("e2e-test-csi-driver-shared-resource-")
+	testNamespace := GenerateName("e2e-test-csi-driver-shared-resource-")
 	t.T.Logf("%s: Creating test namespace %s", time.Now().String(), testNamespace)
 	ns := &corev1.Namespace{}
 	ns.Name = testNamespace
