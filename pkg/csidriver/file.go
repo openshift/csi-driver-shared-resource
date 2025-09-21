@@ -17,7 +17,7 @@ type Payload struct {
 
 func ProcessFileSystemError(obj runtime.Object, err error) {
 	msg := fmt.Sprintf("%s", err.Error())
-	klog.Errorf(msg)
+	klog.Errorf("%s", msg)
 	client.GetRecorder().Eventf(obj, corev1.EventTypeWarning, "FileSystemError", msg)
 
 }

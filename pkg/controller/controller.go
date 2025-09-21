@@ -293,7 +293,7 @@ func (c *Controller) syncConfigMap(event client.Event) error {
 	if cm == nil || !ok {
 		msg := fmt.Sprintf("unexpected object vs. configmap: %v", event.Object.GetObjectKind().GroupVersionKind())
 		fmt.Print(msg)
-		return fmt.Errorf(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	klog.V(5).Infof("verb %s obj namespace %s configmap name %s", event.Verb, cm.Namespace, cm.Name)
 	switch event.Verb {

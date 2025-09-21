@@ -44,6 +44,7 @@ var (
 )
 
 type nodeServer struct {
+	csi.UnimplementedNodeServer
 	nodeID            string
 	maxVolumesPerNode int64
 	d                 CSIDriver
