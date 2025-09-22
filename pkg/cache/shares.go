@@ -57,31 +57,43 @@ var (
 )
 
 // AddSharedConfigMap adds the SharedConfigMap and its referenced config map to our various tracking maps
-func AddSharedConfigMap(share *sharev1alpha1.SharedConfigMap) {
+func AddSharedConfigMap(share *sharev1alpha1.SharedConfigMap) error {
 	br := share.Spec.ConfigMapRef
 	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("AddSharedConfigMap share %s key %s", share.Name, key)
-	cm := client.GetConfigMap(br.Namespace, br.Name)
+	cm, err := client.GetConfigMap(br.Namespace, br.Name)
+	if err != nil {
+		klog.Warningf("could not get configmap for share %s: %v", share.Name, err)
+		return err
+	}
 	if cm != nil {
 		// so this line build a map with a single entry, the share from this event, and then
 		// applies the function(s) supplied by the CSI volume code in order to make changes based
 		// on this event
 		shareConfigMapsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 	}
+
+	return nil
 }
 
 // AddSharedSecret adds the SharedSecret and its referenced secret to our various tracking maps
-func AddSharedSecret(share *sharev1alpha1.SharedSecret) {
+func AddSharedSecret(share *sharev1alpha1.SharedSecret) error {
 	br := share.Spec.SecretRef
 	key := BuildKey(br.Namespace, br.Name)
 	klog.V(4).Infof("AddSharedSecret key %s", key)
-	s := client.GetSecret(br.Namespace, br.Name)
+	s, err := client.GetSecret(br.Namespace, br.Name)
+	if err != nil {
+		klog.Warningf("could not get secret for share %s: %v", share.Name, err)
+		return err
+	}
 	if s != nil {
 		// so this line build a map with a single entry, the share from this event, and then
 		// applies the function(s) supplied by the CSI volume code in order to make changes based
 		// on this event
 		shareSecretsUpdateCallbacks.Range(buildRanger(buildCallbackMap(share.Name, share)))
 	}
+
+	return nil
 }
 
 // UpdateSharedConfigMap updates the SharedConfigMap in our various tracking maps and if need be calls

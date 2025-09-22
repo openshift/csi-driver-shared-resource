@@ -29,6 +29,7 @@ import (
 
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -124,6 +125,109 @@ func TestCreateVolumeBadAccessType(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "unsupported access type") {
 		t.Fatalf("unexpected err %s", err.Error())
+	}
+}
+
+func TestMapBackingResourceHandlesForbiddenError(t *testing.T) {
+	testCases := []struct {
+		name              string
+		shareObject       runtime.Object
+		driverVolume      *driverVolume
+		reactorResource   string
+		resourceName      string
+		resourceNamespace string
+	}{
+		{
+			name: "forbidden Secret",
+			shareObject: &sharev1alpha1.SharedSecret{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-secret-share"},
+				Spec: sharev1alpha1.SharedSecretSpec{
+					SecretRef: sharev1alpha1.SharedSecretReference{
+						Name:      "my-forbidden-secret",
+						Namespace: "my-namespace",
+					},
+				},
+			},
+			driverVolume: &driverVolume{
+				VolID:          "test-volume-secret",
+				SharedDataId:   "test-secret-share",
+				SharedDataKind: "Secret",
+				Lock:           &sync.Mutex{},
+			},
+			reactorResource:   "secrets",
+			resourceName:      "my-forbidden-secret",
+			resourceNamespace: "my-namespace",
+		},
+		{
+			name: "forbidden ConfigMap",
+			shareObject: &sharev1alpha1.SharedConfigMap{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-cm-share"},
+				Spec: sharev1alpha1.SharedConfigMapSpec{
+					ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
+						Name:      "my-forbidden-cm",
+						Namespace: "my-namespace",
+					},
+				},
+			},
+			driverVolume: &driverVolume{
+				VolID:          "test-volume-cm",
+				SharedDataId:   "test-cm-share",
+				SharedDataKind: "ConfigMap",
+				Lock:           &sync.Mutex{},
+			},
+			reactorResource:   "configmaps",
+			resourceName:      "my-forbidden-cm",
+			resourceNamespace: "my-namespace",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			k8sClient := fakekubeclientset.NewSimpleClientset()
+			shareClient := fakeshareclientset.NewSimpleClientset()
+			client.SetClient(k8sClient)
+			client.SetShareClient(shareClient)
+
+			forbiddenReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+				return true, nil, kerrors.NewForbidden(corev1.Resource(tc.reactorResource), tc.resourceName, fmt.Errorf("access denied by test"))
+			}
+			k8sClient.PrependReactor("get", tc.reactorResource, forbiddenReactorFunc)
+
+			testName := strings.ReplaceAll(t.Name(), "/", "_")
+
+			targetPath, err := os.MkdirTemp(os.TempDir(), testName)
+			if err != nil {
+				t.Fatalf("failed to create temp dir: %v", err)
+			}
+			defer os.RemoveAll(targetPath)
+			tc.driverVolume.TargetPath = targetPath
+
+			// Pre-load the share object into the cache and set up a reactor for it
+			switch share := tc.shareObject.(type) {
+			case *sharev1alpha1.SharedSecret:
+				cache.AddSharedSecret(share)
+				shareReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, share, nil
+				}
+				shareClient.PrependReactor("get", "sharedsecrets", shareReactorFunc)
+			case *sharev1alpha1.SharedConfigMap:
+				cache.AddSharedConfigMap(share)
+				shareReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, share, nil
+				}
+				shareClient.PrependReactor("get", "sharedconfigmaps", shareReactorFunc)
+			}
+
+			err = mapBackingResourceToPod(tc.driverVolume) // function under test
+
+			if err == nil {
+				t.Fatalf("mapBackingResourceToPod unexpectedly succeeded, but should have failed with a Forbidden error")
+			}
+			if !kerrors.IsForbidden(err) {
+				t.Fatalf("Expected a Forbidden error, but got: %v", err)
+			}
+			t.Logf("Successfully received expected Forbidden error: %v", err)
+		})
 	}
 }
 

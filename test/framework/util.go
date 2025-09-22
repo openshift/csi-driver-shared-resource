@@ -14,6 +14,7 @@ var (
 type TestArgs struct {
 	T                                  *testing.T
 	Name                               string
+	Namespace                          string
 	ShareNameOverride                  string
 	SecondName                         string
 	ChangeName                         string
