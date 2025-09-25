@@ -8,8 +8,8 @@ require (
 	github.com/container-storage-interface/spec v1.11.0
 	github.com/go-imports-organizer/goio v1.5.0
 	github.com/kubernetes-csi/csi-lib-utils v0.22.0
-	github.com/openshift/api v0.0.0-20250911131931-2acafd4d1ed2
-	github.com/openshift/client-go v0.0.0-20250915125341-81c9dc83a675
+	github.com/openshift/api v0.0.0-20250922161302-04f99ea228f5
+	github.com/openshift/client-go v0.0.0-20250922201106-dd37bfd2e597
 	github.com/prometheus/client_golang v1.22.0
 	github.com/prometheus/client_model v0.6.1
 	github.com/prometheus/common v0.62.0
