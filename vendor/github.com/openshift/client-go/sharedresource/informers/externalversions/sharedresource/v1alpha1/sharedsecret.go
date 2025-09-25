@@ -3,13 +3,13 @@
 package v1alpha1
 
 import (
-	"context"
+	context "context"
 	time "time"
 
-	sharedresourcev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	apisharedresourcev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
 	versioned "github.com/openshift/client-go/sharedresource/clientset/versioned"
 	internalinterfaces "github.com/openshift/client-go/sharedresource/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/openshift/client-go/sharedresource/listers/sharedresource/v1alpha1"
+	sharedresourcev1alpha1 "github.com/openshift/client-go/sharedresource/listers/sharedresource/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -20,7 +20,7 @@ import (
 // SharedSecrets.
 type SharedSecretInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.SharedSecretLister
+	Lister() sharedresourcev1alpha1.SharedSecretLister
 }
 
 type sharedSecretInformer struct {
@@ -45,16 +45,28 @@ func NewFilteredSharedSecretInformer(client versioned.Interface, resyncPeriod ti
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SharedresourceV1alpha1().SharedSecrets().List(context.TODO(), options)
+				return client.SharedresourceV1alpha1().SharedSecrets().List(context.Background(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.SharedresourceV1alpha1().SharedSecrets().Watch(context.TODO(), options)
+				return client.SharedresourceV1alpha1().SharedSecrets().Watch(context.Background(), options)
+			},
+			ListWithContextFunc: func(ctx context.Context, options v1.ListOptions) (runtime.Object, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.SharedresourceV1alpha1().SharedSecrets().List(ctx, options)
+			},
+			WatchFuncWithContext: func(ctx context.Context, options v1.ListOptions) (watch.Interface, error) {
+				if tweakListOptions != nil {
+					tweakListOptions(&options)
+				}
+				return client.SharedresourceV1alpha1().SharedSecrets().Watch(ctx, options)
 			},
 		},
-		&sharedresourcev1alpha1.SharedSecret{},
+		&apisharedresourcev1alpha1.SharedSecret{},
 		resyncPeriod,
 		indexers,
 	)
@@ -65,9 +77,9 @@ func (f *sharedSecretInformer) defaultInformer(client versioned.Interface, resyn
 }
 
 func (f *sharedSecretInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&sharedresourcev1alpha1.SharedSecret{}, f.defaultInformer)
+	return f.factory.InformerFor(&apisharedresourcev1alpha1.SharedSecret{}, f.defaultInformer)
 }
 
-func (f *sharedSecretInformer) Lister() v1alpha1.SharedSecretLister {
-	return v1alpha1.NewSharedSecretLister(f.Informer().GetIndexer())
+func (f *sharedSecretInformer) Lister() sharedresourcev1alpha1.SharedSecretLister {
+	return sharedresourcev1alpha1.NewSharedSecretLister(f.Informer().GetIndexer())
 }
