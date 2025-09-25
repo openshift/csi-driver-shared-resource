@@ -124,10 +124,10 @@ github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/selinux v1.11.1 h1:nHFvthhM0qY8/m+vfhJylliSshm8G1jJ2jDMcgULaH8=
 github.com/opencontainers/selinux v1.11.1/go.mod h1:E5dMC3VPuVvVHDYmi78qvhJp8+M586T4DlDRYpFkyec=
-github.com/openshift/api v0.0.0-20250911131931-2acafd4d1ed2 h1:orbYgUTUMs2asHZhT792jeXlVzOqGFaGo8FbD9ihnsE=
-github.com/openshift/api v0.0.0-20250911131931-2acafd4d1ed2/go.mod h1:SPLf21TYPipzCO67BURkCfK6dcIIxx0oNRVWaOyRcXM=
-github.com/openshift/client-go v0.0.0-20250915125341-81c9dc83a675 h1:FKrngDbpVX730LfBuPsN1KdD2BwtE+i1q2gwhKDMc80=
-github.com/openshift/client-go v0.0.0-20250915125341-81c9dc83a675/go.mod h1:w7sV33ASK/HcuEb0Ll9qvChZdJwNwqo8GocVAnd7fVY=
+github.com/openshift/api v0.0.0-20250922161302-04f99ea228f5 h1:WpXIRnKr4NoZPfuqjPueAe8XlQDR4i1km8o2NuYIp8I=
+github.com/openshift/api v0.0.0-20250922161302-04f99ea228f5/go.mod h1:SPLf21TYPipzCO67BURkCfK6dcIIxx0oNRVWaOyRcXM=
+github.com/openshift/client-go v0.0.0-20250922201106-dd37bfd2e597 h1:MpnTxVOnXFUfAjpa1bYblgftOsgF61KmxAmBmR+s3+s=
+github.com/openshift/client-go v0.0.0-20250922201106-dd37bfd2e597/go.mod h1:xFmKmVC4oHFSbFMAjlBBhzyWqmroaRK36/qu9BpDDes=
 github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
