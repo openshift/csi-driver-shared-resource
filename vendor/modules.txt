@@ -153,7 +153,7 @@ github.com/mxk/go-flowrate/flowrate
 github.com/opencontainers/selinux/go-selinux
 github.com/opencontainers/selinux/go-selinux/label
 github.com/opencontainers/selinux/pkg/pwalkdir
-# github.com/openshift/api v0.0.0-20250911131931-2acafd4d1ed2
+# github.com/openshift/api v0.0.0-20250926020921-1517fca97fe3
 ## explicit; go 1.24.0
 github.com/openshift/api/config/v1
 github.com/openshift/api/operator/v1
