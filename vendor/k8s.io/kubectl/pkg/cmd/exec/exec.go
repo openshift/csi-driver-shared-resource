@@ -114,18 +114,26 @@ func NewCmdExec(f cmdutil.Factory, streams genericiooptions.IOStreams) *cobra.Co
 
 // RemoteExecutor defines the interface accepted by the Exec command - provided for test stubbing
 type RemoteExecutor interface {
+	// Execute supports executing remote command in a pod.
 	Execute(url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool, terminalSizeQueue remotecommand.TerminalSizeQueue) error
+
+	// ExecuteWithContext, in contrast to Execute, supports stopping the remote command via context cancellation.
+	ExecuteWithContext(ctx context.Context, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool, terminalSizeQueue remotecommand.TerminalSizeQueue) error
 }
 
 // DefaultRemoteExecutor is the standard implementation of remote command execution
 type DefaultRemoteExecutor struct{}
 
-func (*DefaultRemoteExecutor) Execute(url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool, terminalSizeQueue remotecommand.TerminalSizeQueue) error {
+func (d *DefaultRemoteExecutor) Execute(url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool, terminalSizeQueue remotecommand.TerminalSizeQueue) error {
+	return d.ExecuteWithContext(context.Background(), url, config, stdin, stdout, stderr, tty, terminalSizeQueue)
+}
+
+func (*DefaultRemoteExecutor) ExecuteWithContext(ctx context.Context, url *url.URL, config *restclient.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool, terminalSizeQueue remotecommand.TerminalSizeQueue) error {
 	exec, err := createExecutor(url, config)
 	if err != nil {
 		return err
 	}
-	return exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
+	return exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:             stdin,
 		Stdout:            stdout,
 		Stderr:            stderr,
@@ -202,17 +210,8 @@ func (p *ExecOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, argsIn []s
 	}
 	if argsLenAtDash > -1 {
 		p.Command = argsIn[argsLenAtDash:]
-	} else if len(argsIn) > 1 {
-		if !p.Quiet {
-			fmt.Fprint(p.ErrOut, "kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.\n")
-		}
-		p.Command = argsIn[1:]
-	} else if len(argsIn) > 0 && len(p.FilenameOptions.Filenames) != 0 {
-		if !p.Quiet {
-			fmt.Fprint(p.ErrOut, "kubectl exec [POD] [COMMAND] is DEPRECATED and will be removed in a future version. Use kubectl exec [POD] -- [COMMAND] instead.\n")
-		}
-		p.Command = argsIn[0:]
-		p.ResourceName = ""
+	} else if len(argsIn) > 1 || (len(argsIn) > 0 && len(p.FilenameOptions.Filenames) != 0) {
+		return cmdutil.UsageErrorf(cmd, "exec [POD] [COMMAND] is not supported anymore. Use exec [POD] -- [COMMAND] instead")
 	}
 
 	var err error
@@ -225,7 +224,7 @@ func (p *ExecOptions) Complete(f cmdutil.Factory, cmd *cobra.Command, argsIn []s
 
 	p.GetPodTimeout, err = cmdutil.GetPodRunningTimeoutFlag(cmd)
 	if err != nil {
-		return cmdutil.UsageErrorf(cmd, err.Error())
+		return cmdutil.UsageErrorf(cmd, "%s", err.Error())
 	}
 
 	p.Builder = f.NewBuilder
