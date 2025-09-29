@@ -15,11 +15,12 @@ ENTRYPOINT ["./openshift-builds-shared-resource"]
 
 LABEL \
 	com.redhat.component="openshift-builds-shared-resource" \
-	name="openshift-builds/csi-driver-shared-resource" \
+	name="openshift-builds/openshift-builds-shared-resource-rhel9" \
 	version="v1.1.0" \
 	summary="Red Hat OpenShift Builds Shared Resource" \
 	maintainer="openshift-builds@redhat.com" \
 	description="Red Hat OpenShift Builds CSI Driver Shared Resource" \
 	io.k8s.description="Red Hat OpenShift Builds CSI Driver Shared Resource" \
 	io.k8s.display-name="Red Hat OpenShift Builds Shared Resource" \
-	io.openshift.tags="builds,shared-resources,csi-driver"
+	io.openshift.tags="builds,shared-resources,csi-driver" \
+	cpe="cpe:/a:redhat:openshift_builds:1.2::el9"
