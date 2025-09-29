@@ -17,7 +17,8 @@ ENTRYPOINT ["./openshift-builds-shared-resource-webhook"]
 
 LABEL \
 	com.redhat.component="openshift-builds-shared-resource-webhook" \
-	name="openshift-builds/csi-driver-shared-resource-webhook" \
+	name="openshift-builds/openshift-builds-shared-resource-webhook-rhel9" \
+	cpe="cpe:/a:redhat:openshift_builds:1.3::el9" \
 	version="v1.1.0" \
 	summary="Red Hat OpenShift Builds Shared Resource Webhook" \
 	maintainer="openshift-builds@redhat.com" \
