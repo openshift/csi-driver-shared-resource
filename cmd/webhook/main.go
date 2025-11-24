@@ -4,7 +4,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -74,7 +73,7 @@ func startServer() {
 	var err error
 	if useTLS {
 		var cafile []byte
-		cafile, err = ioutil.ReadFile(caCert)
+		cafile, err = os.ReadFile(caCert)
 		if err != nil {
 			fmt.Printf("Couldn't read CA cert file: %s", err.Error())
 			os.Exit(1)

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"sync"
@@ -96,7 +95,7 @@ func ParseHTTPRequest(r *http.Request) (admissionctl.Request, admissionctl.Respo
 	var err error
 	var body []byte
 	if r.Body != nil {
-		if body, err = ioutil.ReadAll(r.Body); err != nil {
+		if body, err = io.ReadAll(r.Body); err != nil {
 			resp = admissionctl.Errored(http.StatusBadRequest, err)
 			return req, resp, err
 		}
