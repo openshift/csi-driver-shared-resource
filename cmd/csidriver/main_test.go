@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -62,7 +61,7 @@ func TestMain_exitWhenConfigChanges(t *testing.T) {
 	cfgFilePath := "../../test/config/config.yaml"
 
 	// creating a temporary file, making sure it's deleted when test is done
-	tmpFile, err := ioutil.TempFile("/tmp", "csi-driver-config-")
+	tmpFile, err := os.CreateTemp("/tmp", "csi-driver-config-")
 	if err != nil {
 		t.Fatalf("unable to create a temporary file: '%#v'", err)
 	}
@@ -70,11 +69,11 @@ func TestMain_exitWhenConfigChanges(t *testing.T) {
 	t.Logf("Created a temporary file at '%s'", tmpFile.Name())
 
 	// copying original configuration file contents over the temporary file
-	in, err := ioutil.ReadFile(cfgFilePath)
+	in, err := os.ReadFile(cfgFilePath)
 	if err != nil {
 		t.Fatalf("unable to read configuration file '%s', error: '%#v'", cfgFilePath, err)
 	}
-	if err = ioutil.WriteFile(tmpFile.Name(), in, 0644); err != nil {
+	if err = os.WriteFile(tmpFile.Name(), in, 0644); err != nil {
 		t.Fatalf("unable to write to temporary file '%s', error: '%#v'", tmpFile.Name(), err)
 	}
 
@@ -86,7 +85,7 @@ func TestMain_exitWhenConfigChanges(t *testing.T) {
 	// graceful waiting, then modifying the configuration file contents under watch, it should
 	// trigger the routine checking for modifications
 	time.Sleep(3 * time.Second)
-	if err = ioutil.WriteFile(tmpFile.Name(), []byte{}, 0644); err != nil {
+	if err = os.WriteFile(tmpFile.Name(), []byte{}, 0644); err != nil {
 		t.Fatalf("unable to write to temporary file '%s', error: '%#v'", tmpFile.Name(), err)
 	}
 

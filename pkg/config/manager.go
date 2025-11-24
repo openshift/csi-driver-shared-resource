@@ -3,7 +3,6 @@ package config
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/yaml.v2"
@@ -27,7 +26,7 @@ func (m *Manager) ConfigHasChanged() bool {
 
 	// reading the configration file payload again and comparing with the md5sum stored, when there
 	// are errors reading the file, it does not mark the configuration as changed
-	payload, err := ioutil.ReadFile(m.cfgFilePath)
+	payload, err := os.ReadFile(m.cfgFilePath)
 	if err != nil {
 		klog.Errorf("Reading configuration-file '%s': '%#v'", m.cfgFilePath, err)
 		return false
@@ -50,7 +49,7 @@ func (m *Manager) LoadConfig() (*Config, error) {
 	// destination struct, this method will surface those errors directly, and we may want to create
 	// means to differentiate the error scenarios
 	klog.Infof("Loading configuration-file '%s'", m.cfgFilePath)
-	payload, err := ioutil.ReadFile(m.cfgFilePath)
+	payload, err := os.ReadFile(m.cfgFilePath)
 	if err != nil {
 		return nil, err
 	}
