@@ -60,20 +60,41 @@ arches:
     name: libutempter
     evr: 1.2.1-6.el9
     sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/o/openssl-3.2.2-6.el9_5.1.aarch64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/o/openssl-3.5.1-4.el9_7.aarch64.rpm
     repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 1398689
-    checksum: sha256:f914250a9ef52968e27af0f0e2520745df4443dc354367bec54dd06b4a2da60b
+    size: 1531255
+    checksum: sha256:f7ff8eb3fd8b75ae1745af2270998fa662fcd5f81b892e94afd87e6954e2ffef
     name: openssl
-    evr: 1:3.2.2-6.el9_5.1
-    sourcerpm: openssl-3.2.2-6.el9_5.1.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/p/pam-1.5.1-25.el9_6.aarch64.rpm
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.aarch64.rpm
     repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 635353
-    checksum: sha256:b02671f696fa1025b8e1634f6080e268c8d4e949b05b7a98050489db601c8415
+    size: 9366
+    checksum: sha256:0cfe7b281ae2ca3cb0ceaa1a0b84f8c087c4ac16662ebb9c19b5681cf39f99a9
+    name: openssl-fips-provider
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/o/openssl-fips-provider-so-3.0.7-8.el9.aarch64.rpm
+    repoid: ubi-9-for-aarch64-baseos-rpms
+    size: 524824
+    checksum: sha256:18c77b9b37e7abf0e8cf1dac4b3de770efe895547bdcab8aea8d8d8592954947
+    name: openssl-fips-provider-so
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/o/openssl-libs-3.5.1-4.el9_7.aarch64.rpm
+    repoid: ubi-9-for-aarch64-baseos-rpms
+    size: 2278420
+    checksum: sha256:97ef99f02df91fadaeae9a2b424a5235915012588eec03b362c14baef59ca699
+    name: openssl-libs
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/p/pam-1.5.1-26.el9_6.aarch64.rpm
+    repoid: ubi-9-for-aarch64-baseos-rpms
+    size: 636107
+    checksum: sha256:fd8dc3ae80d01e90bed08e84e32e3b47b568fe5ddc857dffbae36cc4bde0887b
     name: pam
-    evr: 1.5.1-25.el9_6
-    sourcerpm: pam-1.5.1-25.el9_6.src.rpm
+    evr: 1.5.1-26.el9_6
+    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/u/util-linux-2.37.4-21.el9.aarch64.rpm
     repoid: ubi-9-for-aarch64-baseos-rpms
     size: 2391248
@@ -155,20 +176,41 @@ arches:
     name: libutempter
     evr: 1.2.1-6.el9
     sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/o/openssl-3.2.2-6.el9_5.1.ppc64le.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/o/openssl-3.5.1-4.el9_7.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 1422952
-    checksum: sha256:56283cbf84234ec9256fb68e2d2669bc5799862eb2ee40521b8ac59044567835
+    size: 1556422
+    checksum: sha256:ec777faeeb541b6db11c2a276c11a027ab9c7f9bdd786fe4f30bc1512148739e
     name: openssl
-    evr: 1:3.2.2-6.el9_5.1
-    sourcerpm: openssl-3.2.2-6.el9_5.1.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/p/pam-1.5.1-25.el9_6.ppc64le.rpm
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 676327
-    checksum: sha256:78aebdbf2d285b23a00a54d2acaaf45f573b3fda9397e9ee95cd6c3f3220d657
+    size: 9390
+    checksum: sha256:c4a55a68f123fd873380d919ede200fb64f7443eb4235ce555a307cfee9fb6a5
+    name: openssl-fips-provider
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/o/openssl-fips-provider-so-3.0.7-8.el9.ppc64le.rpm
+    repoid: ubi-9-for-ppc64le-baseos-rpms
+    size: 576788
+    checksum: sha256:325a2017d21f5ca789931de321cd9fb5f359ce12fb0d0acc2f3cd9dc00b00dc3
+    name: openssl-fips-provider-so
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/o/openssl-libs-3.5.1-4.el9_7.ppc64le.rpm
+    repoid: ubi-9-for-ppc64le-baseos-rpms
+    size: 2541222
+    checksum: sha256:97784802b064a7784ee28a64593dc9374e6eb6a8cb055fd7c6605653d6db3353
+    name: openssl-libs
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/p/pam-1.5.1-26.el9_6.ppc64le.rpm
+    repoid: ubi-9-for-ppc64le-baseos-rpms
+    size: 677447
+    checksum: sha256:93eb19dd21e5bb33d1d004c9e49e49d0049aca990074b8c6f4204e5af4c3c38e
     name: pam
-    evr: 1.5.1-25.el9_6
-    sourcerpm: pam-1.5.1-25.el9_6.src.rpm
+    evr: 1.5.1-26.el9_6
+    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/u/util-linux-2.37.4-21.el9.ppc64le.rpm
     repoid: ubi-9-for-ppc64le-baseos-rpms
     size: 2428895
@@ -243,20 +285,41 @@ arches:
     name: libutempter
     evr: 1.2.1-6.el9
     sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-3.2.2-6.el9_5.1.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-3.5.1-4.el9_7.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
-    size: 1407537
-    checksum: sha256:0a24289ee6324c2ecd6edad913f8ecfcfc6db43fbf6fed65458141e3ec0c104f
+    size: 1538384
+    checksum: sha256:51919b204a4889e82904a4d33099c29c925e710773439647e5f7b66e2e442ee1
     name: openssl
-    evr: 1:3.2.2-6.el9_5.1
-    sourcerpm: openssl-3.2.2-6.el9_5.1.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/p/pam-1.5.1-25.el9_6.s390x.rpm
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
-    size: 627191
-    checksum: sha256:437129b562f49d0e03b66a0ede15bed12f3ce511faf07e1bf4b4de9577be261d
+    size: 9381
+    checksum: sha256:8a4bc9f39ece3d6841a46681c0cdc7ca8510590057e486939b6d0cc1aace958d
+    name: openssl-fips-provider
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-fips-provider-so-3.0.7-8.el9.s390x.rpm
+    repoid: ubi-9-for-s390x-baseos-rpms
+    size: 314467
+    checksum: sha256:612f812c248e7cf6d86de00a2e670d74233bd1da20d45a68dd09527dc0547f10
+    name: openssl-fips-provider-so
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-libs-3.5.1-4.el9_7.s390x.rpm
+    repoid: ubi-9-for-s390x-baseos-rpms
+    size: 2030661
+    checksum: sha256:0fe9d808c2489295e3466261927b4439b653044c65bd15dfa8922d21a625597b
+    name: openssl-libs
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/p/pam-1.5.1-26.el9_6.s390x.rpm
+    repoid: ubi-9-for-s390x-baseos-rpms
+    size: 628673
+    checksum: sha256:0817657a9c8638a20357b6d057abe3448dd9cf8c3fed61a74772e18a9d5a209b
     name: pam
-    evr: 1.5.1-25.el9_6
-    sourcerpm: pam-1.5.1-25.el9_6.src.rpm
+    evr: 1.5.1-26.el9_6
+    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/u/util-linux-2.37.4-21.el9.s390x.rpm
     repoid: ubi-9-for-s390x-baseos-rpms
     size: 2336453
@@ -331,20 +394,41 @@ arches:
     name: libutempter
     evr: 1.2.1-6.el9
     sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-3.2.2-6.el9_5.1.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-3.5.1-4.el9_7.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 1420999
-    checksum: sha256:f379686df99db814e30568a896b417278775fc96864ac6d2660bf48ef94309e3
+    size: 1554784
+    checksum: sha256:e9c30e80d09e2ef402f5380ce0fa52f9e169d638a0c1c8c7485f7a8ff2d27da0
     name: openssl
-    evr: 1:3.2.2-6.el9_5.1
-    sourcerpm: openssl-3.2.2-6.el9_5.1.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/p/pam-1.5.1-25.el9_6.x86_64.rpm
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-fips-provider-3.0.7-8.el9.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 635820
-    checksum: sha256:9094077ad952dd3d65543ebec57cbf52213cb3b17cdd180531652218c2282187
+    size: 9402
+    checksum: sha256:bbf25303def8e1270675531c47bdad432f6ad8ef4c327556ae65bd6abaf8edb5
+    name: openssl-fips-provider
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-fips-provider-so-3.0.7-8.el9.x86_64.rpm
+    repoid: ubi-9-for-x86_64-baseos-rpms
+    size: 589811
+    checksum: sha256:ab48d98504fae6f8636de027a1ee06d21d5e9c27b7beb247017a6fe55567c5e9
+    name: openssl-fips-provider-so
+    evr: 3.0.7-8.el9
+    sourcerpm: openssl-fips-provider-3.0.7-8.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-libs-3.5.1-4.el9_7.x86_64.rpm
+    repoid: ubi-9-for-x86_64-baseos-rpms
+    size: 2412696
+    checksum: sha256:8dfa0d490fb0314e24811e502aeab85fd6dd2700c58008a85b1fc8ce32c518a5
+    name: openssl-libs
+    evr: 1:3.5.1-4.el9_7
+    sourcerpm: openssl-3.5.1-4.el9_7.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/p/pam-1.5.1-26.el9_6.x86_64.rpm
+    repoid: ubi-9-for-x86_64-baseos-rpms
+    size: 636788
+    checksum: sha256:247027fa7a2236c1fb46756ed372637f85cf85886603a2ad5ba918e4231324bc
     name: pam
-    evr: 1.5.1-25.el9_6
-    sourcerpm: pam-1.5.1-25.el9_6.src.rpm
+    evr: 1.5.1-26.el9_6
+    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/u/util-linux-2.37.4-21.el9.x86_64.rpm
     repoid: ubi-9-for-x86_64-baseos-rpms
     size: 2395065
