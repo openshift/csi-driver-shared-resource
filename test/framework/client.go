@@ -66,3 +66,8 @@ func setRESTConfigDefaults(config rest.Config) *rest.Config {
 	config.APIPath = "/api"
 	return &config
 }
+
+// Returns framework's kubernetes clientset.
+func KubeClient() *kubeset.Clientset {
+	return kubeClient
+}
