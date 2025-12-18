@@ -41,6 +41,17 @@ func CreateTestPod(t *TestArgs) {
 	}
 	truVal := true
 	falVal := false
+
+	shareName := t.Name
+	if t.ShareNameOverride != "" {
+		shareName = t.ShareNameOverride
+	}
+
+	shareAttr := "sharedConfigMap"
+	if t.ShareType == "secret" {
+		shareAttr = "sharedSecret"
+	}
+
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      t.Name,
@@ -53,7 +64,7 @@ func CreateTestPod(t *TestArgs) {
 					VolumeSource: corev1.VolumeSource{
 						CSI: &corev1.CSIVolumeSource{
 							Driver:           string(operatorv1.SharedResourcesCSIDriver),
-							VolumeAttributes: map[string]string{"sharedConfigMap": t.Name},
+							VolumeAttributes: map[string]string{shareAttr: shareName},
 						},
 					},
 				},

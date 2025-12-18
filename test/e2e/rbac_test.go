@@ -370,3 +370,179 @@ func TestFixedHotReloadStaleData(t *testing.T) {
 
 	t.Logf("--- Test PASSED: UPDATE Successful on Driver RBAC Revoke ---")
 }
+
+func runRBACTest(t *testing.T, resourceType string, grantDriverRBAC, grantPodRBAC, expectPodUp bool) {
+	args := &framework.TestArgs{T: t}
+	framework.SetupClientsOutsideTestNamespace(args)
+	kubeClient = framework.KubeClient()
+
+	config, err := client.GetConfig()
+	if err != nil {
+		t.Fatalf("failed to get config: %v", err)
+	}
+	shareClient, err := sharev1clientset.NewForConfig(config)
+	if err != nil {
+		t.Fatalf("Error creating Shared Resource client: %v", err)
+	}
+
+	sourceNS := createTestNamespace(t, "e2e-source-ns-")
+	consumingNS := createTestNamespace(t, "e2e-consuming-ns-")
+	defer kubeClient.CoreV1().Namespaces().Delete(context.TODO(), sourceNS, metav1.DeleteOptions{})
+	defer kubeClient.CoreV1().Namespaces().Delete(context.TODO(), consumingNS, metav1.DeleteOptions{})
+
+	sourceName := "source-" + resourceType + "-" + framework.GenerateName("")
+	sharedName := "shared-" + resourceType + "-" + framework.GenerateName("")
+
+	// Create source resource - secret or configmap
+	if resourceType == "secret" {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: sourceName, Namespace: sourceNS},
+			StringData: map[string]string{"username": "admin"},
+		}
+		_, err = kubeClient.CoreV1().Secrets(sourceNS).Create(context.TODO(), secret, metav1.CreateOptions{})
+	} else {
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: sourceName, Namespace: sourceNS},
+			Data:       map[string]string{"test-key": "test-value"},
+		}
+		_, err = kubeClient.CoreV1().ConfigMaps(sourceNS).Create(context.TODO(), cm, metav1.CreateOptions{})
+	}
+	if err != nil {
+		t.Fatalf("failed to create source %s: %v", resourceType, err)
+	}
+
+	// Create SharedSecret or SharedConfigMap
+	err = framework.CreateTestShare(args, sharedName, sourceName, sourceNS, resourceType)
+	if err != nil {
+		t.Fatalf("failed to create shared %s: %v", resourceType, err)
+	}
+	if resourceType == "secret" {
+		defer shareClient.SharedresourceV1alpha1().SharedSecrets().Delete(context.TODO(), sharedName, metav1.DeleteOptions{})
+	} else {
+		defer shareClient.SharedresourceV1alpha1().SharedConfigMaps().Delete(context.TODO(), sharedName, metav1.DeleteOptions{})
+	}
+
+	// Wait for share to be available
+	t.Logf("Waiting for shared %s %s to become available...", resourceType, sharedName)
+	err = wait.PollUntilContextTimeout(context.TODO(), 2*time.Second, 2*time.Minute, true, func(ctx context.Context) (bool, error) {
+		var getErr error
+		if resourceType == "secret" {
+			_, getErr = shareClient.SharedresourceV1alpha1().SharedSecrets().Get(ctx, sharedName, metav1.GetOptions{})
+		} else {
+			_, getErr = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Get(ctx, sharedName, metav1.GetOptions{})
+		}
+		if kerrors.IsNotFound(getErr) {
+			return false, nil
+		}
+		return getErr == nil, getErr
+	})
+	if err != nil {
+		t.Fatalf("Timed out waiting for shared %s %s: %v", resourceType, sharedName, err)
+	}
+
+	// RBAC resources differ by type
+	sharedResourceType := "sharedconfigmaps"
+	coreResourceType := "configmaps"
+	if resourceType == "secret" {
+		sharedResourceType = "sharedsecrets"
+		coreResourceType = "secrets"
+	}
+
+	// Create "use" ClusterRole
+	useClusterRole := &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{Name: "use-" + sharedName},
+		Rules: []rbacv1.PolicyRule{{
+			APIGroups:     []string{"sharedresource.openshift.io"},
+			Resources:     []string{sharedResourceType},
+			ResourceNames: []string{sharedName},
+			Verbs:         []string{"use"},
+		}},
+	}
+	_, err = kubeClient.RbacV1().ClusterRoles().Create(context.TODO(), useClusterRole, metav1.CreateOptions{})
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		t.Fatalf("failed to create 'use' cluster role: %v", err)
+	}
+	defer kubeClient.RbacV1().ClusterRoles().Delete(context.TODO(), useClusterRole.Name, metav1.DeleteOptions{})
+
+	if grantDriverRBAC {
+		driverRole := &rbacv1.Role{
+			ObjectMeta: metav1.ObjectMeta{Name: "driver-access-" + sourceName, Namespace: sourceNS},
+			Rules: []rbacv1.PolicyRule{{
+				Verbs:         []string{"get", "list", "watch"},
+				APIGroups:     []string{""},
+				Resources:     []string{coreResourceType},
+				ResourceNames: []string{sourceName},
+			}},
+		}
+		_, err := kubeClient.RbacV1().Roles(sourceNS).Create(context.TODO(), driverRole, metav1.CreateOptions{})
+		if err != nil {
+			t.Fatalf("failed to create driver role: %v", err)
+		}
+		defer kubeClient.RbacV1().Roles(sourceNS).Delete(context.TODO(), driverRole.Name, metav1.DeleteOptions{})
+
+		driverRoleBinding := &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "driver-binding-" + sourceName, Namespace: sourceNS},
+			Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "csi-driver-shared-resource", Namespace: "openshift-builds"}},
+			RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "Role", Name: driverRole.Name},
+		}
+		_, err = kubeClient.RbacV1().RoleBindings(sourceNS).Create(context.TODO(), driverRoleBinding, metav1.CreateOptions{})
+		if err != nil {
+			t.Fatalf("failed to create driver role binding: %v", err)
+		}
+		defer kubeClient.RbacV1().RoleBindings(sourceNS).Delete(context.TODO(), driverRoleBinding.Name, metav1.DeleteOptions{})
+	}
+
+	if grantPodRBAC {
+		podRoleBinding := &rbacv1.RoleBinding{
+			ObjectMeta: metav1.ObjectMeta{Name: "pod-use-" + sharedName, Namespace: consumingNS},
+			RoleRef:    rbacv1.RoleRef{APIGroup: rbacv1.GroupName, Kind: "ClusterRole", Name: useClusterRole.Name},
+			Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "default", Namespace: consumingNS}},
+		}
+		_, err = kubeClient.RbacV1().RoleBindings(consumingNS).Create(context.TODO(), podRoleBinding, metav1.CreateOptions{})
+		if err != nil {
+			t.Fatalf("failed to create pod role binding: %v", err)
+		}
+		defer kubeClient.RbacV1().RoleBindings(consumingNS).Delete(context.TODO(), podRoleBinding.Name, metav1.DeleteOptions{})
+	}
+
+	// Create and verify pod
+	args.Name = consumingNS
+	args.ShareNameOverride = sharedName
+	if resourceType == "secret" {
+		args.ShareType = "secret"
+	}
+	args.TestPodUp = expectPodUp
+	framework.CreateTestPod(args)
+
+	if expectPodUp {
+		if resourceType == "secret" {
+			args.SearchString = "username"
+		} else {
+			args.SearchString = "test-key"
+		}
+		framework.ExecPod(args)
+	}
+}
+
+func TestSharedResourceRBAC(t *testing.T) {
+	tests := []struct {
+		name         string
+		resourceType string
+		driverRBAC   bool
+		podRBAC      bool
+		expectPodUp  bool
+	}{
+		{"Secret_Success", "secret", true, true, true},
+		{"Secret_Failure_MissingDriverRBAC", "secret", false, true, false},
+		{"Secret_Failure_MissingPodRBAC", "secret", true, false, false},
+		{"ConfigMap_Success", "configmap", true, true, true},
+		{"ConfigMap_Failure_MissingDriverRBAC", "configmap", false, true, false},
+		{"ConfigMap_Failure_MissingPodRBAC", "configmap", true, false, false},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runRBACTest(t, tc.resourceType, tc.driverRBAC, tc.podRBAC, tc.expectPodUp)
+		})
+	}
+}
