@@ -2,10 +2,12 @@ reviewers:
 - otaviof
 - sayan-biswas
 - psrvere
+- avinal
 approvers:
 - adambkaplan
 - gabemontero
 - sayan-biswas
 - psrvere
+- avinal
 component: Storage
 subcomponent: Shared Resource CSI Driver
