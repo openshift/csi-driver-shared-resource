@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"strings"
 	"time"
@@ -367,7 +367,7 @@ func dumpCSIPods(t *TestArgs) {
 				if err != nil {
 					t.T.Fatalf("error getting pod logs for container %s: %s", container.Name, err.Error())
 				}
-				b, err := ioutil.ReadAll(readCloser)
+				b, err := io.ReadAll(readCloser)
 				if err != nil {
 					t.T.Fatalf("error reading pod stream %s", err.Error())
 				}

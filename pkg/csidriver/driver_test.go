@@ -19,7 +19,6 @@ package csidriver
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,11 +85,11 @@ func (f *fakeMounter) GetMountRefs(pathname string) ([]string, error) {
 }
 
 func testDriver(testName string, kubeClient kubernetes.Interface) (CSIDriver, string, string, error) {
-	tmpDir1, err := ioutil.TempDir(os.TempDir(), testName)
+	tmpDir1, err := os.MkdirTemp(os.TempDir(), testName)
 	if err != nil {
 		return nil, "", "", err
 	}
-	tmpDir2, err := ioutil.TempDir(os.TempDir(), testName)
+	tmpDir2, err := os.MkdirTemp(os.TempDir(), testName)
 	if err != nil {
 		return nil, "", "", err
 	}
@@ -242,7 +241,7 @@ func TestCreateDeleteConfigMap(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -269,7 +268,7 @@ func TestCreateDeleteSecret(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -300,7 +299,7 @@ func TestDeleteSecretVolume(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -328,7 +327,7 @@ func TestChangeKeys(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -373,7 +372,7 @@ func TestDeleteConfigMapVolume(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -402,7 +401,7 @@ func TestDeleteShare(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -456,7 +455,7 @@ func TestDeleteReAddShare(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -517,7 +516,7 @@ func TestPruner(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -545,7 +544,7 @@ func TestUpdateShare(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -611,7 +610,7 @@ func TestPermChanges(t *testing.T) {
 	}
 	defer os.RemoveAll(dir1)
 	defer os.RemoveAll(dir2)
-	targetPath, err := ioutil.TempDir(os.TempDir(), t.Name())
+	targetPath, err := os.MkdirTemp(os.TempDir(), t.Name())
 	if err != nil {
 		t.Fatalf("err on targetPath %s", err.Error())
 	}
@@ -769,7 +768,7 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 
 			// making sure the tests are running on temporary directories, those will be deleted at
 			// the end of each test pass
-			targetPath, err := ioutil.TempDir(os.TempDir(), test.name)
+			targetPath, err := os.MkdirTemp(os.TempDir(), test.name)
 			if err != nil {
 				t.Fatalf("err on targetPath %s", err.Error())
 			}
