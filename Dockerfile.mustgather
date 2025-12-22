@@ -1,4 +1,4 @@
-FROM registry.ci.openshift.org/ocp/4.18:must-gather
+FROM registry.ci.openshift.org/ocp/4.21:must-gather
 # to make SAST/SNYK happy
 RUN rm -rf examples
 RUN rm -f vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
