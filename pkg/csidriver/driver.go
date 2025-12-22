@@ -28,6 +28,9 @@ import (
 	"sync"
 	"syscall"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,9 +45,6 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/consts"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type driver struct {
@@ -794,7 +794,7 @@ func (d *driver) loadVolsFromDisk() error {
 		fileName := filepath.Join(d.volMapRoot, info.Name())
 		dataFile, oerr := os.Open(fileName)
 		if oerr != nil {
-			klog.V(0).Infof("loadVolsFromDisk error opening file %s: %s", fileName, err.Error())
+			klog.V(0).Infof("loadVolsFromDisk error opening file %s: %s", fileName, oerr.Error())
 			// continue to next file
 			return nil
 		}

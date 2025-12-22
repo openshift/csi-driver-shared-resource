@@ -3,14 +3,15 @@ package cache
 import (
 	"sync"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
-	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/codes"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 /*
