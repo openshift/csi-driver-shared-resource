@@ -50,5 +50,5 @@ func LogAndDebugTestError(t *TestArgs) {
 	t.T.Logf("*** TEST %s FAILED BEGIN OF TEST EVENT DUMP at time %s", t.T.Name(), time.Now().String())
 	dumpTestPodEvents(t)
 	t.T.Logf("*** TEST %s FAILED END OF TEST EVENT DUMP at time %s", t.T.Name(), time.Now().String())
-	t.T.Fatalf(t.MessageString)
+	t.T.Fatalf("%s", t.MessageString)
 }

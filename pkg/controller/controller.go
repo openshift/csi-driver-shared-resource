@@ -34,10 +34,10 @@ type sharedObjectInformer struct {
 type Controller struct {
 	kubeClient kubernetes.Interface
 
-	cfgMapWorkqueue          workqueue.RateLimitingInterface
-	secretWorkqueue          workqueue.RateLimitingInterface
-	sharedConfigMapWorkqueue workqueue.RateLimitingInterface
-	sharedSecretWorkqueue    workqueue.RateLimitingInterface
+	cfgMapWorkqueue          workqueue.TypedRateLimitingInterface[any]
+	secretWorkqueue          workqueue.TypedRateLimitingInterface[any]
+	sharedConfigMapWorkqueue workqueue.TypedRateLimitingInterface[any]
+	sharedSecretWorkqueue    workqueue.TypedRateLimitingInterface[any]
 
 	secretWatchObjs    sync.Map
 	configMapWatchObjs sync.Map
@@ -66,9 +66,9 @@ func NewController(shareRelist time.Duration, refreshResources bool) (*Controlle
 
 	c := &Controller{
 		kubeClient: kubeClient,
-		sharedConfigMapWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
+		sharedConfigMapWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultTypedControllerRateLimiter[any](),
 			"shared-configmap-changes"),
-		sharedSecretWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(),
+		sharedSecretWorkqueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultTypedControllerRateLimiter[any](),
 			"shared-secret-changes"),
 		secretWatchObjs:                sync.Map{},
 		configMapWatchObjs:             sync.Map{},
@@ -81,9 +81,9 @@ func NewController(shareRelist time.Duration, refreshResources bool) (*Controlle
 	}
 
 	c.cfgMapWorkqueue = workqueue.NewNamedRateLimitingQueue(
-		workqueue.DefaultControllerRateLimiter(), "shared-resource-configmap-changes")
+		workqueue.DefaultTypedControllerRateLimiter[any](), "shared-resource-configmap-changes")
 	c.secretWorkqueue = workqueue.NewNamedRateLimitingQueue(
-		workqueue.DefaultControllerRateLimiter(), "shared-resource-secret-changes")
+		workqueue.DefaultTypedControllerRateLimiter[any](), "shared-resource-secret-changes")
 
 	client.SetSharedConfigMapsLister(c.sharedConfigMapInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Lister())
 	client.SetSharedSecretsLister(c.sharedSecretInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Lister())

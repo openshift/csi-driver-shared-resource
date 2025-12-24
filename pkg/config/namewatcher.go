@@ -60,10 +60,7 @@ func (rn *ReservedNames) ValidateSharedConfigMapOpenShiftName(shareName, refName
 }
 
 func startsWithOpenShift(shareName string) bool {
-	if strings.HasPrefix(shareName, "openshift") {
-		return true
-	}
-	return false
+	return strings.HasPrefix(shareName, "openshift")
 }
 
 func innerValidate(shareName, refNamespace, refName string, ok bool, v types.NamespacedName) bool {

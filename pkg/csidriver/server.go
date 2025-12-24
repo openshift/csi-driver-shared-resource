@@ -42,12 +42,8 @@ type nonBlockingGRPCServer struct {
 }
 
 func (s *nonBlockingGRPCServer) Start(endpoint string, ids csi.IdentityServer, ns csi.NodeServer) {
-
 	s.wg.Add(1)
-
 	go s.serve(endpoint, ids, ns)
-
-	return
 }
 
 func (s *nonBlockingGRPCServer) Wait() {

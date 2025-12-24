@@ -3,14 +3,15 @@ package cache
 import (
 	"sync"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
-	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/codes"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 /*
@@ -66,7 +67,7 @@ func DelConfigMap(configmap *corev1.ConfigMap) {
 // RegisterConfigMapUpsertCallback will be called as part of the kubelet sending a mount CSI volume request for a pod;
 // if the corresponding share references a configmap, then the function registered here will be called to possibly change
 // storage
-func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value interface{}) bool) error{
+func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value interface{}) bool) error {
 	if !config.LoadedConfig.RefreshResources {
 		return nil
 	}
@@ -75,7 +76,7 @@ func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value inter
 	cm, err := client.GetConfigMap(ns, name)
 	if err != nil {
 		klog.Warningf("could not get configmap for %s vol %s", cmID, volID)
-		
+
 		if kerrors.IsForbidden(err) {
 			return status.Errorf(codes.PermissionDenied, "csi driver is forbidden to access configmap %s/%s: %v", ns, name, err)
 		}

@@ -9,16 +9,18 @@ import (
 	"testing"
 	"time"
 
-	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
-	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
-	"github.com/openshift/csi-driver-shared-resource/pkg/client"
-	"github.com/openshift/csi-driver-shared-resource/test/framework"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+
+	sharev1alpha1 "github.com/openshift/api/sharedresource/v1alpha1"
+	sharev1clientset "github.com/openshift/client-go/sharedresource/clientset/versioned"
+
+	"github.com/openshift/csi-driver-shared-resource/pkg/client"
+	"github.com/openshift/csi-driver-shared-resource/test/framework"
 )
 
 var (

@@ -82,7 +82,7 @@ func testNodeServer(testName string) (*nodeServer, string, string, error) {
 func getTestTargetPath(t *testing.T) string {
 	dir, err := os.MkdirTemp(os.TempDir(), "ut")
 	if err != nil {
-		t.Fatalf("unexpected err %s", err.Error())
+		t.Fatalf("unexpected err %v", err)
 	}
 	return dir
 }
@@ -618,7 +618,8 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 		},
 	}
-	for _, test := range tests {
+	for ti := range tests {
+		test := &tests[ti]
 		t.Run(test.name, func(t *testing.T) {
 			if test.nodePublishVolReq.TargetPath != "" {
 				defer os.RemoveAll(test.nodePublishVolReq.TargetPath)
