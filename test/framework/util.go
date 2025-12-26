@@ -16,6 +16,7 @@ type TestArgs struct {
 	Name                               string
 	Namespace                          string
 	ShareNameOverride                  string
+	ShareType                          string // secret or configmap (default -> configmap)
 	SecondName                         string
 	ChangeName                         string
 	SearchString                       string
