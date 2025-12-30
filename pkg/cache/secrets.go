@@ -3,7 +3,11 @@ package cache
 import (
 	"sync"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
@@ -65,18 +69,28 @@ func DelSecret(secret *corev1.Secret) {
 // RegisterSecretUpsertCallback will be called as part of the kubelet sending a mount CSI volume request for a pod;
 // if the corresponding share references a secret, then the function registered here will be called to possibly change
 // storage
-func RegisterSecretUpsertCallback(volID, sID string, f func(key, value interface{}) bool) {
+func RegisterSecretUpsertCallback(volID, sID string, f func(key, value interface{}) bool) error {
 	if !config.LoadedConfig.RefreshResources {
-		return
+		return nil
 	}
 	secretUpsertCallbacks.Store(volID, f)
 	ns, name, _ := SplitKey(sID)
-	s := client.GetSecret(ns, name)
+	s, err := client.GetSecret(ns, name)
+	if err != nil {
+		klog.Warningf("could not get secret for %s vol %s", sID, volID)
+
+		if kerrors.IsForbidden(err) {
+			return status.Errorf(codes.PermissionDenied, "csi driver is forbidden to access secret %s/%s: %v", ns, name, err)
+		}
+		return status.Errorf(codes.Internal, "csi driver failed to get secret %s/%s: %v", ns, name, err)
+	}
+
 	if s != nil {
 		f(BuildKey(s.Namespace, s.Name), s)
 	} else {
-		klog.Warningf("not found on secret with key %s vol %s", sID, volID)
+		klog.Warningf("not found on get secret with key %s vol %s", sID, volID)
 	}
+	return nil
 }
 
 // UnregisterSecretUpsertCallback will be called as part of the kubelet sending a delete CSI volume request for a pod

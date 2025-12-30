@@ -1,15 +1,14 @@
 package metrics
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"math/big"
-	mr "math/rand"
 	"net/http"
 	"os"
 	"sync/atomic"
@@ -30,8 +29,6 @@ var (
 
 func TestMain(m *testing.M) {
 	var err error
-
-	mr.Seed(time.Now().UnixNano())
 
 	tlsKey, tlsCRT, err = generateTempCertificates()
 	if err != nil {
@@ -63,7 +60,7 @@ func generateTempCertificates() (string, string, error) {
 		return "", "", err
 	}
 
-	cert, err := ioutil.TempFile("", "testcert-")
+	cert, err := os.CreateTemp("", "testcert-")
 	if err != nil {
 		return "", "", err
 	}
@@ -73,7 +70,7 @@ func generateTempCertificates() (string, string, error) {
 		Bytes: derBytes,
 	})
 
-	keyPath, err := ioutil.TempFile("", "testkey-")
+	keyPath, err := os.CreateTemp("", "testkey-")
 	if err != nil {
 		return "", "", err
 	}
@@ -87,22 +84,24 @@ func generateTempCertificates() (string, string, error) {
 }
 
 func blockUntilServerStarted(port int) error {
-	return wait.PollImmediate(100*time.Millisecond, 5*time.Second, func() (bool, error) {
-		if _, err := http.Get(fmt.Sprintf("https://localhost:%d/metrics", port)); err != nil {
-			// in case error is "connection refused", server is not up (yet)
-			// it is possible that it is still being started
-			// in that case we need to try more
-			if utilnet.IsConnectionRefused(err) {
-				return false, nil
+	ctx := context.TODO()
+	return wait.PollUntilContextTimeout(ctx, 100*time.Millisecond, 5*time.Second, true,
+		func(ctx context.Context) (bool, error) {
+			if _, err := http.Get(fmt.Sprintf("https://localhost:%d/metrics", port)); err != nil {
+				// in case error is "connection refused", server is not up (yet)
+				// it is possible that it is still being started
+				// in that case we need to try more
+				if utilnet.IsConnectionRefused(err) {
+					return false, nil
+				}
+
+				// in case of a different error, return immediately
+				return true, err
 			}
 
-			// in case of a different error, return immediately
-			return true, err
-		}
-
-		// no error, stop polling the server, continue with the test logic
-		return true, nil
-	})
+			// no error, stop polling the server, continue with the test logic
+			return true, nil
+		})
 }
 
 func runMetricsServer(t *testing.T) (int, chan<- struct{}) {

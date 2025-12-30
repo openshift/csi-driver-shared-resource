@@ -5,7 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"path/filepath"
 	"strings"
 	"time"
@@ -28,14 +28,16 @@ const (
 
 func CreateTestPod(t *TestArgs) {
 	t.T.Logf("%s: start create test pod %s", time.Now().String(), t.Name)
-	saErr := wait.PollImmediate(1*time.Second, 1*time.Minute, func() (done bool, err error) {
-		_, e := kubeClient.CoreV1().ServiceAccounts(t.Name).Get(context.TODO(), "default", metav1.GetOptions{})
-		if e != nil {
-			t.T.Logf("default SA not available yet: %s", e.Error())
-			return false, nil
-		}
-		return true, nil
-	})
+	ctx := context.TODO()
+	saErr := wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true,
+		func(ctx context.Context) (done bool, err error) {
+			_, e := kubeClient.CoreV1().ServiceAccounts(t.Name).Get(context.TODO(), "default", metav1.GetOptions{})
+			if e != nil {
+				t.T.Logf("default SA not available yet: %s", e.Error())
+				return false, nil
+			}
+			return true, nil
+		})
 	if saErr != nil {
 		t.T.Logf("default SA for namespace %s not available ever after a minute from namespace creation", t.Name)
 	}
@@ -129,37 +131,40 @@ func CreateTestPod(t *TestArgs) {
 	if t.TestPodUp {
 		eventClient := kubeClient.CoreV1().Events(t.Name)
 		t.T.Logf("%s: start verify image for test pod %s is pulled", time.Now().String(), t.Name)
-		err = wait.PollImmediate(1*time.Second, 1*time.Minute, func() (done bool, err error) {
-			eventList, err := eventClient.List(context.TODO(), metav1.ListOptions{})
-			if err != nil {
-				t.T.Logf("%s: error list events for %s: %s", time.Now().String(), t.Name, err.Error())
-				return false, nil
-			}
-			for _, event := range eventList.Items {
-				if event.InvolvedObject.Kind == "Pod" &&
-					(strings.Contains(event.Reason, "Pulled") || strings.Contains(event.Reason, "Already")) {
-					t.T.Logf("%s: image for test pod %s available: %s", time.Now().String(), t.Name, event.Reason)
-					return true, nil
+		ctx := context.TODO()
+		err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true,
+			func(ctx context.Context) (done bool, err error) {
+				eventList, err := eventClient.List(context.TODO(), metav1.ListOptions{})
+				if err != nil {
+					t.T.Logf("%s: error list events for %s: %s", time.Now().String(), t.Name, err.Error())
+					return false, nil
 				}
-			}
-			return false, nil
-		})
+				for _, event := range eventList.Items {
+					if event.InvolvedObject.Kind == "Pod" &&
+						(strings.Contains(event.Reason, "Pulled") || strings.Contains(event.Reason, "Already")) {
+						t.T.Logf("%s: image for test pod %s available: %s", time.Now().String(), t.Name, event.Reason)
+						return true, nil
+					}
+				}
+				return false, nil
+			})
 		// even if we do not pull the image int time, we'll still given it time to sort out as part of the Pod getting to Running state
 		if err != nil {
 			t.T.Logf("%s: did not see image pull event for pod %s but will still see if it comes up in time", time.Now().String(), t.Name)
 		}
 		t.T.Logf("%s: start verify test pod %s is up", time.Now().String(), t.Name)
-		err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
-			pod, err = podClient.Get(context.TODO(), t.Name, metav1.GetOptions{})
-			if err != nil {
-				t.T.Logf("%s: error getting pod %s: %s", time.Now().String(), t.Name, err.Error())
-			}
-			if pod.Status.Phase != corev1.PodRunning {
-				t.T.Logf("%s: pod %s only in phase %s\n", time.Now().String(), pod.Name, pod.Status.Phase)
-				return false, nil
-			}
-			return true, nil
-		})
+		err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true,
+			func(ctx context.Context) (done bool, err error) {
+				pod, err = podClient.Get(context.TODO(), t.Name, metav1.GetOptions{})
+				if err != nil {
+					t.T.Logf("%s: error getting pod %s: %s", time.Now().String(), t.Name, err.Error())
+				}
+				if pod.Status.Phase != corev1.PodRunning {
+					t.T.Logf("%s: pod %s only in phase %s\n", time.Now().String(), pod.Name, pod.Status.Phase)
+					return false, nil
+				}
+				return true, nil
+			})
 		if err != nil {
 			podJSONBytes, err := json.MarshalIndent(pod, "", "    ")
 			if err != nil {
@@ -180,21 +185,23 @@ func mountFailed(t *TestArgs) {
 	eventClient := kubeClient.CoreV1().Events(t.Name)
 	eventList := &corev1.EventList{}
 	var err error
-	err = wait.PollImmediate(1*time.Second, 30*time.Second, func() (bool, error) {
-		eventList, err = eventClient.List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			t.T.Logf("%s: unable to list events in test namespace %s: %s", time.Now().String(), t.Name, err.Error())
-			return false, nil
-		}
-		for _, event := range eventList.Items {
-			t.T.Logf("%s: found event %s in namespace %s", time.Now().String(), event.Reason, t.Name)
-			// the constant for FailedMount is in k8s/k8s; refraining for vendoring that in this repo
-			if event.Reason == "FailedMount" && event.InvolvedObject.Kind == "Pod" && event.InvolvedObject.Name == t.Name {
-				return true, nil
+	ctx := context.TODO()
+	err = wait.PollUntilContextTimeout(ctx, 1*time.Second, 1*time.Minute, true,
+		func(ctx context.Context) (done bool, err error) {
+			eventList, err = eventClient.List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				t.T.Logf("%s: unable to list events in test namespace %s: %s", time.Now().String(), t.Name, err.Error())
+				return false, nil
 			}
-		}
-		return false, nil
-	})
+			for _, event := range eventList.Items {
+				t.T.Logf("%s: found event %s in namespace %s", time.Now().String(), event.Reason, t.Name)
+				// the constant for FailedMount is in k8s/k8s; refraining for vendoring that in this repo
+				if event.Reason == "FailedMount" && event.InvolvedObject.Kind == "Pod" && event.InvolvedObject.Name == t.Name {
+					return true, nil
+				}
+			}
+			return false, nil
+		})
 	if err != nil {
 		eventJsonString := ""
 		for _, event := range eventList.Items {
@@ -225,31 +232,33 @@ func ExecPod(t *TestArgs) {
 	}
 
 	for _, startingPoint := range dirs {
-		err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
-			req := restClient.Post().Resource("pods").Namespace(t.Name).Name(t.Name).SubResource("exec").
-				Param("container", containerName).Param("stdout", "true").Param("stderr", "true").
-				Param("command", "ls").Param("command", "-laR").Param("command", startingPoint)
+		ctx := context.TODO()
+		err := wait.PollUntilContextTimeout(ctx, pollInterval, t.TestDuration, true,
+			func(ctx context.Context) (bool, error) {
+				req := restClient.Post().Resource("pods").Namespace(t.Name).Name(t.Name).SubResource("exec").
+					Param("container", containerName).Param("stdout", "true").Param("stderr", "true").
+					Param("command", "ls").Param("command", "-laR").Param("command", startingPoint)
 
-			out := &bytes.Buffer{}
-			errOut := &bytes.Buffer{}
-			remoteExecutor := kubexec.DefaultRemoteExecutor{}
-			err := remoteExecutor.Execute(req.URL(), kubeConfig, nil, out, errOut, false, nil)
+				out := &bytes.Buffer{}
+				errOut := &bytes.Buffer{}
+				remoteExecutor := kubexec.DefaultRemoteExecutor{}
+				err := remoteExecutor.Execute(req.URL(), kubeConfig, nil, out, errOut, false, nil)
 
-			if err != nil {
-				t.T.Logf("%s: error with remote exec: %s, errOut: %s", time.Now().String(), err.Error(), errOut)
-				return false, nil
-			}
-			if !t.SearchStringMissing && !strings.Contains(out.String(), t.SearchString) {
-				t.T.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), t.SearchStringMissing, out.String(), errOut.String())
-				return false, nil
-			}
-			if t.SearchStringMissing && strings.Contains(out.String(), t.SearchString) {
-				t.T.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), t.SearchStringMissing, out.String(), errOut.String())
-				return false, nil
-			}
-			t.T.Logf("%s: final directory listing:\n%s", time.Now().String(), out.String())
-			return true, nil
-		})
+				if err != nil {
+					t.T.Logf("%s: error with remote exec: %s, errOut: %s", time.Now().String(), err.Error(), errOut)
+					return false, nil
+				}
+				if !t.SearchStringMissing && !strings.Contains(out.String(), t.SearchString) {
+					t.T.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), t.SearchStringMissing, out.String(), errOut.String())
+					return false, nil
+				}
+				if t.SearchStringMissing && strings.Contains(out.String(), t.SearchString) {
+					t.T.Logf("%s: directory listing did not have expected output: missing: %v\nout: %s\nerr: %s\n", time.Now().String(), t.SearchStringMissing, out.String(), errOut.String())
+					return false, nil
+				}
+				t.T.Logf("%s: final directory listing:\n%s", time.Now().String(), out.String())
+				return true, nil
+			})
 		if err == nil {
 			return
 		}
@@ -287,38 +296,40 @@ func WaitForPodContainerRestart(t *TestArgs) error {
 		pollInterval = 1 * time.Minute
 	}
 	t.T.Logf("%s: WaitForPodContainerRestart CurrentDriverContainerRestartCount %v", time.Now().String(), t.CurrentDriverContainerRestartCount)
-	err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
-		podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			t.T.Fatalf("error list pods %v", err)
-		}
-		t.T.Logf("%s: WaitForPodContainerRestart have %d items in list", time.Now().String(), len(podList.Items))
-		if len(podList.Items) < 3 {
-			return false, nil
-		}
-		for _, pod := range podList.Items {
-			if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
-				if pod.Status.Phase != corev1.PodRunning {
-					t.T.Logf("%s: WaitForPodContainerRestart pod %s not in running phase: %s", time.Now().String(), pod.Name, pod.Status.Phase)
-				}
-				for _, cs := range pod.Status.ContainerStatuses {
-					if strings.TrimSpace(cs.Name) == "csidriver" {
-						t.T.Logf("%s: WaitForPodContainerRestart pod %s csidriver container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
-						countBeforeConfigChange, ok := t.CurrentDriverContainerRestartCount[pod.Name]
-						if !ok {
-							t.T.Logf("%s: WaitForPodContainerRestart pod %s did not have a prior restart count?", time.Now().String(), pod.Name)
-							return false, fmt.Errorf("no prior restart count for %s", pod.Name)
-						}
-						if cs.RestartCount <= countBeforeConfigChange {
-							return false, nil
+	ctx := context.TODO()
+	err := wait.PollUntilContextTimeout(ctx, pollInterval, t.TestDuration, true,
+		func(ctx context.Context) (bool, error) {
+			podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
+			if err != nil {
+				t.T.Fatalf("error list pods %v", err)
+			}
+			t.T.Logf("%s: WaitForPodContainerRestart have %d items in list", time.Now().String(), len(podList.Items))
+			if len(podList.Items) < 3 {
+				return false, nil
+			}
+			for _, pod := range podList.Items {
+				if strings.HasPrefix(pod.Name, "shared-resource-csi-driver-node") {
+					if pod.Status.Phase != corev1.PodRunning {
+						t.T.Logf("%s: WaitForPodContainerRestart pod %s not in running phase: %s", time.Now().String(), pod.Name, pod.Status.Phase)
+					}
+					for _, cs := range pod.Status.ContainerStatuses {
+						if strings.TrimSpace(cs.Name) == "csidriver" {
+							t.T.Logf("%s: WaitForPodContainerRestart pod %s csidriver container has restart count %d", time.Now().String(), pod.Name, cs.RestartCount)
+							countBeforeConfigChange, ok := t.CurrentDriverContainerRestartCount[pod.Name]
+							if !ok {
+								t.T.Logf("%s: WaitForPodContainerRestart pod %s did not have a prior restart count?", time.Now().String(), pod.Name)
+								return false, fmt.Errorf("no prior restart count for %s", pod.Name)
+							}
+							if cs.RestartCount <= countBeforeConfigChange {
+								return false, nil
+							}
 						}
 					}
 				}
-			}
 
-		}
-		return true, nil
-	})
+			}
+			return true, nil
+		})
 	return err
 }
 
@@ -327,20 +338,22 @@ func SearchCSIPods(t *TestArgs) {
 	if t.TestDuration != 30*time.Second {
 		pollInterval = 1 * time.Minute
 	}
-	err := wait.PollImmediate(pollInterval, t.TestDuration, func() (bool, error) {
-		dumpCSIPods(t)
+	ctx := context.TODO()
+	err := wait.PollUntilContextTimeout(ctx, pollInterval, t.TestDuration, true,
+		func(ctx context.Context) (bool, error) {
+			dumpCSIPods(t)
 
-		if !t.SearchStringMissing && !strings.Contains(t.LogContent, t.SearchString) {
-			t.T.Logf("%s: csi pod listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
-			return false, nil
-		}
-		if t.SearchStringMissing && strings.Contains(t.LogContent, t.SearchString) {
-			t.T.Logf("%s: directory listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
-			return false, nil
-		}
-		t.T.Logf("%s: shared resource driver pods are good with search string criteria: missing: %v\n, string: %s\n", time.Now().String(), t.SearchStringMissing, t.SearchString)
-		return true, nil
-	})
+			if !t.SearchStringMissing && !strings.Contains(t.LogContent, t.SearchString) {
+				t.T.Logf("%s: csi pod listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
+				return false, nil
+			}
+			if t.SearchStringMissing && strings.Contains(t.LogContent, t.SearchString) {
+				t.T.Logf("%s: directory listing did not have expected output: missing: %v\n", time.Now().String(), t.SearchStringMissing)
+				return false, nil
+			}
+			t.T.Logf("%s: shared resource driver pods are good with search string criteria: missing: %v\n, string: %s\n", time.Now().String(), t.SearchStringMissing, t.SearchString)
+			return true, nil
+		})
 	if err == nil {
 		return
 	}
@@ -367,7 +380,7 @@ func dumpCSIPods(t *TestArgs) {
 				if err != nil {
 					t.T.Fatalf("error getting pod logs for container %s: %s", container.Name, err.Error())
 				}
-				b, err := ioutil.ReadAll(readCloser)
+				b, err := io.ReadAll(readCloser)
 				if err != nil {
 					t.T.Fatalf("error reading pod stream %s", err.Error())
 				}

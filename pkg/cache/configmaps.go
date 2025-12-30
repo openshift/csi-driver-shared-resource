@@ -3,7 +3,11 @@ package cache
 import (
 	"sync"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/klog/v2"
 
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
@@ -63,18 +67,28 @@ func DelConfigMap(configmap *corev1.ConfigMap) {
 // RegisterConfigMapUpsertCallback will be called as part of the kubelet sending a mount CSI volume request for a pod;
 // if the corresponding share references a configmap, then the function registered here will be called to possibly change
 // storage
-func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value interface{}) bool) {
+func RegisterConfigMapUpsertCallback(volID, cmID string, f func(key, value interface{}) bool) error {
 	if !config.LoadedConfig.RefreshResources {
-		return
+		return nil
 	}
 	configmapUpsertCallbacks.Store(volID, f)
 	ns, name, _ := SplitKey(cmID)
-	cm := client.GetConfigMap(ns, name)
+	cm, err := client.GetConfigMap(ns, name)
+	if err != nil {
+		klog.Warningf("could not get configmap for %s vol %s", cmID, volID)
+
+		if kerrors.IsForbidden(err) {
+			return status.Errorf(codes.PermissionDenied, "csi driver is forbidden to access configmap %s/%s: %v", ns, name, err)
+		}
+		return status.Errorf(codes.Internal, "csi driver failed to get configmap %s/%s: %v", ns, name, err)
+	}
+
 	if cm != nil {
 		f(BuildKey(cm.Namespace, cm.Name), cm)
 	} else {
 		klog.Warningf("not found on get configmap for %s vol %s", cmID, volID)
 	}
+	return nil
 }
 
 // UnregisterConfigMapUpsertCallback will be called as part of the kubelet sending a delete CSI volume request for a pod

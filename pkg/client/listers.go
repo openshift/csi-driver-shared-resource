@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	corev1 "k8s.io/api/core/v1"
@@ -47,7 +48,7 @@ func GetListers() *Listers {
 	return &singleton
 }
 
-func GetSecret(namespace, name string) *corev1.Secret {
+func GetSecret(namespace, name string) (*corev1.Secret, error) {
 	var lister corelistersv1.SecretLister
 	obj, ok := singleton.Secrets.Load(namespace)
 	if ok {
@@ -56,21 +57,23 @@ func GetSecret(namespace, name string) *corev1.Secret {
 	if lister != nil {
 		s, err := lister.Secrets(namespace).Get(name)
 		if err == nil {
-			return s
+			return s, nil
 		}
 		klog.V(4).Infof("GetSecret lister for %s/%s got error: %s", namespace, name, err.Error())
 	}
 	if kubeClient != nil {
 		s, err := kubeClient.CoreV1().Secrets(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-		if err == nil {
-			return s
+		if err != nil {
+			// "forbidden" error will be caught and returned
+			klog.V(4).Infof("GetSecret client for %s/%s got error: %s", namespace, name, err.Error())
+			return nil, err
 		}
-		klog.V(4).Infof("GetSecret client for %s/%s got error: %s", namespace, name, err.Error())
+		return s, nil
 	}
-	return nil
+	return nil, fmt.Errorf("no secret lister or kubeClient available for namespace %s", namespace)
 }
 
-func GetConfigMap(namespace, name string) *corev1.ConfigMap {
+func GetConfigMap(namespace, name string) (*corev1.ConfigMap, error) {
 	var lister corelistersv1.ConfigMapLister
 	obj, ok := singleton.ConfigMaps.Load(namespace)
 	if ok {
@@ -79,18 +82,20 @@ func GetConfigMap(namespace, name string) *corev1.ConfigMap {
 	if lister != nil {
 		cm, err := lister.ConfigMaps(namespace).Get(name)
 		if err == nil {
-			return cm
+			return cm, nil
 		}
 		klog.V(4).Infof("GetConfigMap lister for %s/%s got error: %s", namespace, name, err.Error())
 	}
 	if kubeClient != nil {
 		cm, err := kubeClient.CoreV1().ConfigMaps(namespace).Get(context.TODO(), name, metav1.GetOptions{})
-		if err == nil {
-			return cm
+		if err != nil {
+			// "forbidden" error will be caught and returned
+			klog.V(4).Infof("GetConfigMap client for %s/%s got error: %s", namespace, name, err.Error())
+			return nil, err
 		}
-		klog.V(4).Infof("GetConfigMap client for %s/%s got error: %s", namespace, name, err.Error())
+		return cm, nil
 	}
-	return nil
+	return nil, fmt.Errorf("no configmap lister or kubeClient available for namespace %s", namespace)
 }
 
 func GetSharedSecret(name string) *sharev1alpha1.SharedSecret {
