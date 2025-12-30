@@ -599,6 +599,10 @@ func mapBackingResourceToPod(dv *driverVolume) error {
 		// we can return the error back to volume provisioning, where the kubelet will retry at
 		// a controlled frequency
 		sharedSecret := client.GetSharedSecret(dv.GetSharedDataId())
+		if sharedSecret == nil {
+			klog.V(4).Infof("mapBackingResourceToPod for pod volume %s:%s:%s share %s no longer exists", dv.GetPodNamespace(), dv.GetPodName(), dv.GetVolID(), dv.GetSharedDataId())
+			return nil
+		}
 		sNamespace := sharedSecret.Spec.SecretRef.Namespace
 		sName := sharedSecret.Spec.SecretRef.Name
 		comboKey := objcache.BuildKey(sNamespace, sName)
