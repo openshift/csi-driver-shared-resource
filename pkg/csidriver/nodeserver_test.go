@@ -9,6 +9,7 @@ import (
 	"golang.org/x/net/context"
 
 	authorizationv1 "k8s.io/api/authorization/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -618,6 +619,25 @@ func TestNodePublishVolume(t *testing.T) {
 			},
 		},
 	}
+	secret := corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cool-secret",
+			Namespace: "cool-secret-namespace",
+		},
+	}
+	configMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cool-configmap",
+			Namespace: "cool-configmap-namespace",
+		},
+	}
+	secretReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &secret, nil
+	}
+	configMapReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &configMap, nil
+	}
+
 	for ti := range tests {
 		test := &tests[ti]
 		t.Run(test.name, func(t *testing.T) {
@@ -630,6 +650,7 @@ func TestNodePublishVolume(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpDir)
 			defer os.RemoveAll(volPath)
+			defer ns.d.deleteVolume(test.nodePublishVolReq.VolumeId)
 
 			secretShareLister := &fakeSharedSecretLister{
 				sShare: test.secretShare,
@@ -643,6 +664,8 @@ func TestNodePublishVolume(t *testing.T) {
 			if test.reactor != nil {
 				sarClient := fakekubeclientset.NewSimpleClientset()
 				sarClient.PrependReactor("create", "subjectaccessreviews", test.reactor)
+				sarClient.PrependReactor("get", "secrets", secretReactorFunc)
+				sarClient.PrependReactor("get", "configmaps", configMapReactorFunc)
 				client.SetClient(sarClient)
 			}
 

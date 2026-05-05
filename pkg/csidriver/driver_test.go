@@ -26,6 +26,9 @@ import (
 	"testing"
 	"time"
 
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	authorizationv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -127,7 +130,7 @@ func TestCreateVolumeBadAccessType(t *testing.T) {
 	}
 }
 
-func TestMapBackingResourceHandlesForbiddenError(t *testing.T) {
+func TestMapBackingResourceHandlesPermissionDenied(t *testing.T) {
 	testCases := []struct {
 		name              string
 		shareObject       runtime.Object
@@ -220,12 +223,13 @@ func TestMapBackingResourceHandlesForbiddenError(t *testing.T) {
 			err = mapBackingResourceToPod(tc.driverVolume) // function under test
 
 			if err == nil {
-				t.Fatalf("mapBackingResourceToPod unexpectedly succeeded, but should have failed with a Forbidden error")
+				t.Fatalf("mapBackingResourceToPod unexpectedly succeeded, but should have failed with a PermissionDenied error")
 			}
-			if !kerrors.IsForbidden(err) {
-				t.Fatalf("Expected a Forbidden error, but got: %v", err)
+			st, ok := status.FromError(err)
+			if !ok || st.Code() != codes.PermissionDenied {
+				t.Fatalf("Expected gRPC PermissionDenied error, but got: %v", err)
 			}
-			t.Logf("Successfully received expected Forbidden error: %v", err)
+			t.Logf("Successfully received expected PermissionDenied error: %v", err)
 		})
 	}
 }
