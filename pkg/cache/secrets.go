@@ -111,3 +111,15 @@ func RegisterSecretDeleteCallback(volID string, f func(key, value interface{}) b
 func UnregisterSecretDeleteCallback(volID string) {
 	secretDeleteCallbacks.Delete(volID)
 }
+
+func SecretUpsertCallbackCount() int {
+	count := 0
+	secretUpsertCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}
+
+func SecretDeleteCallbackCount() int {
+	count := 0
+	secretDeleteCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}
