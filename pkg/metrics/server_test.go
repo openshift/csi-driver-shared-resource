@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 
 	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -153,7 +154,7 @@ func testServerForExpected(t *testing.T, testName string, port int, expected []m
 	if err != nil {
 		t.Fatalf("error requesting metrics server: %v in test %q", err, testName)
 	}
-	var p expfmt.TextParser
+	p := expfmt.NewTextParser(model.UTF8Validation)
 	mf, err := p.TextToMetricFamilies(resp.Body)
 	if err != nil {
 		t.Fatalf("error parsing server response: %v in test %q", err, testName)

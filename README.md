@@ -154,6 +154,7 @@ Sharing resources is done as follows:
 
 See also:
 
+- [RBAC configuration](docs/rbac.md)
 - [Simple example](docs/simple-example.md)
 - [Tekton example](docs/tekton-example.md)
 - [OpenShift BuildConfig example](docs/build-with-rhel-entitlements.md)

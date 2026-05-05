@@ -124,3 +124,36 @@ func DeleteShare(t *TestArgs) {
 	}
 	t.T.Logf("%s: completed delete share %s", time.Now().String(), name)
 }
+
+// creates a SharedSecret or SharedConfigMap with a custom source reference for RBAC tests
+func CreateTestShare(t *TestArgs, shareName, sourceName, sourceNamespace, shareType string) error {
+	var err error
+	if shareType == "secret" {
+		share := &shareapi.SharedSecret{
+			ObjectMeta: metav1.ObjectMeta{Name: shareName},
+			Spec: shareapi.SharedSecretSpec{
+				SecretRef: shareapi.SharedSecretReference{
+					Name:      sourceName,
+					Namespace: sourceNamespace,
+				},
+			},
+		}
+		_, err = shareClient.SharedresourceV1alpha1().SharedSecrets().Create(context.TODO(), share, metav1.CreateOptions{})
+	} else {
+		share := &shareapi.SharedConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: shareName},
+			Spec: shareapi.SharedConfigMapSpec{
+				ConfigMapRef: shareapi.SharedConfigMapReference{
+					Name:      sourceName,
+					Namespace: sourceNamespace,
+				},
+			},
+		}
+		_, err = shareClient.SharedresourceV1alpha1().SharedConfigMaps().Create(context.TODO(), share, metav1.CreateOptions{})
+	}
+	if err != nil && !kerrors.IsAlreadyExists(err) {
+		return err
+	}
+	t.T.Logf("Created share %s (type: %s)", shareName, shareType)
+	return nil
+}
