@@ -801,6 +801,10 @@ func TestMapVolumeToPodWithKubeClient(t *testing.T) {
 			if !foundSecret && !foundConfigMap {
 				t.Fatalf("mount point doesn't have data: secret='%v', configmap='%v'", foundSecret, foundConfigMap)
 			}
+			// clear out dv for next run
+			if err := d.deleteVolume(test.name); err != nil {
+				t.Fatalf("deleteVolume: %s", err.Error())
+			}
 		})
 	}
 }
@@ -960,4 +964,149 @@ func findSharedItems(t *testing.T, dir string) (bool, bool) {
 		t.Fatalf("unexpected walk error: %s", err.Error())
 	}
 	return foundSecret, foundConfigMap
+}
+
+// TestCallbackLeakOnPodChurn verifies that repeated pod mount/unmount cycles do not leak
+// callback entries in the global sync.Map caches. Covers both SharedSecret and SharedConfigMap
+// resource types via table-driven subtests.
+func TestCallbackLeakOnPodChurn(t *testing.T) {
+	k8sClient := fakekubeclientset.NewSimpleClientset()
+	client.SetClient(k8sClient)
+	shareClient := fakeshareclientset.NewSimpleClientset()
+	client.SetShareClient(shareClient)
+
+	d, dir1, dir2, err := testDriver(t.Name(), k8sClient)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
+	}
+	defer os.RemoveAll(dir1)
+	defer os.RemoveAll(dir2)
+
+	acceptReactorFunc := func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &authorizationv1.SubjectAccessReview{Status: authorizationv1.SubjectAccessReviewStatus{Allowed: true}}, nil
+	}
+	k8sClient.PrependReactor("create", "subjectaccessreviews", acceptReactorFunc)
+
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{Name: "secret1", Namespace: "namespace"},
+		Data:       map[string][]byte{secretkey1: []byte(secretvalue1)},
+	}
+	k8sClient.PrependReactor("get", "secrets", func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, secret, nil
+	})
+	cache.UpsertSecret(secret)
+
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "configmap1", Namespace: "namespace"},
+		Data:       map[string]string{configmapkey1: configmapvalue1},
+	}
+	k8sClient.PrependReactor("get", "configmaps", func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, cm, nil
+	})
+	cache.UpsertConfigMap(cm)
+
+	sShare := &sharev1alpha1.SharedSecret{
+		ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-secret", t.Name())},
+		Spec: sharev1alpha1.SharedSecretSpec{
+			SecretRef: sharev1alpha1.SharedSecretReference{
+				Name:      "secret1",
+				Namespace: "namespace",
+			},
+		},
+	}
+	cache.AddSharedSecret(sShare)
+	shareClient.PrependReactor("get", "sharedsecrets", func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, sShare, nil
+	})
+	shareClient.PrependReactor("list", "sharedsecrets", func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &sharev1alpha1.SharedSecretList{Items: []sharev1alpha1.SharedSecret{*sShare}}, nil
+	})
+
+	cmShare := &sharev1alpha1.SharedConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-configmap", t.Name())},
+		Spec: sharev1alpha1.SharedConfigMapSpec{
+			ConfigMapRef: sharev1alpha1.SharedConfigMapReference{
+				Name:      "configmap1",
+				Namespace: "namespace",
+			},
+		},
+	}
+	cache.AddSharedConfigMap(cmShare)
+	shareClient.PrependReactor("get", "sharedconfigmaps", func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, cmShare, nil
+	})
+	shareClient.PrependReactor("list", "sharedconfigmaps", func(action fakekubetesting.Action) (handled bool, ret runtime.Object, err error) {
+		return true, &sharev1alpha1.SharedConfigMapList{Items: []sharev1alpha1.SharedConfigMap{*cmShare}}, nil
+	})
+
+	shareInformerFactory := shareinformer.NewSharedInformerFactoryWithOptions(shareClient, 10*time.Minute)
+	client.SetSharedSecretsLister(shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Lister())
+	client.SetSharedConfigMapsLister(shareInformerFactory.Sharedresource().V1alpha1().SharedConfigMaps().Lister())
+
+	tests := []struct {
+		name    string
+		sShare  *sharev1alpha1.SharedSecret
+		cmShare *sharev1alpha1.SharedConfigMap
+	}{{
+		name:   "SharedSecret",
+		sShare: sShare,
+	}, {
+		name:    "SharedConfigMap",
+		cmShare: cmShare,
+	}}
+
+	podCount := 50
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			for i := 0; i < podCount; i++ {
+				volID := fmt.Sprintf("%s-vol-%d", test.name, i)
+				targetPath, err := os.MkdirTemp(os.TempDir(), test.name)
+				if err != nil {
+					t.Fatalf("iteration %d: failed to create temp dir: %s", i, err.Error())
+				}
+
+				volCtx := seedVolumeContext()
+				dv, err := d.createVolume(volID, targetPath, true, volCtx, test.cmShare, test.sShare, 0, mountAccess)
+				if err != nil {
+					t.Fatalf("iteration %d createVolume: %s", i, err.Error())
+				}
+
+				if err := d.mapVolumeToPod(dv); err != nil {
+					t.Fatalf("iteration %d mapVolumeToPod: %s", i, err.Error())
+				}
+
+				if err := d.deleteVolume(volID); err != nil {
+					t.Fatalf("iteration %d deleteVolume: %s", i, err.Error())
+				}
+				os.RemoveAll(targetPath)
+			}
+
+			if count := cache.ShareSecretsUpdateCallbackCount(); count != 0 {
+				t.Fatalf("Memory leak: shareSecretsUpdateCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.ShareSecretsDeleteCallbackCount(); count != 0 {
+				t.Fatalf("shareSecretsDeleteCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.SecretUpsertCallbackCount(); count != 0 {
+				t.Fatalf("secretUpsertCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.SecretDeleteCallbackCount(); count != 0 {
+				t.Fatalf("secretDeleteCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.ShareConfigMapsUpdateCallbackCount(); count != 0 {
+				t.Fatalf("Memory leak: shareConfigMapsUpdateCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.ShareConfigMapsDeleteCallbackCount(); count != 0 {
+				t.Fatalf("shareConfigMapsDeleteCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.ConfigMapUpsertCallbackCount(); count != 0 {
+				t.Fatalf("configmapUpsertCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+			if count := cache.ConfigMapDeleteCallbackCount(); count != 0 {
+				t.Fatalf("configmapDeleteCallbacks has %d stale entries after %d pod lifecycles (expected 0)", count, podCount)
+			}
+
+			t.Logf("All callback maps clean after %d pod lifecycles", podCount)
+		})
+	}
 }

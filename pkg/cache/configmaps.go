@@ -109,3 +109,15 @@ func RegisterConfigMapDeleteCallback(volID string, f func(key, value interface{}
 func UnregisterConfigMapDeleteCallback(volID string) {
 	configmapDeleteCallbacks.Delete(volID)
 }
+
+func ConfigMapUpsertCallbackCount() int {
+	count := 0
+	configmapUpsertCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}
+
+func ConfigMapDeleteCallbackCount() int {
+	count := 0
+	configmapDeleteCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}

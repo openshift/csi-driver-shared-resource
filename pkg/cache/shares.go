@@ -181,13 +181,13 @@ func RegisterSharedSecretUpdateCallback(volID, shareID string, f func(key, value
 // UnregisterSharedConfigMapUpdateCallback will be called as part of the kubelet sending a delete CSI volume request for a pod
 // that is going away, and we remove the corresponding function for that volID
 func UnregisterSharedConfigMapUpdateCallback(volID string) {
-	configmapUpsertCallbacks.Delete(volID)
+	shareConfigMapsUpdateCallbacks.Delete(volID)
 }
 
-// UnregsiterSharedSecretsUpdateCallback will be called as part of the kubelet sending a delete CSI volume request for a pod
+// UnregisterSharedSecretUpdateCallback will be called as part of the kubelet sending a delete CSI volume request for a pod
 // that is going away, and we remove the corresponding function for that volID
-func UnregsiterSharedSecretsUpdateCallback(volID string) {
-	secretUpsertCallbacks.Delete(volID)
+func UnregisterSharedSecretUpdateCallback(volID string) {
+	shareSecretsUpdateCallbacks.Delete(volID)
 }
 
 // RegisterSharedConfigMapDeleteCallback will be called as part of the kubelet sending a mount CSI volume request for a pod;
@@ -214,4 +214,28 @@ func UnregisterSharedConfigMapDeleteCallback(volID string) {
 // that is going away, and we remove the corresponding function for that volID
 func UnregisterSharedSecretDeleteCallback(volID string) {
 	shareSecretsDeleteCallbacks.Delete(volID)
+}
+
+func ShareConfigMapsUpdateCallbackCount() int {
+	count := 0
+	shareConfigMapsUpdateCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}
+
+func ShareSecretsUpdateCallbackCount() int {
+	count := 0
+	shareSecretsUpdateCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}
+
+func ShareConfigMapsDeleteCallbackCount() int {
+	count := 0
+	shareConfigMapsDeleteCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
+}
+
+func ShareSecretsDeleteCallbackCount() int {
+	count := 0
+	shareSecretsDeleteCallbacks.Range(func(_, _ interface{}) bool { count++; return true })
+	return count
 }

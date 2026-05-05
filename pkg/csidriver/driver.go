@@ -777,7 +777,7 @@ func (d *driver) deleteVolume(volID string) error {
 	objcache.UnregisterSharedConfigMapDeleteCallback(volID)
 	objcache.UnregisterSharedConfigMapUpdateCallback(volID)
 	objcache.UnregisterSharedSecretDeleteCallback(volID)
-	objcache.UnregsiterSharedSecretsUpdateCallback(volID)
+	objcache.UnregisterSharedSecretUpdateCallback(volID)
 	return nil
 }
 
