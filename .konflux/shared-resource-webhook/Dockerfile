@@ -1,4 +1,4 @@
-FROM registry.redhat.io/ubi9/go-toolset@sha256:d637b9dfccb16623f19b95c43fe5a65b20b722e62753c4445c5d02f9e40b807d AS builder
+FROM registry.redhat.io/ubi9/go-toolset@sha256:180d433d97773ac90384662ee0f54c3b474f6eeb7219e414a4ca323d1196bb13 AS builder
 
 ENV GOEXPERIMENT=strictfipsruntime
 
@@ -8,7 +8,7 @@ RUN rm -f /vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 
 RUN CGO_ENABLED=1 GO111MODULE=on go build -a -mod=vendor -buildvcs=false -ldflags="-s -w" -tags="strictfipsruntime" -o /tmp/openshift-builds-shared-resource-webhook ./cmd/webhook
 
-FROM registry.redhat.io/ubi9-minimal@sha256:f225a0f8eb7d258011e1f7c8b025dc7dd155d6ffc66c17cd203dcec88935b455
+FROM registry.redhat.io/ubi9-minimal@sha256:8d0a8fb39ec907e8ca62cdd24b62a63ca49a30fe465798a360741fde58437a23
 
 WORKDIR /
 
@@ -19,7 +19,7 @@ ENTRYPOINT ["./openshift-builds-shared-resource-webhook"]
 
 LABEL \
 	com.redhat.component="openshift-builds-shared-resource-webhook" \
-	cpe="cpe:/a:redhat:openshift_builds:1.7::el9" \
+	cpe="cpe:/a:redhat:openshift_builds:1.8::el9" \
 	description="Red Hat OpenShift Builds CSI Driver Shared Resource Webhook" \
 	distribution-scope="public" \
 	io.k8s.description="Red Hat OpenShift Builds CSI Driver Shared Resource Webhook" \
@@ -31,4 +31,4 @@ LABEL \
 	summary="Red Hat OpenShift Builds Shared Resource Webhook" \
 	url="https://github.com/openshift/csi-driver-shared-resource" \
 	vendor="Red Hat, Inc." \
-	version="v1.7.0"
+	version="v1.8.0"
