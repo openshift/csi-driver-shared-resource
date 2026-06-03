@@ -40,6 +40,8 @@ spec:
       - linux/arm64
       - linux/ppc64le
       - linux/s390x
+  - name: enable-package-registry-proxy
+    value: "true"
   - name: prefetch-input
     value: '{"packages": [{"type": "gomod"}]}'
   pipelineRef:

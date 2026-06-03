@@ -42,6 +42,8 @@ spec:
     value:
       - linux/x86_64
       - linux/arm64
+  - name: enable-package-registry-proxy
+    value: "true"
   - name: prefetch-input
     value: '{"packages": [{"type": "gomod"},{"type": "rpm"}]}'
   pipelineRef:
