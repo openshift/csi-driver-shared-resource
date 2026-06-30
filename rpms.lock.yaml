@@ -4,360 +4,1004 @@ lockfileVendor: redhat
 arches:
 - arch: aarch64
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/c/cracklib-2.9.6-27.el9.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 100995
-    checksum: sha256:6b4e2bae51af42c1ab0f1ec7430ab19542747937a827eba8cac540cb7514a145
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/appstream/os/Packages/l/libxkbcommon-1.7.0-4.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-appstream-rpms
+    size: 150103
+    checksum: sha256:a2a0260c3888399f576ce39c7573ca15a509d603941ddc4644e4588ae1d87370
+    name: libxkbcommon
+    evr: 1.7.0-4.el10
+    sourcerpm: libxkbcommon-1.7.0-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/appstream/os/Packages/x/xkeyboard-config-2.41-3.el10.noarch.rpm
+    repoid: ubi-10-for-aarch64-appstream-rpms
+    size: 1028145
+    checksum: sha256:871c6faf56bf3733826ba6c17406417665e5760ac4a2ddf5855a0ee82a771878
+    name: xkeyboard-config
+    evr: 2.41-3.el10
+    sourcerpm: xkeyboard-config-2.41-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/a/authselect-1.5.2-1.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 222525
+    checksum: sha256:a30d1abce704ff9ba2300cae77106f0a7d363ee48796a161c598e5f3a85fee21
+    name: authselect
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/a/authselect-libs-1.5.2-1.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 264898
+    checksum: sha256:f3ace53a3baa0d8c3db2568814c53a9c623038fd90f2f51fcbc932837203e9a6
+    name: authselect-libs
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/c/cracklib-2.9.11-8.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 102834
+    checksum: sha256:45c68cd4d051b2eee30c1ab010be9faeb1aa58115dd33605e8bd17dd91b865a9
     name: cracklib
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/c/cracklib-dicts-2.9.6-27.el9.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 3821337
-    checksum: sha256:c4ef55b06c9b5352b2338a6deccd25030472308b3ffe39735585967382e75419
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/c/cracklib-dicts-2.9.11-8.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 3827454
+    checksum: sha256:2088cbe88fdebc9cc4c93000c5617ff3aea454df92d137f15a2b80666d384c63
     name: cracklib-dicts
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/g/gzip-1.12-1.el9.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 169809
-    checksum: sha256:45710df49b439ddc4a2848fd3877367761b574234ae28b6be46f1cf54f3fcdca
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/c/cryptsetup-libs-2.8.1-2.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 591036
+    checksum: sha256:5a53e7d88c62e8c22b62501adad26b20b2fc898b99c4102e79474ca0788ae832
+    name: cryptsetup-libs
+    evr: 2.8.1-2.el10
+    sourcerpm: cryptsetup-2.8.1-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/d/dbus-1.14.10-5.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 8665
+    checksum: sha256:ac94677c66ee453c7a86b489b3cbb401d1d7d971dbfa48648c9084397762f07f
+    name: dbus
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/d/dbus-broker-36-4.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 171155
+    checksum: sha256:0b5c3c403e53921ee135535e2c0a64a30fa72bedc6ecd6a4322c075647254aa7
+    name: dbus-broker
+    evr: 36-4.el10
+    sourcerpm: dbus-broker-36-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/d/dbus-common-1.14.10-5.el10.noarch.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 19267
+    checksum: sha256:1299ce43ed298d52b9243dd332011e0f4de505d2902ba48a72234c16b95883bc
+    name: dbus-common
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/d/device-mapper-1.02.210-2.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 148101
+    checksum: sha256:7241e94d0d7edefa1b295fd3729a109030a6063863af9a204cabf51808788ce0
+    name: device-mapper
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/d/device-mapper-libs-1.02.210-2.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 183743
+    checksum: sha256:56175f99d49094fdf34acfb7425518fd3367bfdc4e6bc43de34421dc0b32841a
+    name: device-mapper-libs
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/d/diffutils-3.10-8.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 418490
+    checksum: sha256:41c79726216b7af26dcb168ff7994407d83d6373c636efc7a11bc452f4bd93fb
+    name: diffutils
+    evr: 3.10-8.el10
+    sourcerpm: diffutils-3.10-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/elfutils-debuginfod-client-0.194-2.el10_2.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 50064
+    checksum: sha256:a2d93995a8810dd8fa5c5cf6926eae02f104a3d6d99a0a7c73902d1584e70569
+    name: elfutils-debuginfod-client
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/elfutils-default-yama-scope-0.194-2.el10_2.noarch.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 15020
+    checksum: sha256:f54b06a8a721b2dd0eb465070813411db4dcfc3b1c7678a579e9924085a9768b
+    name: elfutils-default-yama-scope
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/elfutils-libelf-0.194-2.el10_2.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 210883
+    checksum: sha256:31e28ab007204364567d978b5f36a83ea470a3e6c2e1d2e02df5f906764ca834
+    name: elfutils-libelf
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/elfutils-libs-0.194-2.el10_2.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 275620
+    checksum: sha256:054c5a7a2d2b5df28722269120c9f6e1fa23ff1db842a8d12366a1d40b8f7614
+    name: elfutils-libs
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/expat-2.7.3-1.el10_2.1.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 123527
+    checksum: sha256:0dcfff5c701c572248fb431cc2b7f7c46b5e56365e7eab5b9da6e0155950c4b8
+    name: expat
+    evr: 2.7.3-1.el10_2.1
+    sourcerpm: expat-2.7.3-1.el10_2.1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/g/gdbm-1.23-12.el10_0.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 158080
+    checksum: sha256:88015884d8187fb7f38b3413d5bf32eee48ea605a70c246cec6429cb2bcfa5b9
+    name: gdbm
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/g/gdbm-libs-1.23-12.el10_0.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 61230
+    checksum: sha256:afb42788b667ab88b159ce07f1b67bdb6105da737c449ce50c9051342ec10e0a
+    name: gdbm-libs
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/g/gzip-1.13-3.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 176545
+    checksum: sha256:4d6fdc1e71bab17676980a00b9d32a3ef1172f8df207cba0360f303ee8130fc1
     name: gzip
-    evr: 1.12-1.el9
-    sourcerpm: gzip-1.12-1.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 727417
-    checksum: sha256:3a912b2a0a6226695a5773138ce5ce090c9fb155151dffe732b8d52e6dd22d63
-    name: libdb
-    evr: 5.3.28-57.el9_6
-    sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/l/libeconf-0.4.1-4.el9.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 29577
-    checksum: sha256:b6f435b6b79b8a62729f581edead46542dc61fe7276117b2354c324c44ba8309
-    name: libeconf
-    evr: 0.4.1-4.el9
-    sourcerpm: libeconf-0.4.1-4.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/l/libfdisk-2.37.4-21.el9_7.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 156277
-    checksum: sha256:c3373716e1a6bd9f4efeacb66b11dfe8c96e8b988462a61fbb2426a608e32bb4
+    evr: 1.13-3.el10
+    sourcerpm: gzip-1.13-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/k/kmod-libs-31-13.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 74946
+    checksum: sha256:75a659a979f13000c272c6bc9572dd60134be6e4a9ad9f838f2ea0eaf836d89b
+    name: kmod-libs
+    evr: 31-13.el10
+    sourcerpm: kmod-31-13.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libbpf-1.7.0-1.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 197607
+    checksum: sha256:1b5ae2dd6e1d42922cd2c06e109f478ec29f9c591fec0b8aa5fb999355640169
+    name: libbpf
+    evr: 2:1.7.0-1.el10
+    sourcerpm: libbpf-1.7.0-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libfdisk-2.40.2-18.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 166348
+    checksum: sha256:c7cf7db7f1c90191517eac93c665eeada1b82c42cdbf7f93763e0dd76c2a5725
     name: libfdisk
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/l/libpwquality-1.4.4-8.el9.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 125712
-    checksum: sha256:1657d94bbd79f93dc7a79d474316813bde681ce3a7f62f73314ec4d630e39349
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libpwquality-1.4.5-12.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 130070
+    checksum: sha256:e4beeed63e3c0344d7b8c1afe19631d366c10e542d1f6e15b642fac264f8182c
     name: libpwquality
-    evr: 1.4.4-8.el9
-    sourcerpm: libpwquality-1.4.4-8.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/l/libutempter-1.2.1-6.el9.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 30505
-    checksum: sha256:d352371cbb7d5bd0c53fc699df953c8c1f184b056690b3c4571e57a6634015c5
+    evr: 1.4.5-12.el10
+    sourcerpm: libpwquality-1.4.5-12.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libseccomp-2.5.6-1.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 73738
+    checksum: sha256:e9968e3759573ff1c8e6901061adaf333011d62326a6d26b869b5f79cfa8a1e1
+    name: libseccomp
+    evr: 2.5.6-1.el10
+    sourcerpm: libseccomp-2.5.6-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libsemanage-3.10-1.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 128258
+    checksum: sha256:00b6569fccb0c6a0a1d0f57305c75a0017557ea5b0a59e9af0ed71b44bdc6c1d
+    name: libsemanage
+    evr: 3.10-1.el10
+    sourcerpm: libsemanage-3.10-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libutempter-1.2.1-15.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 31354
+    checksum: sha256:deb40fd5bdd852acdf65d2415b51ad0c0c003e42e3d39c681249a406b5248659
     name: libutempter
-    evr: 1.2.1-6.el9
-    sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 1541274
-    checksum: sha256:fa672afb8e31cda4d155929f0e84efba28a925134fd3edacf822802c04e35b8d
-    name: openssl
-    evr: 1:3.5.1-7.el9_7
-    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/p/pam-1.5.1-26.el9_6.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 636107
-    checksum: sha256:fd8dc3ae80d01e90bed08e84e32e3b47b568fe5ddc857dffbae36cc4bde0887b
+    evr: 1.2.1-15.el10
+    sourcerpm: libutempter-1.2.1-15.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/l/libxcrypt-4.4.36-10.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 130795
+    checksum: sha256:53c75977f33b6d2012c8a1b7b4609f58e1d56cf2dcd8e1bdc7e455ce5d772a32
+    name: libxcrypt
+    evr: 4.4.36-10.el10
+    sourcerpm: libxcrypt-4.4.36-10.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/p/pam-1.6.1-9.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 603171
+    checksum: sha256:66d69a7e734de6de62ae1fdfea9ea76436ff90f166aef2013565f2776f339f38
     name: pam
-    evr: 1.5.1-26.el9_6
-    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/u/util-linux-2.37.4-21.el9_7.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 2388428
-    checksum: sha256:00ec97a5869f54e74f5c2187739954ad807d528a6e9f7a9079271d34e5890b53
+    evr: 1.6.1-9.el10
+    sourcerpm: pam-1.6.1-9.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/s/shadow-utils-4.15.0-11.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 1415521
+    checksum: sha256:6e88b99376aedd3f11ea7223ce35255c1cf371062b5cf1dc086beb1169e8656a
+    name: shadow-utils
+    evr: 2:4.15.0-11.el10
+    sourcerpm: shadow-utils-4.15.0-11.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/s/systemd-257-23.el10_2.2.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 5782355
+    checksum: sha256:dc28daccbecc6f6a75869eb80732b48b2a27cd6bb328e451463cbc7ddff3c02d
+    name: systemd
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/s/systemd-pam-257-23.el10_2.2.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 322582
+    checksum: sha256:55d44c43c83235452caae4f1046da3c02e884c8c9bef272c7ddf2b24a37a141c
+    name: systemd-pam
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/u/util-linux-2.40.2-18.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 1314310
+    checksum: sha256:ab6aa11fe0eaed4e9862782508bdb2198caf3aa9e8fb618fa673af5235912b8a
     name: util-linux
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/u/util-linux-core-2.37.4-21.el9_7.aarch64.rpm
-    repoid: ubi-9-for-aarch64-baseos-rpms
-    size: 472668
-    checksum: sha256:6c64ae44f7b363099c14c54e6baf8fbeec666818bd60d3fea6ff247df1420370
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/u/util-linux-core-2.40.2-18.el10.aarch64.rpm
+    repoid: ubi-10-for-aarch64-baseos-rpms
+    size: 563973
+    checksum: sha256:8c08f6f9b5ab3660326b169016e655a7f6acc8832519c6645bb0aa0d7a4d4cbd
     name: util-linux-core
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
   source: []
   module_metadata: []
 - arch: ppc64le
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/c/cracklib-2.9.6-27.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 102420
-    checksum: sha256:be3738f99a18e14c80b771e0bcc4e13d9d067f1a1bcefd9ffcdabdb5e03bf46a
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/appstream/os/Packages/l/libxkbcommon-1.7.0-4.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-appstream-rpms
+    size: 163111
+    checksum: sha256:6d49a35667664c77922ba3bf63428f97687ef0ba0c7661b9b5a7f4dceb05fc4b
+    name: libxkbcommon
+    evr: 1.7.0-4.el10
+    sourcerpm: libxkbcommon-1.7.0-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/appstream/os/Packages/x/xkeyboard-config-2.41-3.el10.noarch.rpm
+    repoid: ubi-10-for-ppc64le-appstream-rpms
+    size: 1028145
+    checksum: sha256:871c6faf56bf3733826ba6c17406417665e5760ac4a2ddf5855a0ee82a771878
+    name: xkeyboard-config
+    evr: 2.41-3.el10
+    sourcerpm: xkeyboard-config-2.41-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/a/authselect-1.5.2-1.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 223719
+    checksum: sha256:d74ce26c99845a6f1c851a00958807cc67e7f347a570f3dd128d2b700f785385
+    name: authselect
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/a/authselect-libs-1.5.2-1.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 269566
+    checksum: sha256:628cc473d56a3cc0dd8a794d67c2d506d6b826a16f46f44d57773d1b382749ff
+    name: authselect-libs
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/c/cracklib-2.9.11-8.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 104044
+    checksum: sha256:9304d427b5c4891a7a90976c1e8bc83e435ab646d4c4c361e0b89c08bdd9c0e8
     name: cracklib
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/c/cracklib-dicts-2.9.6-27.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 3821001
-    checksum: sha256:a5ae48064c709f448291de88bbf97427c65cc6a03179972496d27d4223bb6e96
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/c/cracklib-dicts-2.9.11-8.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 3827450
+    checksum: sha256:36200a36fb95eb781614c434a409ab00c798c639c1895e6508497900cb45b310
     name: cracklib-dicts
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/g/gzip-1.12-1.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 175705
-    checksum: sha256:55b983f08d8b2a0741b07f114cdba89a8ecb207064c001e90e4c76a13836d458
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/c/cryptsetup-libs-2.8.1-2.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 647140
+    checksum: sha256:e2f99a2faa7765fad9d81e72cbddb882ba9e9b4d9bc921f6e04441f75a91c75a
+    name: cryptsetup-libs
+    evr: 2.8.1-2.el10
+    sourcerpm: cryptsetup-2.8.1-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/d/dbus-1.14.10-5.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 8661
+    checksum: sha256:372114e3320c4b3f72ce7a19f266d83fe3b18f7b7d7f6239fd5a973d7e442652
+    name: dbus
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/d/dbus-broker-36-4.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 190848
+    checksum: sha256:ef7c9a7bfaab2238e5a23c481c6c504761bb9891c1d2c7f0985eee721096f9d5
+    name: dbus-broker
+    evr: 36-4.el10
+    sourcerpm: dbus-broker-36-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/d/dbus-common-1.14.10-5.el10.noarch.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 19267
+    checksum: sha256:1299ce43ed298d52b9243dd332011e0f4de505d2902ba48a72234c16b95883bc
+    name: dbus-common
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/d/device-mapper-1.02.210-2.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 152234
+    checksum: sha256:b7fb0a5dfb9bd191350e7ee9727f55c8d63b615d1a1af90f8270b61777142802
+    name: device-mapper
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/d/device-mapper-libs-1.02.210-2.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 202147
+    checksum: sha256:f9872ea11b02eba2bb613b299c38a62571fb6662bf0ab067522e4cbd7c57c3cf
+    name: device-mapper-libs
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/d/diffutils-3.10-8.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 433737
+    checksum: sha256:eab0c314930efc2c1cc0fbccb782d1fc2259a23de93c42e113c3809253dcbad6
+    name: diffutils
+    evr: 3.10-8.el10
+    sourcerpm: diffutils-3.10-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/elfutils-debuginfod-client-0.194-2.el10_2.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 53215
+    checksum: sha256:dc6ab4daac86cf9035520bb22d362c89be994889fb0ea52efd293183453328f6
+    name: elfutils-debuginfod-client
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/elfutils-default-yama-scope-0.194-2.el10_2.noarch.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 15020
+    checksum: sha256:f54b06a8a721b2dd0eb465070813411db4dcfc3b1c7678a579e9924085a9768b
+    name: elfutils-default-yama-scope
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/elfutils-libelf-0.194-2.el10_2.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 218694
+    checksum: sha256:9a19b227c590031e8673e06262d868f534c993b34377340e0a7a799a0d89f58c
+    name: elfutils-libelf
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/elfutils-libs-0.194-2.el10_2.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 315684
+    checksum: sha256:ab1cf547dc428164d0b1ffab54655069ed80638d380cd0b7a83859be2c08ec4f
+    name: elfutils-libs
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/expat-2.7.3-1.el10_2.1.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 133834
+    checksum: sha256:3f4e04b4f25c9d8b4cca898dc7b9bd584521dd4040dd0c5717e82686e8539685
+    name: expat
+    evr: 2.7.3-1.el10_2.1
+    sourcerpm: expat-2.7.3-1.el10_2.1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/g/gdbm-1.23-12.el10_0.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 165190
+    checksum: sha256:a456f1ec740003f7ead7ebcb08f52fea9ba87a75225a94026a618f7a6736d0b5
+    name: gdbm
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/g/gdbm-libs-1.23-12.el10_0.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 66610
+    checksum: sha256:910da23030b32ec558f1f687c6332ca31761ecc0b0c684b6ca306d1a7052297b
+    name: gdbm-libs
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/g/gzip-1.13-3.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 181468
+    checksum: sha256:3deb739f6e3fb28c2945936c53007872d64afeb4f7680ad1b331e6500cfa2342
     name: gzip
-    evr: 1.12-1.el9
-    sourcerpm: gzip-1.12-1.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 837087
-    checksum: sha256:3c73512cfb5cff3477193e37e80fbd416449035f909998b7873bcade57aa242c
-    name: libdb
-    evr: 5.3.28-57.el9_6
-    sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/l/libeconf-0.4.1-4.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 32878
-    checksum: sha256:a3fbb9481c4d4f13cc1f1593a83f31fc27975b759fd01235b875d09973eeb102
-    name: libeconf
-    evr: 0.4.1-4.el9
-    sourcerpm: libeconf-0.4.1-4.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/l/libfdisk-2.37.4-21.el9_7.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 176639
-    checksum: sha256:4c772f1872f91203182ffec334b60d8c11a1d5dcca283e203af0a564cbab9458
+    evr: 1.13-3.el10
+    sourcerpm: gzip-1.13-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/k/kmod-libs-31-13.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 84747
+    checksum: sha256:2ae5b2ee1c0b8118372cc237f58fcba6ec61494cd9f56d373da42d62a373646b
+    name: kmod-libs
+    evr: 31-13.el10
+    sourcerpm: kmod-31-13.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libbpf-1.7.0-1.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 231717
+    checksum: sha256:c50e3a9ad09c1918c01ada3a0fa177c1c90c09d96bd1040f21d3e3dd4c96efe1
+    name: libbpf
+    evr: 2:1.7.0-1.el10
+    sourcerpm: libbpf-1.7.0-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libfdisk-2.40.2-18.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 185625
+    checksum: sha256:7afd1bbea2e70a3779c55c042b6aeef05ef71b8d0b88d626af756333f165b308
     name: libfdisk
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/l/libpwquality-1.4.4-8.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 128350
-    checksum: sha256:0b13ff548b9b0be9f8d0271d90fa3673c081fbc22dc869ae4c37c68fa2a32c09
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libpwquality-1.4.5-12.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 132291
+    checksum: sha256:db94e49b95e8661256e1aa12b87a61ea26d53cee24fe0786302bcaa6e47b6dc6
     name: libpwquality
-    evr: 1.4.4-8.el9
-    sourcerpm: libpwquality-1.4.4-8.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/l/librtas-2.0.6-1.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 86335
-    checksum: sha256:64d105e7f8b9ee542efe65816ae77fb38988c00bef1e0cc5ea3e1a4e89fb7505
+    evr: 1.4.5-12.el10
+    sourcerpm: libpwquality-1.4.5-12.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/librtas-2.0.6-4.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 84342
+    checksum: sha256:f1214183a1fabaa7f5cef8e7ab79e6e362ea349d16bd363570419488cc11efdb
     name: librtas
-    evr: 2.0.6-1.el9
-    sourcerpm: librtas-2.0.6-1.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/l/libutempter-1.2.1-6.el9.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 30656
-    checksum: sha256:b62a3c29e31482fc21de315eaefa28f3e52f59396b0a33e6d1267822cabc1c67
+    evr: 2.0.6-4.el10
+    sourcerpm: librtas-2.0.6-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libseccomp-2.5.6-1.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 80638
+    checksum: sha256:c8fcd4453d140ff4cf46cd7bae6307230b4826dda84122a8c34500133f7273f2
+    name: libseccomp
+    evr: 2.5.6-1.el10
+    sourcerpm: libseccomp-2.5.6-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libsemanage-3.10-1.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 143828
+    checksum: sha256:c7f81e327581ad2b7e6552df9aab6847b84c18c2334d879a36433bcc2cd9a58a
+    name: libsemanage
+    evr: 3.10-1.el10
+    sourcerpm: libsemanage-3.10-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libutempter-1.2.1-15.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 31351
+    checksum: sha256:82ec128316866e60b399aeb0c2bc841208beaa24b736c699c4b37ed3f0d5da69
     name: libutempter
-    evr: 1.2.1-6.el9
-    sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 1566615
-    checksum: sha256:c5a5284070d6d182a4c93283039a327bf02efd41ab7ab4a748971421773ba605
-    name: openssl
-    evr: 1:3.5.1-7.el9_7
-    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/p/pam-1.5.1-26.el9_6.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 677447
-    checksum: sha256:93eb19dd21e5bb33d1d004c9e49e49d0049aca990074b8c6f4204e5af4c3c38e
+    evr: 1.2.1-15.el10
+    sourcerpm: libutempter-1.2.1-15.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/l/libxcrypt-4.4.36-10.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 138025
+    checksum: sha256:f41b21712c9bdd7e64b24d9806728ac0595bbd75015c99d91cbbdf3be1ae39e1
+    name: libxcrypt
+    evr: 4.4.36-10.el10
+    sourcerpm: libxcrypt-4.4.36-10.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/p/pam-1.6.1-9.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 635154
+    checksum: sha256:ab1d9f9e2dc686ced0a776f7f837e5902db9cb79babe4af4862709ee286078a0
     name: pam
-    evr: 1.5.1-26.el9_6
-    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/u/util-linux-2.37.4-21.el9_7.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 2424397
-    checksum: sha256:f8fb64127696c7c7856fddc98e9b6642b2d603487363eda8d72f449e7efe39c9
+    evr: 1.6.1-9.el10
+    sourcerpm: pam-1.6.1-9.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/s/shadow-utils-4.15.0-11.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 1438710
+    checksum: sha256:8dbb1fb57511f9b880d9b0cb265636c54b2dc94ca20aa99277d55c7dd98c8269
+    name: shadow-utils
+    evr: 2:4.15.0-11.el10
+    sourcerpm: shadow-utils-4.15.0-11.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/s/systemd-257-23.el10_2.2.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 6092604
+    checksum: sha256:93aec18ead2045affa4661666f5aac3e0ce260a0814aa34c7066242b38af82aa
+    name: systemd
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/s/systemd-pam-257-23.el10_2.2.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 353355
+    checksum: sha256:f42e3d674f3d3b49144482f41f9a809d14402dee3ca4761c1c1d2de88a78dd10
+    name: systemd-pam
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/u/util-linux-2.40.2-18.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 1369648
+    checksum: sha256:fb880151f4233535c4c4affa539d73b24e92bce7c9d8420d810ae557d5a16050
     name: util-linux
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/ppc64le/baseos/os/Packages/u/util-linux-core-2.37.4-21.el9_7.ppc64le.rpm
-    repoid: ubi-9-for-ppc64le-baseos-rpms
-    size: 495317
-    checksum: sha256:d9a5aee7efe2b85b531648bd8d0aa53a0e02d2dbe2f77881b7072ac9390eeb2c
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/u/util-linux-core-2.40.2-18.el10.ppc64le.rpm
+    repoid: ubi-10-for-ppc64le-baseos-rpms
+    size: 588346
+    checksum: sha256:2dc1da7847447f5ba08ba39d9ac1126fe08c26abe44894c6b69439425c99d28b
     name: util-linux-core
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
   source: []
   module_metadata: []
 - arch: s390x
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/c/cracklib-2.9.6-27.el9.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 100558
-    checksum: sha256:7cd93f220df178d0a76f486ab341cbf858e4ea768e9bc779b1e6eb74259fc3bf
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/l/libxkbcommon-1.7.0-4.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-appstream-rpms
+    size: 157459
+    checksum: sha256:0f899c8f46675c591d719aad265835e65e2afd7fe7a30a33cfb12d2202fff82e
+    name: libxkbcommon
+    evr: 1.7.0-4.el10
+    sourcerpm: libxkbcommon-1.7.0-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/appstream/os/Packages/x/xkeyboard-config-2.41-3.el10.noarch.rpm
+    repoid: ubi-10-for-s390x-appstream-rpms
+    size: 1028145
+    checksum: sha256:871c6faf56bf3733826ba6c17406417665e5760ac4a2ddf5855a0ee82a771878
+    name: xkeyboard-config
+    evr: 2.41-3.el10
+    sourcerpm: xkeyboard-config-2.41-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/a/authselect-1.5.2-1.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 222082
+    checksum: sha256:4dd193f72d20b6c99e1b23dbce24ecfb2fc17ef8d387e6cf5ec02ee54d969c71
+    name: authselect
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/a/authselect-libs-1.5.2-1.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 264331
+    checksum: sha256:8d0561988bfbf35cbed35882a585ad0988218b521d4c1d595c31b895630c8f7c
+    name: authselect-libs
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/c/cracklib-2.9.11-8.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 104148
+    checksum: sha256:a2d79a487bf693b5e1e5165449e00db8ed0603ea45bb07b2285ea1d38876e68a
     name: cracklib
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/c/cracklib-dicts-2.9.6-27.el9.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 3838529
-    checksum: sha256:fb179b85546fb2ba2e044e40d6f97a7856802840150f636447a048ecf680c07d
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/c/cracklib-dicts-2.9.11-8.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 3839405
+    checksum: sha256:4dd67bd8087f6d3e127d4bf1ab1ccd94eedd63495d423b7456673f55f69933b5
     name: cracklib-dicts
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/g/gzip-1.12-1.el9.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 173101
-    checksum: sha256:50034ee6281864a218a5f3bc47de5afb434400fb8415907fd31d8351adbdc5a6
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/c/cryptsetup-libs-2.8.1-2.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 590564
+    checksum: sha256:e7d9d651e72c474330d406e9f9c2fff629d2dcc51586b42f7bd178ed4d1d36fa
+    name: cryptsetup-libs
+    evr: 2.8.1-2.el10
+    sourcerpm: cryptsetup-2.8.1-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/d/dbus-1.14.10-5.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 8641
+    checksum: sha256:2b581d53b47b137feba2f50224d4bccc8b117f87258a1a823562682c121c527c
+    name: dbus
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/d/dbus-broker-36-4.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 177996
+    checksum: sha256:54c652f65a345446e4cc20b64eba640cb5e910e2f0feaab8d6ff33b35f0c3d73
+    name: dbus-broker
+    evr: 36-4.el10
+    sourcerpm: dbus-broker-36-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/d/dbus-common-1.14.10-5.el10.noarch.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 19267
+    checksum: sha256:1299ce43ed298d52b9243dd332011e0f4de505d2902ba48a72234c16b95883bc
+    name: dbus-common
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/d/device-mapper-1.02.210-2.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 152246
+    checksum: sha256:95503c82867715f74164057853eac2350fa87d22db3ad5ebd24c835e83e40387
+    name: device-mapper
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/d/device-mapper-libs-1.02.210-2.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 194466
+    checksum: sha256:bb7731c2e620cedd40684a7e3a13ab8e5b1ab11bf23ff92f7c7afad266d473e3
+    name: device-mapper-libs
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/d/diffutils-3.10-8.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 436754
+    checksum: sha256:b0e9a0925d86f0893d802f554d9000a8fe9df17c633264177c261b6fb4a04243
+    name: diffutils
+    evr: 3.10-8.el10
+    sourcerpm: diffutils-3.10-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/elfutils-debuginfod-client-0.194-2.el10_2.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 51043
+    checksum: sha256:84f9ae0d43a0d6d18ee4b7a866f53216931174412eb246c5532b8a9db43a0f3e
+    name: elfutils-debuginfod-client
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/elfutils-default-yama-scope-0.194-2.el10_2.noarch.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 15020
+    checksum: sha256:f54b06a8a721b2dd0eb465070813411db4dcfc3b1c7678a579e9924085a9768b
+    name: elfutils-default-yama-scope
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/elfutils-libelf-0.194-2.el10_2.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 216716
+    checksum: sha256:210cbdc9d978eb3d49f6ad5ab7a49fa19e3be69b791494bce24d8baf3dda35bc
+    name: elfutils-libelf
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/elfutils-libs-0.194-2.el10_2.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 302645
+    checksum: sha256:62d00c45325d6b4b11aab4d4be12cfe08f2b7a87a99f254c232792306e6745bc
+    name: elfutils-libs
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/expat-2.7.3-1.el10_2.1.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 132293
+    checksum: sha256:11d8cb024f5c999898bd2d64a3b81de6273cf301c51409ee95ad1c2c23c8c070
+    name: expat
+    evr: 2.7.3-1.el10_2.1
+    sourcerpm: expat-2.7.3-1.el10_2.1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/g/gdbm-1.23-12.el10_0.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 163369
+    checksum: sha256:f9cc3422c91c56c683cb31733a3ffd7b5e8234d1252054305b445995854ac34c
+    name: gdbm
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/g/gdbm-libs-1.23-12.el10_0.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 62973
+    checksum: sha256:4af24e2bec7188590db4b2033aeedd6fc2ac198df8f673219dd2f9dc0b6800e2
+    name: gdbm-libs
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/g/gzip-1.13-3.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 185159
+    checksum: sha256:dac5bdfe10517fb438a250319d6603ec182237ccdffd426b85cd9b2bf7b0d648
     name: gzip
-    evr: 1.12-1.el9
-    sourcerpm: gzip-1.12-1.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 721041
-    checksum: sha256:150208aa151d6351c3926632a7f9850022788d16d647d4151915a79af3c3c74f
-    name: libdb
-    evr: 5.3.28-57.el9_6
-    sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/l/libeconf-0.4.1-4.el9.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 30401
-    checksum: sha256:97f2c01fb34760ab35d8f1b88fc59d743710035ae1677f06ea8919d0390e0ebb
-    name: libeconf
-    evr: 0.4.1-4.el9
-    sourcerpm: libeconf-0.4.1-4.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/l/libfdisk-2.37.4-21.el9_7.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 155697
-    checksum: sha256:0fd99f51b377f1f178ffc8c6e17ecfd0d34c73bf9ab59000a38ed229bf8c9d06
+    evr: 1.13-3.el10
+    sourcerpm: gzip-1.13-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/k/kmod-libs-31-13.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 79673
+    checksum: sha256:7faf536348d58af3b632a427a68b0c271db8e5c5cd089d4483d3193603ff169d
+    name: kmod-libs
+    evr: 31-13.el10
+    sourcerpm: kmod-31-13.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libbpf-1.7.0-1.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 208819
+    checksum: sha256:f0b8fbcdab5e34b41bee1befbd431159d76d705fc5408bef515d17dd701c0234
+    name: libbpf
+    evr: 2:1.7.0-1.el10
+    sourcerpm: libbpf-1.7.0-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libfdisk-2.40.2-18.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 177356
+    checksum: sha256:7aee3fe5924bc9ec0e567c597769a845680da9312c8b17e358eb12a712b9cde6
     name: libfdisk
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/l/libpwquality-1.4.4-8.el9.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 125703
-    checksum: sha256:d3878b8c342582135698ee7c7fb371ed8326c7998bca3b8426191082bd32a6ae
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libpwquality-1.4.5-12.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 130306
+    checksum: sha256:b45d72052543e78b257d893a14c0d6054067aef2e6a2951a4b3da3992076fe35
     name: libpwquality
-    evr: 1.4.4-8.el9
-    sourcerpm: libpwquality-1.4.4-8.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/l/libutempter-1.2.1-6.el9.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 30191
-    checksum: sha256:4cd059814008cfc903b75f38ed7da8037f51f6123a953218e8a37a8a96822c53
+    evr: 1.4.5-12.el10
+    sourcerpm: libpwquality-1.4.5-12.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libseccomp-2.5.6-1.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 75388
+    checksum: sha256:20d9c7b7b763e42afaa3ff76c83383602352da87b6b2bf5c152899c814ae3dbf
+    name: libseccomp
+    evr: 2.5.6-1.el10
+    sourcerpm: libseccomp-2.5.6-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libsemanage-3.10-1.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 133571
+    checksum: sha256:dde5c59e73e3a71e36cad4c240cbf52e0f93ad14238ce834a10b4f3120ad509f
+    name: libsemanage
+    evr: 3.10-1.el10
+    sourcerpm: libsemanage-3.10-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libutempter-1.2.1-15.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 30901
+    checksum: sha256:fd9aa28a222973956358ad0aa6cfefb2cba5b60641d37885a70166e1a1527bba
     name: libutempter
-    evr: 1.2.1-6.el9
-    sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 1548995
-    checksum: sha256:12d540f2ad34e2c202d47d3edff129acc324012a3946ef57cb1a5db8aad544a2
-    name: openssl
-    evr: 1:3.5.1-7.el9_7
-    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/p/pam-1.5.1-26.el9_6.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 628673
-    checksum: sha256:0817657a9c8638a20357b6d057abe3448dd9cf8c3fed61a74772e18a9d5a209b
+    evr: 1.2.1-15.el10
+    sourcerpm: libutempter-1.2.1-15.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/l/libxcrypt-4.4.36-10.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 132147
+    checksum: sha256:ad3c8dd53f9e752795e21c00b3469dcb72a848c8e16ca25fb61bcd71a840c44d
+    name: libxcrypt
+    evr: 4.4.36-10.el10
+    sourcerpm: libxcrypt-4.4.36-10.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/p/pam-1.6.1-9.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 607853
+    checksum: sha256:cc2bced2afdbf1174698d92eb8ef291f41df0d7142068c4e813ac493622b9afc
     name: pam
-    evr: 1.5.1-26.el9_6
-    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/u/util-linux-2.37.4-21.el9_7.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 2326731
-    checksum: sha256:c235f80ddea8e310263f766987e3b157ea0cc06e36f55ca9e0ec31607c2fc4c5
+    evr: 1.6.1-9.el10
+    sourcerpm: pam-1.6.1-9.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/s/shadow-utils-4.15.0-11.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 1427343
+    checksum: sha256:593b42f153c4a7171e4dae1f4e7006df9f196d00f8029d065831e365d0fea956
+    name: shadow-utils
+    evr: 2:4.15.0-11.el10
+    sourcerpm: shadow-utils-4.15.0-11.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/s/systemd-257-23.el10_2.2.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 5974895
+    checksum: sha256:426b75341cb2140f8ff209db065569ebcc4e5c8e32bd9b8e3f8a0a1e226bfce1
+    name: systemd
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/s/systemd-pam-257-23.el10_2.2.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 337426
+    checksum: sha256:a3ffb770409c66e1b5763ce5b4453e907e87cd48c36e7bdf384db74e081ed461
+    name: systemd-pam
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/u/util-linux-2.40.2-18.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 1309710
+    checksum: sha256:82e717296e3438e40c4e3102780d5036dc6ad3fed34698c2acdc15e3a7814fa4
     name: util-linux
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/s390x/baseos/os/Packages/u/util-linux-core-2.37.4-21.el9_7.s390x.rpm
-    repoid: ubi-9-for-s390x-baseos-rpms
-    size: 468076
-    checksum: sha256:6c361b6341c1d06f7e6f9c1253dc487ab883cb83f88f8007dc4ec60d7703da2b
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/u/util-linux-core-2.40.2-18.el10.s390x.rpm
+    repoid: ubi-10-for-s390x-baseos-rpms
+    size: 580532
+    checksum: sha256:cc0056e9a7f34ae1e2bede1458a4ac6365785e2da13193fb42b04a2375b503c3
     name: util-linux-core
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
   source: []
   module_metadata: []
 - arch: x86_64
   packages:
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/c/cracklib-2.9.6-27.el9.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 100903
-    checksum: sha256:8551b711718596fbfef6622bbf32f785864959af9d06a76da2545ec9f3a126e7
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/l/libxkbcommon-1.7.0-4.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-appstream-rpms
+    size: 151250
+    checksum: sha256:295865e66c9ba6e216a2aa30002707364a8e45d4c977619f7ae8e9bd6f3f71be
+    name: libxkbcommon
+    evr: 1.7.0-4.el10
+    sourcerpm: libxkbcommon-1.7.0-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/appstream/os/Packages/x/xkeyboard-config-2.41-3.el10.noarch.rpm
+    repoid: ubi-10-for-x86_64-appstream-rpms
+    size: 1028145
+    checksum: sha256:871c6faf56bf3733826ba6c17406417665e5760ac4a2ddf5855a0ee82a771878
+    name: xkeyboard-config
+    evr: 2.41-3.el10
+    sourcerpm: xkeyboard-config-2.41-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/a/authselect-1.5.2-1.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 222871
+    checksum: sha256:f5884d2ceef3f2610c23b52826b151bf26710c76f61b2becc16e043b4e7201ca
+    name: authselect
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/a/authselect-libs-1.5.2-1.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 266852
+    checksum: sha256:9c8a175d3908ed23eeaaa04f7d4390898d90353f3770729395c723301191fc7c
+    name: authselect-libs
+    evr: 1.5.2-1.el10
+    sourcerpm: authselect-1.5.2-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/c/cracklib-2.9.11-8.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 102557
+    checksum: sha256:05b60f5f64a0ad329ec4b07c2ec4f9899c8209912f7d292fcb663ec34faccc1e
     name: cracklib
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/c/cracklib-dicts-2.9.6-27.el9.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 3821230
-    checksum: sha256:ab4356c86bdc996dc9e55703a7ae936e3e46aec6ebf6d6f008e126ff06e83df2
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/c/cracklib-dicts-2.9.11-8.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 3827482
+    checksum: sha256:b229f2ac449d7699d26fd66853626fbd13d68e84f572a6e6131513c0ad7d0207
     name: cracklib-dicts
-    evr: 2.9.6-27.el9
-    sourcerpm: cracklib-2.9.6-27.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/g/gzip-1.12-1.el9.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 171206
-    checksum: sha256:c8b3e0414d55b1eedb0185a564ac6cb2368bee2fd5f995447d045f6a714488ac
+    evr: 2.9.11-8.el10
+    sourcerpm: cracklib-2.9.11-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/c/cryptsetup-libs-2.8.1-2.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 599593
+    checksum: sha256:bdbd7eaebb3cc3e1c00150b19e779066adf704c28a98fdfc11df04980400e742
+    name: cryptsetup-libs
+    evr: 2.8.1-2.el10
+    sourcerpm: cryptsetup-2.8.1-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/d/dbus-1.14.10-5.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 8689
+    checksum: sha256:cac7abf4d1efb20a9deeb00e70418704f6ea027a8a6786c040715775262d0693
+    name: dbus
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/d/dbus-broker-36-4.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 178061
+    checksum: sha256:8e28f6dc7553aac0e86d0aab963c9ff70fa9b55d88ac098f6494b2635e2a7bee
+    name: dbus-broker
+    evr: 36-4.el10
+    sourcerpm: dbus-broker-36-4.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/d/dbus-common-1.14.10-5.el10.noarch.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 19267
+    checksum: sha256:1299ce43ed298d52b9243dd332011e0f4de505d2902ba48a72234c16b95883bc
+    name: dbus-common
+    evr: 1:1.14.10-5.el10
+    sourcerpm: dbus-1.14.10-5.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/d/device-mapper-1.02.210-2.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 150286
+    checksum: sha256:4b91ea309f354b8903dbde96b37f31075a4d8431fa09b86e3c142fb97660bc28
+    name: device-mapper
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/d/device-mapper-libs-1.02.210-2.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 191487
+    checksum: sha256:5471f1881ff34d68a495240a9af218b1a4f8249894c36b9f816e01f30feb3526
+    name: device-mapper-libs
+    evr: 10:1.02.210-2.el10
+    sourcerpm: lvm2-2.03.36-2.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/d/diffutils-3.10-8.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 423166
+    checksum: sha256:a8e3e08d2fd19a3ef513875aa379a35e5e424272dbf4e0aad5702bb0c49bd95f
+    name: diffutils
+    evr: 3.10-8.el10
+    sourcerpm: diffutils-3.10-8.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/elfutils-debuginfod-client-0.194-2.el10_2.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 50760
+    checksum: sha256:41d8283ea8b643836aa1885a79c55919885d2009bdf31d81b35c179877d9a483
+    name: elfutils-debuginfod-client
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/elfutils-default-yama-scope-0.194-2.el10_2.noarch.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 15020
+    checksum: sha256:f54b06a8a721b2dd0eb465070813411db4dcfc3b1c7678a579e9924085a9768b
+    name: elfutils-default-yama-scope
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/elfutils-libelf-0.194-2.el10_2.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 212795
+    checksum: sha256:596bf764721cc3e85b0f1389d8f5b5ee928b5074eb3de32f474978a69a01e3ad
+    name: elfutils-libelf
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/elfutils-libs-0.194-2.el10_2.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 279624
+    checksum: sha256:14d73e7f16fe8ae56d5eed45b6b64996f0cea7643f82495deffdff8aaa6df412
+    name: elfutils-libs
+    evr: 0.194-2.el10_2
+    sourcerpm: elfutils-0.194-2.el10_2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/expat-2.7.3-1.el10_2.1.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 129412
+    checksum: sha256:77280b9f04b396003ad79ad918f164c8f05ac55998ba9663906045ada679ce5b
+    name: expat
+    evr: 2.7.3-1.el10_2.1
+    sourcerpm: expat-2.7.3-1.el10_2.1.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/g/gdbm-1.23-12.el10_0.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 159273
+    checksum: sha256:8309f0c24d485de9038432764827d891da1563fa3f8f8c7ae3568ab0662e9649
+    name: gdbm
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/g/gdbm-libs-1.23-12.el10_0.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 61329
+    checksum: sha256:9b3a0e96223cf82a4e1b30582738aef95b9866e7eeb71d3e6c8055c11700286b
+    name: gdbm-libs
+    evr: 1:1.23-12.el10_0
+    sourcerpm: gdbm-1.23-12.el10_0.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/g/gzip-1.13-3.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 178391
+    checksum: sha256:d0c80b0bc77f03ffeb0705be24c9943b35cf1fc4a35918f40c27b4bb42b1d489
     name: gzip
-    evr: 1.12-1.el9
-    sourcerpm: gzip-1.12-1.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/l/libdb-5.3.28-57.el9_6.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 755192
-    checksum: sha256:3246e76f197e2b60eb470b9b55d3e0dda2301b029f295fed9c38ff70b87c5b6b
-    name: libdb
-    evr: 5.3.28-57.el9_6
-    sourcerpm: libdb-5.3.28-57.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/l/libeconf-0.4.1-4.el9.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 30371
-    checksum: sha256:f7998382ca1be7836f6af05d42dc03f88799abcb10aa7a761e16f74058598012
-    name: libeconf
-    evr: 0.4.1-4.el9
-    sourcerpm: libeconf-0.4.1-4.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/l/libfdisk-2.37.4-21.el9_7.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 161481
-    checksum: sha256:833ea0e100e0404affc6d103db64b8aa685e73886f2651c4073d0f3cd35a42e0
+    evr: 1.13-3.el10
+    sourcerpm: gzip-1.13-3.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/k/kmod-libs-31-13.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 77198
+    checksum: sha256:95a460fe1216d2e27af8e5f1ac5cb11b1e14877837798dacb0fe2adf63ef31fd
+    name: kmod-libs
+    evr: 31-13.el10
+    sourcerpm: kmod-31-13.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libbpf-1.7.0-1.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 197769
+    checksum: sha256:c4786e699e5ff0cea978470365e6da5326839166c4533ef523ea496766793efa
+    name: libbpf
+    evr: 2:1.7.0-1.el10
+    sourcerpm: libbpf-1.7.0-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libfdisk-2.40.2-18.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 171123
+    checksum: sha256:206e4ca3f00c34e660452acb4da72c826a1624396bfeb0f3012bce4acb5d3056
     name: libfdisk
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/l/libpwquality-1.4.4-8.el9.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 126104
-    checksum: sha256:14b7ff2f7fdaf8ebec90261f4619ea7f7c3564c4de8483666de7ed4b1f49b66f
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libpwquality-1.4.5-12.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 129792
+    checksum: sha256:36a6f5c84392c6b578bd8b0bd7c7e431f6ed371ec217887e2373cff3206cd016
     name: libpwquality
-    evr: 1.4.4-8.el9
-    sourcerpm: libpwquality-1.4.4-8.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/l/libutempter-1.2.1-6.el9.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 30354
-    checksum: sha256:0f1df5e0d48c2ac9914bfffa7ed569cd58e42b17ba96bb3f7cf74d1e80de2597
+    evr: 1.4.5-12.el10
+    sourcerpm: libpwquality-1.4.5-12.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libseccomp-2.5.6-1.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 72946
+    checksum: sha256:2aec021802705c06a7598648e5013b197930e8ee6bcdadd3455a5c4ccb30f4e6
+    name: libseccomp
+    evr: 2.5.6-1.el10
+    sourcerpm: libseccomp-2.5.6-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libsemanage-3.10-1.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 131392
+    checksum: sha256:a82fac6a60b3c1e494440c0b08023a9a715e3495e1bcfca54ec19329dca62f52
+    name: libsemanage
+    evr: 3.10-1.el10
+    sourcerpm: libsemanage-3.10-1.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libutempter-1.2.1-15.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 31124
+    checksum: sha256:6ea908dc99708b1ae9505ae351476f6b0a377252462972f46fc09a8aabc5fa28
     name: libutempter
-    evr: 1.2.1-6.el9
-    sourcerpm: libutempter-1.2.1-6.el9.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/o/openssl-3.5.1-7.el9_7.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 1565197
-    checksum: sha256:efc3eb2f303047d5244a0f717a13615820d0de977c62d58bbe6d04ce35df8c6e
-    name: openssl
-    evr: 1:3.5.1-7.el9_7
-    sourcerpm: openssl-3.5.1-7.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/p/pam-1.5.1-26.el9_6.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 636788
-    checksum: sha256:247027fa7a2236c1fb46756ed372637f85cf85886603a2ad5ba918e4231324bc
+    evr: 1.2.1-15.el10
+    sourcerpm: libutempter-1.2.1-15.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/l/libxcrypt-4.4.36-10.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 127002
+    checksum: sha256:aaf3d1f7a232c9e583d6c52904c9b640e0dd3de4be80219eab0de3d66601dac4
+    name: libxcrypt
+    evr: 4.4.36-10.el10
+    sourcerpm: libxcrypt-4.4.36-10.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/p/pam-1.6.1-9.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 598152
+    checksum: sha256:28336af9346638057043101fc77776ef55766a2e64e5a45130ebac53b47efcbc
     name: pam
-    evr: 1.5.1-26.el9_6
-    sourcerpm: pam-1.5.1-26.el9_6.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/u/util-linux-2.37.4-21.el9_7.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 2382589
-    checksum: sha256:35bdc67c40e276a8b775be673a55b24862755ad9c6a8a8d685c2543431711e9d
+    evr: 1.6.1-9.el10
+    sourcerpm: pam-1.6.1-9.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/s/shadow-utils-4.15.0-11.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 1416217
+    checksum: sha256:d4c569664fee25bd6a3185d46f7e866a7a602271eabf3d99ff7f066c69004efc
+    name: shadow-utils
+    evr: 2:4.15.0-11.el10
+    sourcerpm: shadow-utils-4.15.0-11.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/s/systemd-257-23.el10_2.2.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 6051287
+    checksum: sha256:c3adce9ac50ec7f70ae5e808b377b26e06067779970c64096f24a86d3972cd41
+    name: systemd
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/s/systemd-pam-257-23.el10_2.2.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 336130
+    checksum: sha256:14ee94b1808f5d2c4dbc06e1b616abd02205cefa627834885d3997039bbd1284
+    name: systemd-pam
+    evr: 257-23.el10_2.2
+    sourcerpm: systemd-257-23.el10_2.2.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/u/util-linux-2.40.2-18.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 1329299
+    checksum: sha256:eae2caadf939a673f8c53b6658694621b7d438bdbc03fdd881e281aba0432038
     name: util-linux
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/u/util-linux-core-2.37.4-21.el9_7.x86_64.rpm
-    repoid: ubi-9-for-x86_64-baseos-rpms
-    size: 475071
-    checksum: sha256:ac86e01cb061c529b3becdb824e7f62d5ca70f6984f7f775f5355ec13dcbc087
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/u/util-linux-core-2.40.2-18.el10.x86_64.rpm
+    repoid: ubi-10-for-x86_64-baseos-rpms
+    size: 571683
+    checksum: sha256:210a0371b268ffd94bad93d666d3e4b936a8c2fd33534a6c13dd965d3455d59d
     name: util-linux-core
-    evr: 2.37.4-21.el9_7
-    sourcerpm: util-linux-2.37.4-21.el9_7.src.rpm
+    evr: 2.40.2-18.el10
+    sourcerpm: util-linux-2.40.2-18.el10.src.rpm
   source: []
   module_metadata: []
