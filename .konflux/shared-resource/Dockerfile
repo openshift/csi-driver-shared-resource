@@ -24,7 +24,7 @@ ENTRYPOINT ["./openshift-builds-shared-resource"]
 
 LABEL \
 	com.redhat.component="openshift-builds-shared-resource" \
-	cpe="cpe:/a:redhat:openshift_builds:1.8::el9" \
+	cpe="cpe:/a:redhat:openshift_builds:1.8::el10" \
 	description="Red Hat OpenShift Builds CSI Driver Shared Resource" \
 	distribution-scope="public" \
 	io.k8s.description="Red Hat OpenShift Builds CSI Driver Shared Resource" \
