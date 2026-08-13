@@ -19,7 +19,7 @@ ENTRYPOINT ["./openshift-builds-shared-resource-webhook"]
 
 LABEL \
 	com.redhat.component="openshift-builds-shared-resource-webhook" \
-	cpe="cpe:/a:redhat:openshift_builds:1.8::el10" \
+	cpe="cpe:/a:redhat:openshift_builds:1.9::el10" \
 	description="Red Hat OpenShift Builds CSI Driver Shared Resource Webhook" \
 	distribution-scope="public" \
 	io.k8s.description="Red Hat OpenShift Builds CSI Driver Shared Resource Webhook" \
@@ -31,4 +31,4 @@ LABEL \
 	summary="Red Hat OpenShift Builds Shared Resource Webhook" \
 	url="https://github.com/openshift/csi-driver-shared-resource" \
 	vendor="Red Hat, Inc." \
-	version="v1.8.0"
+	version="v1.9.0"
