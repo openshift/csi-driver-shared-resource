@@ -1,4 +1,4 @@
-FROM registry.redhat.io/ubi10/go-toolset@sha256:d5d48915a31c7c774caf7568f7fbe3b25275e042f9f4de73d13fba39f9b2a987 AS builder
+FROM registry.redhat.io/ubi10/go-toolset@sha256:1db86a2b0f77c1197b011de5140236effc27b1a1724c0105d4926857a0756de5 AS builder
 
 ENV GOEXPERIMENT=strictfipsruntime
 
@@ -8,7 +8,7 @@ RUN rm -f /vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
 
 RUN CGO_ENABLED=1 GO111MODULE=on go build -a -mod=vendor -buildvcs=false -ldflags="-s -w" -tags="strictfipsruntime" -o /tmp/openshift-builds-shared-resource ./cmd/csidriver
 
-FROM registry.redhat.io/ubi10-minimal@sha256:2c20ac20ca1ecbbbd583603feabd9cc51e7e8ea5a82e5088e20a9494794b2574
+FROM registry.redhat.io/ubi10-minimal@sha256:a036678b09bd6e5d0efc28ea5554ae14aa6af2bc317d60f9bb0c0dd7610972d0
 
 RUN \
   microdnf --assumeyes --nodocs install util-linux && \
