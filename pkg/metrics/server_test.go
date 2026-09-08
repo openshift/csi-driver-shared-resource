@@ -66,20 +66,24 @@ func generateTempCertificates() (string, string, error) {
 		return "", "", err
 	}
 	defer cert.Close()
-	pem.Encode(cert, &pem.Block{
+	if err := pem.Encode(cert, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: derBytes,
-	})
+	}); err != nil {
+		return "", "", err
+	}
 
 	keyPath, err := os.CreateTemp("", "testkey-")
 	if err != nil {
 		return "", "", err
 	}
 	defer keyPath.Close()
-	pem.Encode(keyPath, &pem.Block{
+	if err := pem.Encode(keyPath, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
+	}); err != nil {
+		return "", "", err
+	}
 
 	return keyPath.Name(), cert.Name(), nil
 }
@@ -109,7 +113,7 @@ func runMetricsServer(t *testing.T) (int, chan<- struct{}) {
 	var port int = MetricsPort + int(atomic.AddUint32(&portOffset, 1))
 
 	ch := make(chan struct{})
-	server, err := BuildServer(port)
+	server, err := BuildServer(port, nil)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
