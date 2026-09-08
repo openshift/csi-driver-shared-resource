@@ -32,6 +32,8 @@ var (
 	driverName        string // name of the CSI driver, registered in the cluster
 	nodeID            string // current Kubernetes node identifier
 	maxVolumesPerNode int64  // maximum amount of volumes per node, i.e. per driver instance
+	tlsMinVersion     string // minimum TLS version for metrics server
+	tlsCipherSuites   string // comma-separated TLS cipher suites for metrics server
 
 )
 
@@ -46,7 +48,7 @@ var rootCmd = &cobra.Command{
 		cfgManager := config.NewManager(cfgFilePath)
 		cfg, err := cfgManager.LoadConfig()
 		if err != nil {
-			fmt.Printf("Failed to load configuration file '%s': %s", cfgFilePath, err.Error())
+			fmt.Printf("Failed to load configuration file '%s': %s\n", cfgFilePath, err.Error())
 			os.Exit(1)
 		}
 
@@ -55,13 +57,13 @@ var rootCmd = &cobra.Command{
 
 		}
 		if kubeClient, err := loadKubernetesClientset(); err != nil {
-			fmt.Printf("Failed to load Kubernetes API client: %s", err.Error())
+			fmt.Printf("Failed to load Kubernetes API client: %s\n", err.Error())
 			os.Exit(1)
 		} else {
 			client.SetClient(kubeClient)
 		}
 		if shareClient, err := loadSharedresourceClientset(); err != nil {
-			fmt.Printf("Failed to load SharedResource API client: %s", err.Error())
+			fmt.Printf("Failed to load SharedResource API client: %s\n", err.Error())
 			os.Exit(1)
 		} else {
 			client.SetShareClient(shareClient)
@@ -78,13 +80,13 @@ var rootCmd = &cobra.Command{
 			mount.New(""),
 		)
 		if err != nil {
-			fmt.Printf("Failed to initialize driver: %s", err.Error())
+			fmt.Printf("Failed to initialize driver: %s\n", err.Error())
 			os.Exit(1)
 		}
 
-		c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources)
+		c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources, tlsMinVersion, tlsCipherSuites)
 		if err != nil {
-			fmt.Printf("Failed to set up controller: %s", err.Error())
+			fmt.Printf("Failed to set up controller: %s\n", err.Error())
 			os.Exit(1)
 		}
 		prunerTicker := time.NewTicker(cfg.GetShareRelistInterval())
@@ -133,6 +135,8 @@ func init() {
 	rootCmd.Flags().StringVar(&driverName, "drivername", string(operatorv1.SharedResourcesCSIDriver), "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
+	rootCmd.Flags().StringVar(&tlsMinVersion, "tls-min-version", "", "Minimum TLS version for metrics server (e.g., VersionTLS12)")
+	rootCmd.Flags().StringVar(&tlsCipherSuites, "tls-cipher-suites", "", "Comma-separated list of cipher suites for metrics server")
 }
 
 // loadKubernetesClientset instantiate a clientset using local config.
@@ -157,7 +161,7 @@ func loadSharedresourceClientset() (sharev1clientset.Interface, error) {
 func runOperator(c *controller.Controller, stopCh <-chan struct{}) {
 	err := c.Run(stopCh)
 	if err != nil {
-		fmt.Printf("Controller exited: %s", err.Error())
+		fmt.Printf("Controller exited: %s\n", err.Error())
 		os.Exit(1)
 	}
 }

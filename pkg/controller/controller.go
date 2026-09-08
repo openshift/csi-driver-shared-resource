@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"crypto/tls"
 	"fmt"
 	"sync"
 	"time"
@@ -19,6 +20,7 @@ import (
 	objcache "github.com/openshift/csi-driver-shared-resource/pkg/cache"
 	"github.com/openshift/csi-driver-shared-resource/pkg/client"
 	"github.com/openshift/csi-driver-shared-resource/pkg/metrics"
+	tlsprofile "github.com/openshift/csi-driver-shared-resource/pkg/tls"
 )
 
 const (
@@ -50,13 +52,16 @@ type Controller struct {
 
 	listers *client.Listers
 
+	tlsMinVersion   string
+	tlsCipherSuites string
+
 	refreshResources bool
 }
 
 // NewController instantiate a new controller with relisting interval, and optional refresh-resources
 // mode. Refresh-resources mode means the controller will keep watching for ConfigMaps and Secrets
 // for future changes, when disabled it only loads the resource contents before mounting the volume.
-func NewController(shareRelist time.Duration, refreshResources bool) (*Controller, error) {
+func NewController(shareRelist time.Duration, refreshResources bool, tlsMinVersion string, tlsCipherSuites string) (*Controller, error) {
 	kubeClient := client.GetClient()
 	shareClient := client.GetShareClient()
 
@@ -78,6 +83,8 @@ func NewController(shareRelist time.Duration, refreshResources bool) (*Controlle
 		sharedSecretInformer:           shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Informer(),
 		listers:                        client.GetListers(),
 		refreshResources:               refreshResources,
+		tlsMinVersion:                  tlsMinVersion,
+		tlsCipherSuites:                tlsCipherSuites,
 	}
 
 	c.cfgMapWorkqueue = workqueue.NewNamedRateLimitingQueue(
@@ -116,7 +123,11 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 
 	// start the Prometheus metrics serner
 	klog.Info("Starting the metrics server")
-	server, err := metrics.BuildServer(metrics.MetricsPort)
+	metricsTLSCfg, err := c.buildMetricsTLSConfig()
+	if err != nil {
+		return fmt.Errorf("failed to build metrics TLS config: %w", err)
+	}
+	server, err := metrics.BuildServer(metrics.MetricsPort, metricsTLSCfg)
 	if err != nil {
 		return err
 	}
@@ -627,4 +638,10 @@ func (c *Controller) syncSharedSecret(event client.Event) error {
 	}
 
 	return err
+}
+
+// buildMetricsTLSConfig builds TLS configuration from flags injected by the operator.
+// Returns an error if the TLS configuration flags are invalid.
+func (c *Controller) buildMetricsTLSConfig() (*tls.Config, error) {
+	return tlsprofile.BuildTLSConfigFromFlags(c.tlsMinVersion, c.tlsCipherSuites)
 }
