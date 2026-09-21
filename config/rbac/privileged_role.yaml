@@ -1,0 +1,11 @@
+
+# TODO: create custom SCC with things that the CSI driver needs
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: shared-resource-privileged-role
+rules:
+  - apiGroups: ["security.openshift.io"]
+    resourceNames: ["privileged"]
+    resources: ["securitycontextconstraints"]
+    verbs: ["use"]

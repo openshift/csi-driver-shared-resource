@@ -1,0 +1,20 @@
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: csi.sharedresource.openshift.io
+  annotations:
+    # This CSIDriver is managed by an OCP CSI operator
+    csi.openshift.io/managed: "true"
+  labels:
+    security.openshift.io/csi-ephemeral-volume-profile: "restricted"
+spec:
+  # Supports ephemeral inline volumes.
+  volumeLifecycleModes:
+    - Ephemeral
+  # To determine at runtime which mode a volume uses, pod info and its
+  # "csi.storage.k8s.io/ephemeral" entry are needed.
+  podInfoOnMount: true
+  # Always apply pod.spec.securityContext.fsGroup, autodetection does not work for Ephemeral volumes.
+  fsGroupPolicy: File
+  # This CSI driver does not implement ControllerPublish.
+  attachRequired: false

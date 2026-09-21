@@ -1,0 +1,151 @@
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: shared-resource-csi-driver-node
+  namespace: openshift-cluster-csi-drivers
+  labels:
+    app: shared-resource-csi-driver-node
+spec:
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 10%
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: shared-resource-csi-driver-node
+  template:
+    metadata:
+      labels:
+        app: shared-resource-csi-driver-node
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+    spec:
+      priorityClassName: system-node-critical
+      serviceAccountName: csi-driver-shared-resource-plugin
+      containers:
+        - name: node-driver-registrar
+          # Symbolic name overridden by config/driver/kustomization.yaml (images:).
+          # In the operator this is templated as ${NODE_DRIVER_REGISTRAR_IMAGE}.
+          image: node-driver-registrar:latest
+          args:
+            - --v=5
+            - --csi-address=/csi/csi.sock
+            - --kubelet-registration-path=/var/lib/kubelet/plugins/sharedresource.csi.openshift.com/csi.sock
+          securityContext:
+            # This is necessary only for systems with SELinux, where
+            # non-privileged sidecar containers cannot access unix domain socket
+            # created by privileged CSI driver container.
+            privileged: true
+          env:
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /registration
+              name: registration-dir
+            - mountPath: /run/csi-data-dir
+              name: csi-data-dir
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          terminationMessagePolicy: FallbackToLogsOnError
+        - name: hostpath
+          # Symbolic name overridden by config/driver/kustomization.yaml (images:).
+          # In the operator this is templated as ${DRIVER_IMAGE}.
+          image: shared-resource-csi-driver:latest
+          # for development purposes; eventually switch to IfNotPresent
+          imagePullPolicy: IfNotPresent
+          command:
+            - csi-driver-shared-resource
+          args:
+            - --config=/var/run/configmaps/config/config.yaml
+            - "--drivername=csi.sharedresource.openshift.io"
+            - "--v=4"
+            - "--nodeid=$(KUBE_NODE_NAME)"
+          env:
+            - name: RESERVED_SHARED_CONFIGMAP_NAMES
+              value: ""
+            - name: RESERVED_SHARED_SECRET_NAMES
+              value: "openshift-etc-pki-entitlement: openshift-config-managed:etc-pki-entitlement"
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+          securityContext:
+            privileged: true
+          ports:
+            - containerPort: 9898
+              name: healthz
+              protocol: TCP
+            - name: provisioner-m
+              containerPort: 6000
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /var/run/configmaps/config
+              name: config
+            - mountPath: /csi
+              name: socket-dir
+            - mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+              name: mountpoint-dir
+            - mountPath: /var/lib/kubelet/plugins
+              mountPropagation: Bidirectional
+              name: plugins-dir
+            - mountPath: /run/csi-data-dir
+              name: csi-data-dir
+              mountPropagation: Bidirectional
+            - mountPath: /csi-volumes-map
+              name: csi-volumes-map
+            - mountPath: /dev
+              name: dev-dir
+            - mountPath: /etc/secrets
+              name: shared-resource-csi-driver-node-metrics-serving-cert
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
+          terminationMessagePolicy: FallbackToLogsOnError
+      volumes:
+        - configMap:
+            optional: true
+            name: csi-driver-shared-resource-config
+          name: config
+        - hostPath:
+            path: /var/lib/kubelet/plugins/sharedresource.csi.openshift.com
+            type: DirectoryOrCreate
+          name: socket-dir
+        - hostPath:
+            path: /var/lib/kubelet/pods
+            type: DirectoryOrCreate
+          name: mountpoint-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+          name: registration-dir
+        - hostPath:
+            path: /var/lib/kubelet/plugins
+            type: Directory
+          name: plugins-dir
+        - hostPath:
+            path: /var/lib/csi-volumes-map/
+            type: DirectoryOrCreate
+          name: csi-volumes-map
+        - hostPath:
+          # hostPath under /run are mounted as a tmpfs (RAM-backed filesystem)
+            path: /run/csi-data-dir
+            type: DirectoryOrCreate
+          name: csi-data-dir
+        - hostPath:
+            path: /dev
+            type: Directory
+          name: dev-dir
+        - name: shared-resource-csi-driver-node-metrics-serving-cert
+          secret:
+            defaultMode: 420
+            secretName: shared-resource-csi-driver-node-metrics-serving-cert

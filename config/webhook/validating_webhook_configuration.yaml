@@ -1,0 +1,44 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+  labels:
+    name: validation.webhook.csidriversharedresource
+  name: validation.webhook.csidriversharedresource
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: shared-resource-csi-driver-webhook
+      namespace: openshift-cluster-csi-drivers
+      path: /resource-validation
+      port: 443
+  name: pod.csi.sharedresource.openshift.io
+  failurePolicy: Ignore
+  matchPolicy: Equivalent
+  namespaceSelector:
+      matchExpressions:
+        - key: runlevel
+          operator: NotIn
+          values: ["0", "1"]
+        - key: openshift.io/run-level
+          operator: NotIn
+          values: ["0", "1"]
+        - key: csi.sharedresource.openshift.io/skip-validation
+          operator: NotIn
+          values: ["true"]
+  rules:
+    - operations: ["CREATE"]
+      apiGroups: [""]
+      apiVersions: ["v1"]
+      resources: ["pods"]
+      scope: "*"
+    - operations: ["CREATE"]
+      apiGroups: ["sharedresource.openshift.io"]
+      apiVersions: ["v1", "v1beta1", "v1alpha1"]
+      resources: ["sharedsecrets", "sharedconfigmaps"]
+      scope: "*"
+  sideEffects: None
+  timeoutSeconds: 10
