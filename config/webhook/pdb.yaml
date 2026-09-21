@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shared-resource-csi-driver-pdb
+  namespace: openshift-cluster-csi-drivers
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      name: shared-resource-csi-driver-webhook

@@ -1,0 +1,21 @@
+# Shared resource CSI driver admission webhook, kept separate from the driver
+# workload so it can be deployed/managed independently.
+# Sourced from https://github.com/openshift/csi-driver-shared-resource-operator/tree/master/assets/webhook
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - sa.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  - pdb.yaml
+  - validating_webhook_configuration.yaml
+
+# deployment.yaml carries a symbolic image name (in the operator this is templated
+# as ${WEBHOOK_IMAGE}). Resolve it here so `kustomize build` produces deployable
+# manifests. Update newName/newTag as needed.
+images:
+  - name: shared-resource-csi-driver-webhook
+    newName: quay.io/openshift/origin-csi-driver-shared-resource-webhook
+    newTag: latest

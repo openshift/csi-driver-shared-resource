@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: shared-resource-csi-driver-webhook-serving-cert
+  name: shared-resource-csi-driver-webhook
+  namespace: openshift-cluster-csi-drivers
+  labels:
+    name: shared-resource-csi-driver-webhook
+spec:
+  sessionAffinity: None
+  type: ClusterIP
+  selector:
+    name: shared-resource-csi-driver-webhook
+  ports:
+  - name: webhook
+    port: 443
+    protocol: TCP
+    targetPort: webhook

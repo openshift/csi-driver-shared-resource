@@ -1,0 +1,13 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: shared-resource-csi-driver-node
+  namespace: openshift-cluster-csi-drivers
+  labels:
+    app: shared-resource-csi-driver-node
+spec:
+  selector:
+    app: shared-resource-csi-driver-node
+  ports:
+    - name: dummy
+      port: 12345

@@ -1,0 +1,36 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: shared-resource-csi-driver-node-monitor
+  namespace: openshift-cluster-csi-drivers
+spec:
+  endpoints:
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    path: /metrics
+    port: provisioner-m
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: shared-resource-csi-driver-node-metrics.openshift-cluster-csi-drivers.svc
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    path: /metrics
+    port: attacher-m
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: shared-resource-csi-driver-node-metrics.openshift-cluster-csi-drivers.svc
+  - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+    interval: 30s
+    path: /metrics
+    port: resizer-m
+    scheme: https
+    tlsConfig:
+      caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
+      serverName: shared-resource-csi-driver-node-metrics.openshift-cluster-csi-drivers.svc
+  jobLabel: component
+  selector:
+    matchLabels:
+      app: shared-resource-csi-driver-node-metrics

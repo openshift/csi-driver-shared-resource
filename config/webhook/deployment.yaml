@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shared-resource-csi-driver-webhook
+  namespace: openshift-cluster-csi-drivers
+  labels:
+    name: shared-resource-csi-driver-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: shared-resource-csi-driver-webhook
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      annotations:
+        target.workload.openshift.io/management: '{"effect": "PreferredDuringScheduling"}'
+      labels:
+        name: shared-resource-csi-driver-webhook
+    spec:
+      containers:
+      # Symbolic name overridden by config/webhook/kustomization.yaml (images:).
+      # In the operator this is templated as ${WEBHOOK_IMAGE}.
+      - image: shared-resource-csi-driver-webhook:latest
+        imagePullPolicy: IfNotPresent
+        name: shared-resource-csi-driver-webhook
+        args:
+          - --tls=true
+          - --tlscert=/etc/secrets/shared-resource-csi-driver-webhook-serving-cert/tls.crt
+          - --tlskey=/etc/secrets/shared-resource-csi-driver-webhook-serving-cert/tls.key
+          - --cacert=/etc/pki/tls/certs/ca-bundle.crt
+          - --port=8443
+        env:
+          - name: RESERVED_SHARED_CONFIGMAP_NAMES
+            value: ""
+          - name: RESERVED_SHARED_SECRET_NAMES
+            value: "openshift-etc-pki-entitlement: openshift-config-managed:etc-pki-entitlement"
+        volumeMounts:
+        - name: trusted-ca-bundle
+          mountPath: /etc/pki/tls/certs/
+        - mountPath: /etc/secrets/shared-resource-csi-driver-webhook-serving-cert/
+          name: shared-resource-csi-driver-webhook-serving-cert
+        ports:
+        - name: webhook
+          containerPort: 8443
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
+        terminationMessagePolicy: FallbackToLogsOnError
+      priorityClassName: system-cluster-critical
+      serviceAccountName: shared-resource-csi-driver-webhook
+      nodeSelector:
+        node-role.kubernetes.io/master: ""
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: "NoSchedule"
+      volumes:
+      - name: shared-resource-csi-driver-webhook-serving-cert
+        secret:
+          defaultMode: 420
+          secretName: shared-resource-csi-driver-webhook-serving-cert
+      - name: trusted-ca-bundle
+        configMap:
+          name: shared-resource-csi-driver-operator-trusted-ca-bundle
+          items:
+            - key: ca-bundle.crt
+              path: ca-bundle.crt
