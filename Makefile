@@ -43,6 +43,10 @@ config: ## Overwrites the configuration ConfigMap with local settings
 	./hack/configmap.sh $(DEPLOY_MODE)
 .PHONY: config
 
+release: ## Render config/ into a single release.yaml manifest. Example: make release
+	./hack/release.sh
+.PHONY: release
+
 test-e2e-no-deploy:
 	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh
 .PHONY: test-e2e-no-deploy

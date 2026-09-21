@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shared-resource-csi-driver-node-ingress
+  namespace: openshift-cluster-csi-drivers
+spec:
+  podSelector:
+    matchLabels:
+      app: shared-resource-csi-driver-node
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: monitoring
+      ports:
+        - protocol: TCP
+          port: 6000  # provisioner-m metrics port
+        - protocol: TCP
+          port: 9898  # healthz port

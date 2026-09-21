@@ -1,0 +1,19 @@
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: shared-resource-csi-driver-node-metrics-serving-cert
+  name: shared-resource-csi-driver-node-metrics
+  namespace: openshift-cluster-csi-drivers
+  labels:
+    app: shared-resource-csi-driver-node-metrics
+spec:
+  sessionAffinity: None
+  type: ClusterIP
+  selector:
+    app: shared-resource-csi-driver-node
+  ports:
+  - name: metrics
+    port: 443
+    protocol: TCP
+    targetPort: metrics
