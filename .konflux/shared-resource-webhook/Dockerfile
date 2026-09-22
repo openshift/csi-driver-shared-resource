@@ -26,7 +26,7 @@ LABEL \
 	io.k8s.display-name="Red Hat OpenShift Builds Shared Resource Webhook" \
 	io.openshift.tags="builds,shared-resources,webhook,csi-driver" \
 	maintainer="openshift-builds@redhat.com" \
-	name="openshift-builds/csi-driver-shared-resource-webhook" \
+	name="openshift-builds/csi-driver-shared-resource-webhook-rhel10" \
 	release="2" \
 	summary="Red Hat OpenShift Builds Shared Resource Webhook" \
 	url="https://github.com/openshift/csi-driver-shared-resource" \
