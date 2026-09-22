@@ -31,7 +31,7 @@ LABEL \
 	io.k8s.display-name="Red Hat OpenShift Builds Shared Resource" \
 	io.openshift.tags="builds,shared-resources,csi-driver" \
 	maintainer="openshift-builds@redhat.com" \
-	name="openshift-builds/csi-driver-shared-resource-rhel10" \
+	name="openshift-builds/openshift-builds-shared-resource-rhel10" \
 	release="2" \
 	summary="Red Hat OpenShift Builds Shared Resource" \
 	url="https://github.com/openshift/csi-driver-shared-resource" \
