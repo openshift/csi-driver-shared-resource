@@ -1,7 +1,7 @@
 package config
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 - MD5 used for file change detection
 	"encoding/hex"
 	"os"
 
@@ -31,7 +31,7 @@ func (m *Manager) ConfigHasChanged() bool {
 		klog.Errorf("Reading configuration-file '%s': '%#v'", m.cfgFilePath, err)
 		return false
 	}
-	sum := md5.Sum(payload)
+	sum := md5.Sum(payload) // #nosec G401 - MD5 used for file change detection
 	return m.md5sum != hex.EncodeToString(sum[:])
 }
 
@@ -53,7 +53,7 @@ func (m *Manager) LoadConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	sum := md5.Sum(payload)
+	sum := md5.Sum(payload) // #nosec G401 - MD5 used for file change detection
 	m.md5sum = hex.EncodeToString(sum[:])
 
 	// overwriting attributes found on the configuration file with the defaults
