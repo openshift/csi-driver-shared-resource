@@ -37,6 +37,7 @@ func TestMain(m *testing.M) {
 	}
 
 	// sets the default http client to skip certificate check.
+	// #nosec G402 - Test code using self-signed certificates, InsecureSkipVerify is appropriate
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
@@ -48,7 +49,7 @@ func TestMain(m *testing.M) {
 }
 
 func generateTempCertificates() (string, string, error) {
-	key, err := rsa.GenerateKey(rand.Reader, 1024)
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
 		return "", "", err
 	}
@@ -66,20 +67,24 @@ func generateTempCertificates() (string, string, error) {
 		return "", "", err
 	}
 	defer cert.Close()
-	pem.Encode(cert, &pem.Block{
+	if err := pem.Encode(cert, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: derBytes,
-	})
+	}); err != nil {
+		return "", "", err
+	}
 
 	keyPath, err := os.CreateTemp("", "testkey-")
 	if err != nil {
 		return "", "", err
 	}
 	defer keyPath.Close()
-	pem.Encode(keyPath, &pem.Block{
+	if err := pem.Encode(keyPath, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
-	})
+	}); err != nil {
+		return "", "", err
+	}
 
 	return keyPath.Name(), cert.Name(), nil
 }
@@ -109,7 +114,7 @@ func runMetricsServer(t *testing.T) (int, chan<- struct{}) {
 	var port int = MetricsPort + int(atomic.AddUint32(&portOffset, 1))
 
 	ch := make(chan struct{})
-	server, err := BuildServer(port)
+	server, err := BuildServer(port, nil)
 	if err != nil {
 		t.Fatalf("error: %v", err)
 	}
