@@ -8,6 +8,12 @@ file. You can use the following flags:
 - `--endpoint`: CSI driver API endpoint for Kubernetes kubelet
 - `--drivername`: CSI driver name to be registered in the cluster
 - `--maxvolumespernode`: maximum amount of volumes per node
+- `--tls-min-version`: Minimum TLS version for the metrics server (e.g., `1.2`, `1.3`, or `VersionTLS12`, `VersionTLS13`)
+  - Default: `VersionTLS12`
+- `--tls-cipher-suites`: Comma-separated list of TLS cipher suites in IANA format for the metrics server
+  - Example: `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`
+  - Note: For TLS 1.3+, cipher suites are ignored (Go uses built-in TLS 1.3 ciphers)
+  - Must include at least one HTTP/2-required cipher: `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256` or `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`
 
 During the rollout of the CSI driver it captures the node-id via `env.ValueFrom`
 [directive](./deploy/csi-hostpath-plugin.yaml).
