@@ -1,0 +1,27 @@
+# Shared resource CSI driver node plugin workload and its supporting objects.
+# Sourced from https://github.com/openshift/csi-driver-shared-resource-operator/tree/master/assets
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - csidriver.yaml
+  - configmap.yaml
+  - daemonset.yaml
+  - service.yaml
+  - servicemonitor.yaml
+  - networkpolicy.yaml
+
+namespace: openshift-cluster-csi-drivers
+
+# node.yaml carries symbolic image names (in the operator these are templated as
+# ${DRIVER_IMAGE} / ${NODE_DRIVER_REGISTRAR_IMAGE}). Resolve them here so
+# `kustomize build` produces deployable manifests. Update newName/newTag as needed.
+images:
+  - name: shared-resource-csi-driver
+    newName: registry.redhat.io/openshift-builds/openshift-builds-shared-resource-rhel10
+    digest: sha256:2e2d32054e40e651e2057595a25cd54ac7525fd074374b385bf053d7eece7c3e
+  - name: node-driver-registrar
+    newName: registry.redhat.io/openshift4/ose-csi-node-driver-registrar-rhel9
+    digest: sha256:8bed04198de197162eaf332890e40100c5a7061bf9f728be09f2004671f9632c

@@ -1,0 +1,17 @@
+# Top-level kustomization that assembles the full shared resource CSI driver
+# deployment: CRDs, RBAC, the node driver workload, and the admission webhook.
+#
+# Render everything with:
+#   kustomize build config
+#
+# Individual components can also be rendered on their own, e.g.:
+#   kustomize build config/crd
+#   kustomize build config/webhook
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - crd
+  - rbac
+  - driver
+  - webhook

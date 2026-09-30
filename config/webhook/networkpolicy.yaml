@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: shared-resource-csi-driver-webhook-ingress
+  namespace: openshift-cluster-csi-drivers
+spec:
+  podSelector:
+    matchLabels:
+      name: shared-resource-csi-driver-webhook
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openshift-kube-apiserver
+      ports:
+        - protocol: TCP
+          port: 8443
