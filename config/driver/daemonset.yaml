@@ -109,7 +109,7 @@ spec:
             - mountPath: /dev
               name: dev-dir
             - mountPath: /etc/secrets
-              name: shared-resource-csi-driver-node-metrics-serving-cert
+              name: shared-resource-csi-driver-node-metrics-cert
           resources:
             requests:
               cpu: 10m
@@ -149,7 +149,7 @@ spec:
             path: /dev
             type: Directory
           name: dev-dir
-        - name: shared-resource-csi-driver-node-metrics-serving-cert
+        - name: shared-resource-csi-driver-node-metrics-cert
           secret:
             defaultMode: 420
-            secretName: shared-resource-csi-driver-node-metrics-serving-cert
+            secretName: shared-resource-csi-driver-node-metrics-cert

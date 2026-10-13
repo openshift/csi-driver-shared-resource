@@ -29,8 +29,8 @@ spec:
         name: shared-resource-csi-driver-webhook
         args:
           - --tls=true
-          - --tlscert=/etc/secrets/shared-resource-csi-driver-webhook-serving-cert/tls.crt
-          - --tlskey=/etc/secrets/shared-resource-csi-driver-webhook-serving-cert/tls.key
+          - --tlscert=/etc/secrets/shared-resource-csi-driver-webhook-cert/tls.crt
+          - --tlskey=/etc/secrets/shared-resource-csi-driver-webhook-cert/tls.key
           - --cacert=/etc/pki/tls/certs/ca-bundle.crt
           - --port=8443
         env:
@@ -41,8 +41,8 @@ spec:
         volumeMounts:
         - name: trusted-ca-bundle
           mountPath: /etc/pki/tls/certs/
-        - mountPath: /etc/secrets/shared-resource-csi-driver-webhook-serving-cert/
-          name: shared-resource-csi-driver-webhook-serving-cert
+        - mountPath: /etc/secrets/shared-resource-csi-driver-webhook-cert/
+          name: shared-resource-csi-driver-webhook-cert
         ports:
         - name: webhook
           containerPort: 8443
@@ -61,13 +61,13 @@ spec:
         operator: Exists
         effect: "NoSchedule"
       volumes:
-      - name: shared-resource-csi-driver-webhook-serving-cert
+      - name: shared-resource-csi-driver-webhook-cert
         secret:
           defaultMode: 420
-          secretName: shared-resource-csi-driver-webhook-serving-cert
+          secretName: shared-resource-csi-driver-webhook-cert
       - name: trusted-ca-bundle
         configMap:
-          name: shared-resource-csi-driver-operator-trusted-ca-bundle
+          name: shared-resource-csi-driver-trusted-ca-bundle
           items:
             - key: ca-bundle.crt
               path: ca-bundle.crt
