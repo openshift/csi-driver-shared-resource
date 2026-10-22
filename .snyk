@@ -8,3 +8,5 @@ exclude:
     # this pod.yaml in apimachinery is just another sample that is never created by our images; you'll see it creates the pod "some-name" in the default namespace
     - vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
     - unpacked_remote_sources/cachito-gomod-with-deps/app/vendor/k8s.io/apimachinery/pkg/util/managedfields/pod.yaml
+    # test files use InsecureSkipVerify for self-signed test certificates; these tests are not part of production images
+    - pkg/metrics/server_test.go
