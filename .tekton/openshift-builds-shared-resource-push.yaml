@@ -3,8 +3,8 @@ kind: PipelineRun
 metadata:
   annotations:
     build.appstudio.openshift.io/repo: https://github.com/openshift/csi-driver-shared-resource?rev={{revision}}
-    build.appstudio.redhat.com/commit_sha: '{{revision}}'
-    build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    build.appstudio.redhat.com/commit_sha: "{{revision}}"
+    build.appstudio.redhat.com/target_branch: "{{target_branch}}"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: |
       event == "push" &&
@@ -12,7 +12,8 @@ metadata:
       (
         files.all.exists(x, x.matches('go.mod|go.sum|.konflux/shared-resource/Dockerfile')) ||
         files.all.exists(x, x.matches('pkg/csidriver|pkg/config|pkg/cache|pkg/consts|pkg/controller|pkg/metrics|cmd/csidriver|cmd/util')) ||
-        files.all.exists(x, x.matches('.tekton/openshift-builds-shared-resource-push.yaml'))
+        files.all.exists(x, x.matches('.tekton/openshift-builds-shared-resource-push.yaml')) ||
+        files.all.exists(x, x.matches('rpms.in.yaml|rpms.lock.yaml|ubi.repo'))
       )
   labels:
     appstudio.openshift.io/application: openshift-builds
@@ -22,30 +23,30 @@ metadata:
   namespace: rh-openshift-builds-tenant
 spec:
   params:
-  - name: git-url
-    value: '{{source_url}}'
-  - name: revision
-    value: '{{revision}}'
-  - name: output-image
-    value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds-shared-resource:{{revision}}
-  - name: dockerfile
-    value: .konflux/shared-resource/Dockerfile
-  - name: build-source-image
-    value: "true"
-  - name: hermetic
-    value: "true"
-  - name: prefetch-dev-package-managers
-    value: "true"
-  - name: build-platforms
-    value:
-      - linux/x86_64
-      - linux/arm64
-      - linux/ppc64le
-      - linux/s390x
-  - name: enable-package-registry-proxy
-    value: "true"
-  - name: prefetch-input
-    value: '{"packages": [{"type": "gomod"},{"type": "rpm"}]}'
+    - name: git-url
+      value: "{{source_url}}"
+    - name: revision
+      value: "{{revision}}"
+    - name: output-image
+      value: quay.io/redhat-user-workloads/rh-openshift-builds-tenant/openshift-builds-shared-resource:{{revision}}
+    - name: dockerfile
+      value: .konflux/shared-resource/Dockerfile
+    - name: build-source-image
+      value: "true"
+    - name: hermetic
+      value: "true"
+    - name: prefetch-dev-package-managers
+      value: "true"
+    - name: build-platforms
+      value:
+        - linux/x86_64
+        - linux/arm64
+        - linux/ppc64le
+        - linux/s390x
+    - name: enable-package-registry-proxy
+      value: "true"
+    - name: prefetch-input
+      value: '{"packages": [{"type": "gomod"},{"type": "rpm"}]}'
   pipelineRef:
     resolver: git
     params:
@@ -60,5 +61,5 @@ spec:
   workspaces:
     - name: git-auth
       secret:
-        secretName: '{{ git_auth_secret }}'
+        secretName: "{{ git_auth_secret }}"
 status: {}
