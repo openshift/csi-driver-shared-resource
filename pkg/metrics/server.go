@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/http"
@@ -21,7 +22,7 @@ var (
 )
 
 // BuildServer creates the http.Server struct
-func BuildServer(port int) (*http.Server, error) {
+func BuildServer(port int, tlsCfg *tls.Config) (*http.Server, error) {
 	if port <= 0 {
 		klog.Error("invalid port for metric server")
 		return nil, errors.New("invalid port for metrics server")
@@ -31,8 +32,12 @@ func BuildServer(port int) (*http.Server, error) {
 	router := http.NewServeMux()
 	router.Handle("/metrics", promhttp.Handler())
 	srv := &http.Server{
-		Addr:    bindAddr,
-		Handler: router,
+		Addr:         bindAddr,
+		Handler:      router,
+		TLSConfig:    tlsCfg,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	return srv, nil
@@ -43,7 +48,7 @@ func StopServer(srv *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		klog.Warningf("Problem shutting down HTTP server: %v", err)
+		klog.Errorf("error closing metrics server: %v", err)
 	}
 }
 
