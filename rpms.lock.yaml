@@ -123,13 +123,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-2.el10_2
     sourcerpm: elfutils-0.194-2.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/expat-2.7.3-1.el10_2.5.aarch64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/e/expat-2.7.3-1.el10_2.7.aarch64.rpm
     repoid: ubi-10-for-aarch64-baseos-rpms
-    size: 126568
-    checksum: sha256:54e71e424d328f4ebe9d9f01708dc9e12d8d74edd9f19bfacd0406612d3545cc
+    size: 126913
+    checksum: sha256:1b534d0cccce47625831fd79bd068e31b4a1be6e0f1ace7654c1ddbb96c13340
     name: expat
-    evr: 2.7.3-1.el10_2.5
-    sourcerpm: expat-2.7.3-1.el10_2.5.src.rpm
+    evr: 2.7.3-1.el10_2.7
+    sourcerpm: expat-2.7.3-1.el10_2.7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/aarch64/baseos/os/Packages/g/gdbm-1.23-12.el10_0.aarch64.rpm
     repoid: ubi-10-for-aarch64-baseos-rpms
     size: 158080
@@ -372,13 +372,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-2.el10_2
     sourcerpm: elfutils-0.194-2.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/expat-2.7.3-1.el10_2.5.ppc64le.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/e/expat-2.7.3-1.el10_2.7.ppc64le.rpm
     repoid: ubi-10-for-ppc64le-baseos-rpms
-    size: 137718
-    checksum: sha256:fabdcfb4edaee76d4b4195d8076ff465486887183d398d5bf6873fc2b39cce63
+    size: 137987
+    checksum: sha256:a0b3d48b669c62981ab7cc252e34e034ea9f7814ecd1c9d68f7ec1a0364fc79c
     name: expat
-    evr: 2.7.3-1.el10_2.5
-    sourcerpm: expat-2.7.3-1.el10_2.5.src.rpm
+    evr: 2.7.3-1.el10_2.7
+    sourcerpm: expat-2.7.3-1.el10_2.7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/ppc64le/baseos/os/Packages/g/gdbm-1.23-12.el10_0.ppc64le.rpm
     repoid: ubi-10-for-ppc64le-baseos-rpms
     size: 165190
@@ -628,13 +628,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-2.el10_2
     sourcerpm: elfutils-0.194-2.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/expat-2.7.3-1.el10_2.5.s390x.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/e/expat-2.7.3-1.el10_2.7.s390x.rpm
     repoid: ubi-10-for-s390x-baseos-rpms
-    size: 135888
-    checksum: sha256:4216802fdf5727ce0d73ec83244e886e667438de5dc6d31c2838cce974cd0050
+    size: 136219
+    checksum: sha256:c080b814a9427a127cf4d60cda5aee7d39ddebea225dfb6f3f7356fb7682f941
     name: expat
-    evr: 2.7.3-1.el10_2.5
-    sourcerpm: expat-2.7.3-1.el10_2.5.src.rpm
+    evr: 2.7.3-1.el10_2.7
+    sourcerpm: expat-2.7.3-1.el10_2.7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/s390x/baseos/os/Packages/g/gdbm-1.23-12.el10_0.s390x.rpm
     repoid: ubi-10-for-s390x-baseos-rpms
     size: 163369
@@ -877,13 +877,13 @@ arches:
     name: elfutils-libs
     evr: 0.194-2.el10_2
     sourcerpm: elfutils-0.194-2.el10_2.src.rpm
-  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/expat-2.7.3-1.el10_2.5.x86_64.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/e/expat-2.7.3-1.el10_2.7.x86_64.rpm
     repoid: ubi-10-for-x86_64-baseos-rpms
-    size: 130906
-    checksum: sha256:68f1749f8c8b170f891d7be911f167808719071c1e04c45b3c2b2a08e840a4e8
+    size: 131245
+    checksum: sha256:1d7b15b93b70ac8fbbf633e14a0ced5bc90da2a74e21ca7df6959a02cf0d78da
     name: expat
-    evr: 2.7.3-1.el10_2.5
-    sourcerpm: expat-2.7.3-1.el10_2.5.src.rpm
+    evr: 2.7.3-1.el10_2.7
+    sourcerpm: expat-2.7.3-1.el10_2.7.src.rpm
   - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi10/10/x86_64/baseos/os/Packages/g/gdbm-1.23-12.el10_0.x86_64.rpm
     repoid: ubi-10-for-x86_64-baseos-rpms
     size: 159273
