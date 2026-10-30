@@ -1,8 +1,6 @@
 module github.com/openshift/csi-driver-shared-resource
 
-go 1.25.0
-
-toolchain go1.25.7
+go 1.26.0
 
 require (
 	github.com/container-storage-interface/spec v1.12.0
