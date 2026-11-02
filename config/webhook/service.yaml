@@ -4,7 +4,7 @@ metadata:
   annotations:
     service.beta.openshift.io/serving-cert-secret-name: shared-resource-csi-driver-webhook-cert
   name: shared-resource-csi-driver-webhook
-  namespace: openshift-cluster-csi-drivers
+  namespace: shared-resource-csi-driver
   labels:
     name: shared-resource-csi-driver-webhook
 spec:

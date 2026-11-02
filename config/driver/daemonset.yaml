@@ -2,7 +2,7 @@ kind: DaemonSet
 apiVersion: apps/v1
 metadata:
   name: shared-resource-csi-driver-node
-  namespace: openshift-cluster-csi-drivers
+  namespace: shared-resource-csi-driver
   labels:
     app: shared-resource-csi-driver-node
 spec:
@@ -109,7 +109,7 @@ spec:
             - mountPath: /dev
               name: dev-dir
             - mountPath: /etc/secrets
-              name: shared-resource-csi-driver-node-metrics-cert
+              name: shared-resource-csi-driver-node-cert
           resources:
             requests:
               cpu: 10m
@@ -149,7 +149,7 @@ spec:
             path: /dev
             type: Directory
           name: dev-dir
-        - name: shared-resource-csi-driver-node-metrics-cert
+        - name: shared-resource-csi-driver-node-cert
           secret:
             defaultMode: 420
-            secretName: shared-resource-csi-driver-node-metrics-cert
+            secretName: shared-resource-csi-driver-node-cert

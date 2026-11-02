@@ -11,9 +11,8 @@ resources:
   - daemonset.yaml
   - service.yaml
   - servicemonitor.yaml
-  - networkpolicy.yaml
 
-namespace: openshift-cluster-csi-drivers
+namespace: shared-resource-csi-driver
 
 # node.yaml carries symbolic image names (in the operator these are templated as
 # ${DRIVER_IMAGE} / ${NODE_DRIVER_REGISTRAR_IMAGE}). Resolve them here so

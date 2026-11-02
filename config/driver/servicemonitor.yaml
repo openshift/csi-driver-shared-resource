@@ -2,8 +2,8 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: shared-resource-csi-driver-node-monitor
-  namespace: openshift-cluster-csi-drivers
+  name: shared-resource-csi-driver-node
+  namespace: shared-resource-csi-driver
 spec:
   endpoints:
   - bearerTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
@@ -13,8 +13,8 @@ spec:
     scheme: https
     tlsConfig:
       caFile: /etc/prometheus/configmaps/serving-certs-ca-bundle/service-ca.crt
-      serverName: shared-resource-csi-driver-node-metrics.openshift-cluster-csi-drivers.svc
+      serverName: shared-resource-csi-driver-node.shared-resource-csi-driver.svc
   jobLabel: component
   selector:
     matchLabels:
-      app: shared-resource-csi-driver-node-metrics
+      app: shared-resource-csi-driver-node

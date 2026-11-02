@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: shared-resource-csi-driver-webhook
-  namespace: openshift-cluster-csi-drivers
+  namespace: shared-resource-csi-driver
   labels:
     name: shared-resource-csi-driver-webhook
 spec:

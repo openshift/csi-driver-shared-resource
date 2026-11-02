@@ -9,4 +9,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: shared-resource-csi-driver-node
-    namespace: openshift-cluster-csi-drivers
+    namespace: shared-resource-csi-driver
