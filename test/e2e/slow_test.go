@@ -18,6 +18,7 @@ func TestBasicThenNoRBACThenRBAC(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	basicShareSetupAndVerification(testArgs)
 
 	framework.DeleteShareRelatedRBAC(testArgs)

@@ -25,6 +25,7 @@ func prep(t *framework.TestArgs) {
 
 func basicShareSetupAndVerification(t *framework.TestArgs) {
 	framework.CreateShareRelatedRBAC(t)
+	framework.CreateDriverRBAC(t, "openshift-config", "configmaps", "openshift-install")
 	framework.CreateShare(t)
 	t.TestPodUp = true
 	framework.CreateTestPod(t)
@@ -36,6 +37,7 @@ func basicShareSetupAndVerification(t *framework.TestArgs) {
 
 func doubleShareSetupAndVerification(t *framework.TestArgs) {
 	t.SecondShare = true
+	framework.CreateDriverRBAC(t, "openshift-config", "secrets", "pull-secret")
 	basicShareSetupAndVerification(t)
 	t.SearchString = ".dockerconfigjson"
 	framework.ExecPod(t)

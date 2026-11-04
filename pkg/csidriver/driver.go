@@ -662,10 +662,14 @@ func (d *driver) registerRangers(dv *driverVolume) {
 	switch dv.GetSharedDataKind() {
 	case consts.ResourceReferenceTypeSecret:
 		objcache.RegisterSharedSecretUpdateCallback(dv.GetVolID(), dv.GetSharedDataId(), updateRangerShare)
-		objcache.RegisteredSharedSecretDeleteCallback(dv.GetVolID(), deleteRangerShare)
+		klog.V(0).Infof("Registered SharedSecret update callback for volID=%s shareID=%s", dv.GetVolID(), dv.GetSharedDataId())
+		objcache.RegisterSharedSecretDeleteCallback(dv.GetVolID(), deleteRangerShare)
+		klog.V(0).Infof("Registered SharedSecret delete callback for volID=%s shareID=%s", dv.GetVolID(), dv.GetSharedDataId())
 	case consts.ResourceReferenceTypeConfigMap:
 		objcache.RegisterSharedConfigMapUpdateCallback(dv.GetVolID(), dv.GetSharedDataId(), updateRangerShare)
+		klog.V(0).Infof("Registered SharedConfigMap update callback for volID=%s shareID=%s", dv.GetVolID(), dv.GetSharedDataId())
 		objcache.RegisterSharedConfigMapDeleteCallback(dv.GetVolID(), deleteRangerShare)
+		klog.V(0).Infof("Registered SharedConfigMap delete callback for volID=%s shareID=%s", dv.GetVolID(), dv.GetSharedDataId())
 	}
 
 }

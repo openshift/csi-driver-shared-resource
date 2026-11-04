@@ -146,7 +146,7 @@ func TestFixedHotReloadStaleData(t *testing.T) {
 
 	driverRoleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "driver-binding", Namespace: sourceNamespace},
-		Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "csi-driver-shared-resource", Namespace: "openshift-builds"}},
+		Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: framework.GetDriverServiceAccount(), Namespace: client.DefaultNamespace}},
 		RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "Role", Name: driverRole.Name},
 	}
 	_, err = kubeClient.RbacV1().RoleBindings(sourceNamespace).Create(context.TODO(), driverRoleBinding, metav1.CreateOptions{})
@@ -484,7 +484,7 @@ func runRBACTest(t *testing.T, resourceType string, grantDriverRBAC, grantPodRBA
 
 		driverRoleBinding := &rbacv1.RoleBinding{
 			ObjectMeta: metav1.ObjectMeta{Name: "driver-binding-" + sourceName, Namespace: sourceNS},
-			Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "csi-driver-shared-resource", Namespace: "openshift-builds"}},
+			Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: framework.GetDriverServiceAccount(), Namespace: client.DefaultNamespace}},
 			RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "Role", Name: driverRole.Name},
 		}
 		_, err = kubeClient.RbacV1().RoleBindings(sourceNS).Create(context.TODO(), driverRoleBinding, metav1.CreateOptions{})

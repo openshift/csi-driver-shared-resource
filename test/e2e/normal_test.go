@@ -18,6 +18,8 @@ func TestNoRBAC(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	framework.CreateDriverRBAC(testArgs, "openshift-config", "configmaps", "openshift-install")
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	framework.CreateShare(testArgs)
 	framework.CreateTestPod(testArgs)
 }
@@ -29,6 +31,8 @@ func TestNoShare(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	framework.CreateDriverRBAC(testArgs, "openshift-config", "configmaps", "openshift-install")
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	framework.CreateShareRelatedRBAC(testArgs)
 	framework.CreateTestPod(testArgs)
 }
@@ -37,6 +41,7 @@ func coreTestBasicThenNoShareThenShare(testArgs *framework.TestArgs) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	basicShareSetupAndVerification(testArgs)
 
 	testArgs.T.Logf("%s: deleting share for %s", time.Now().String(), testArgs.Name)
@@ -51,6 +56,7 @@ func coreTestBasicThenNoShareThenShare(testArgs *framework.TestArgs) {
 	testArgs.T.Logf("%s: adding share back for %s", time.Now().String(), testArgs.Name)
 
 	framework.CreateShare(testArgs)
+	testArgs.TestDuration = 2 * time.Minute 
 	testArgs.SearchStringMissing = false
 	testArgs.SearchString = "invoker"
 	framework.ExecPod(testArgs)
@@ -64,6 +70,7 @@ func TestBasicNoRefresh(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	basicShareSetupAndVerification(testArgs)
 }
 
@@ -76,6 +83,7 @@ func TestBasicGroupRBAC(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	basicShareSetupAndVerification(testArgs)
 }
 
@@ -90,6 +98,7 @@ func coreTestTwoSharesSeparateMountPaths(testArgs *framework.TestArgs) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config") // Cleanup for both configmaps and secrets
 	doubleShareSetupAndVerification(testArgs)
 }
 
@@ -108,6 +117,8 @@ func TestRejectPodWithReadOnlyFalseSharedVolume(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	framework.CreateDriverRBAC(testArgs, "openshift-config", "configmaps", "openshift-install")
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	framework.CreateShareRelatedRBAC(testArgs)
 	framework.CreateShare(testArgs)
 	framework.CreateTestPod(testArgs)
@@ -122,6 +133,8 @@ func TestRejectShareWithOpenShiftPrefix(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	framework.CreateDriverRBAC(testArgs, "openshift-config", "configmaps", "openshift-install")
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	framework.CreateShareRelatedRBAC(testArgs)
 	framework.CreateShare(testArgs)
 }
@@ -134,6 +147,8 @@ func TestAcceptShareWithOpenShiftPrefix(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	framework.CreateDriverRBAC(testArgs, "openshift-config", "configmaps", "openshift-install")
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	framework.CreateShareRelatedRBAC(testArgs)
 	framework.CreateReservedOpenShiftShare(testArgs)
 }

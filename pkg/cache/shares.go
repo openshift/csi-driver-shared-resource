@@ -197,10 +197,10 @@ func RegisterSharedConfigMapDeleteCallback(volID string, f func(key, value inter
 	shareConfigMapsDeleteCallbacks.Store(volID, f)
 }
 
-// RegisteredSharedSecretDeleteCallback will be called as part of the kubelet sending a mount CSI volume request for a pod;
+// RegisterSharedSecretDeleteCallback will be called as part of the kubelet sending a mount CSI volume request for a pod;
 // it records the CSI driver function to be called when a share is deleted, so that the CSI
 // driver can remove any storage mounted in the pod for the given SharedSecret
-func RegisteredSharedSecretDeleteCallback(volID string, f func(key, value interface{}) bool) {
+func RegisterSharedSecretDeleteCallback(volID string, f func(key, value interface{}) bool) {
 	shareSecretsDeleteCallbacks.Store(volID, f)
 }
 
