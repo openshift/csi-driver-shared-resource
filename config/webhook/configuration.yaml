@@ -12,7 +12,7 @@ webhooks:
   clientConfig:
     service:
       name: shared-resource-csi-driver-webhook
-      namespace: openshift-cluster-csi-drivers
+      namespace: shared-resource-csi-driver
       path: /resource-validation
       port: 443
   name: pod.csi.sharedresource.openshift.io

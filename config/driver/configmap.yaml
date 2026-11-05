@@ -2,7 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: shared-resource-csi-driver-config
-  namespace: openshift-cluster-csi-drivers
+  namespace: shared-resource-csi-driver
 data:
   config.yaml: |
     ---
@@ -24,7 +24,7 @@ data:
       - openshift-config-operator
       - openshift-etcd-operator
       - openshift-apiserver-operator
-      - openshift-cluster-csi-drivers
+      - shared-resource-csi-driver
       - openshift-cluster-storage-operator
       - openshift-cluster-version
       - openshift-image-registry

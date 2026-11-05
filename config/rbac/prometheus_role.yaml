@@ -3,7 +3,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: shared-resource-csi-driver-node-prometheus
-  namespace: openshift-cluster-csi-drivers
+  namespace: shared-resource-csi-driver
 rules:
   - apiGroups:
       - ""

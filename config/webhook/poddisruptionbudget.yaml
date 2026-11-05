@@ -2,7 +2,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: shared-resource-csi-driver
-  namespace: openshift-cluster-csi-drivers
+  namespace: shared-resource-csi-driver
 spec:
   maxUnavailable: 1
   selector:

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: openshift-cluster-csi-drivers
+  name: shared-resource-csi-driver
   labels:
     openshift.io/cluster-monitoring: "true"
     pod-security.kubernetes.io/enforce: privileged
