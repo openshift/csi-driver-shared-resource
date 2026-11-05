@@ -48,7 +48,9 @@ release: ## Render config/ into a single release.yaml manifest. Example: make re
 .PHONY: release
 
 test-e2e-no-deploy:
-	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) ./hack/test-e2e.sh
+	TEST_SUITE=$(TEST_SUITE) TEST_TIMEOUT=$(TEST_TIMEOUT) DAEMONSET_PODS=$(DAEMONSET_PODS) \
+	CSI_DRIVER_NAMESPACE=$(CSI_DRIVER_NAMESPACE) CSI_DRIVER_SERVICE_ACCOUNT=$(CSI_DRIVER_SERVICE_ACCOUNT) \
+	./hack/test-e2e.sh
 .PHONY: test-e2e-no-deploy
 
 test-e2e: test-e2e-no-deploy

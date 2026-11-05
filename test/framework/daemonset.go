@@ -102,7 +102,7 @@ func RestartDaemonSet(t *TestArgs) {
 	ctx := context.TODO()
 	err := wait.PollUntilContextTimeout(ctx, 1*time.Second, 5*time.Second, true,
 		func(ctx context.Context) (bool, error) {
-			podList, err := podClient.List(context.TODO(), metav1.ListOptions{})
+			podList, err := podClient.List(context.TODO(), metav1.ListOptions{LabelSelector: "app=shared-resource-csi-driver-node"})
 			if err != nil {
 				t.T.Logf("%s: unexpected error list driver pods: %s", time.Now().String(), err.Error())
 				return false, nil

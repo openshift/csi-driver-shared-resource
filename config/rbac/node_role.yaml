@@ -3,16 +3,16 @@ kind: ClusterRole
 metadata:
   name: shared-resource-csi-driver-node
 rules:
+  # Pod access is needed for the CSI driver to identify requesting pods
   - apiGroups:
       - ""
     resources:
-      - secrets
-      - configmaps
       - pods
     verbs:
       - get
       - list
       - watch
+  # SharedSecrets and SharedConfigMaps are cluster-scoped resources
   - apiGroups:
       - sharedresource.openshift.io
     resources:
@@ -22,9 +22,12 @@ rules:
       - get
       - list
       - watch
+  # SubjectAccessReviews are needed for RBAC permission checks
   - apiGroups:
       - authorization.k8s.io
     resources:
       - subjectaccessreviews
     verbs:
       - create
+  # NOTE: Access to secrets and configmaps MUST be granted per-namespace
+  # via Role/RoleBinding in the source namespace. See docs/rbac.md

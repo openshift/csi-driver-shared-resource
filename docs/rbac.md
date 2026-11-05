@@ -15,8 +15,8 @@ the Pod stays in a pending state with a `FailedMount` event.
 ## Prerequisites
 
 - OpenShift cluster with Shared Resource CSI Driver deployed 
-- The CSI driver DaemonSet runs under the `csi-driver-shared-resource`
-  ServiceAccount in the `openshift-builds` namespace 
+- The CSI driver DaemonSet runs under the `shared-resource-csi-driver-node`
+  ServiceAccount in the `openshift-cluster-csi-drivers` namespace 
 
 ## Granting Driver Permission to Access the Source Resource
 
@@ -24,33 +24,38 @@ The CSI driver no longer has cluster-wide read access to all Secrets and
 ConfigMaps. You must explicitly grant it permission to read each source
 resource by creating a `Role` and `RoleBinding` in the source namespace.
 
+**Important:** The CSI driver uses Kubernetes informers which require `list`
+and `watch` permissions. The driver's current informers do not use field selectors
+to restrict access to specific resource names. Therefore, the Role grants access
+to all secrets or configmaps in the source namespace.
+
 ### For a Secret
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: csi-read-my-secret
+  name: csi-read-secrets
   namespace: source-namespace
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    resourceNames: ["my-secret"]
+    # resourceNames cannot be specified - list/watch require unrestricted access
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: csi-read-my-secret
+  name: csi-read-secrets
   namespace: source-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: csi-read-my-secret
+  name: csi-read-secrets
 subjects:
   - kind: ServiceAccount
-    name: csi-driver-shared-resource
-    namespace: openshift-builds
+    name: shared-resource-csi-driver-node
+    namespace: openshift-cluster-csi-drivers
 ```
 
 ### For a ConfigMap
@@ -59,27 +64,27 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: csi-read-my-configmap
+  name: csi-read-configmaps
   namespace: source-namespace
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
-    resourceNames: ["my-configmap"]
+    # resourceNames cannot be specified - list/watch require unrestricted access
     verbs: ["get", "list", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: csi-read-my-configmap
+  name: csi-read-configmaps
   namespace: source-namespace
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: csi-read-my-configmap
+  name: csi-read-configmaps
 subjects:
   - kind: ServiceAccount
-    name: csi-driver-shared-resource
-    namespace: openshift-builds
+    name: shared-resource-csi-driver-node
+    namespace: openshift-cluster-csi-drivers
 ```
 
 ## Granting Pod Permission to Use a Shared Resource

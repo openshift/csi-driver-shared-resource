@@ -13,6 +13,7 @@ import (
 func inner(testArgs *framework.TestArgs, t *testing.T) {
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 	basicShareSetupAndVerification(testArgs)
 
 	t.Logf("%s: initiating csi driver restart", time.Now().String())

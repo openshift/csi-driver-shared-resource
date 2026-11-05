@@ -29,10 +29,22 @@ import (
 )
 
 const (
-	DefaultNamespace             = "openshift-cluster-csi-drivers"
 	DriverConfigurationConfigMap = "csi-driver-shared-resource-config"
 	DriverConfigurationDataKey   = "config.yaml"
 )
+
+var (
+	// DefaultNamespace is the namespace where the CSI driver is deployed.
+	// Defaults to openshift-cluster-csi-drivers, can be overridden via CSI_DRIVER_NAMESPACE env var.
+	DefaultNamespace = getDefaultNamespace()
+)
+
+func getDefaultNamespace() string {
+	if ns := os.Getenv("CSI_DRIVER_NAMESPACE"); ns != "" {
+		return ns
+	}
+	return "openshift-cluster-csi-drivers"
+}
 
 var (
 	initLock    = sync.Mutex{}

@@ -17,6 +17,7 @@ func TestChangeRefreshConfigurationThenBasic(t *testing.T) {
 	prep(testArgs)
 	framework.CreateTestNamespace(testArgs)
 	defer framework.CleanupTestNamespaceAndClusterScopedResources(testArgs)
+	defer framework.DeleteDriverRBAC(testArgs, "openshift-config")
 
 	testArgs.CurrentDriverContainerRestartCount = framework.GetPodContainerRestartCount(testArgs)
 	framework.TurnOffRefreshResources(testArgs)
