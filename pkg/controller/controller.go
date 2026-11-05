@@ -153,6 +153,11 @@ func (c *Controller) RegisterSecretInformer(namespace string) error {
 		informerObj.stopCh = make(chan struct{})
 		informerObj.informerFactory.Start(informerObj.stopCh)
 		if !cache.WaitForCacheSync(informerObj.stopCh, informerObj.informer.HasSynced) {
+			// Clean up the informer we started and remove the placeholder that
+			// LoadOrStore inserted, otherwise the map is left with an entry whose
+			// stopCh is nil, which panics ("close of nil channel") when pruned.
+			close(informerObj.stopCh)
+			c.secretWatchObjs.Delete(namespace)
 			return fmt.Errorf("failed to wait for Secrets informer cache for namespace %s to sync", namespace)
 		}
 		c.secretWatchObjs.Store(namespace, informerObj)
@@ -164,7 +169,12 @@ func (c *Controller) UnregisterSecretInformer(namespace string) {
 	val, ok := c.secretWatchObjs.Load(namespace)
 	if ok {
 		informerObj := val.(sharedObjectInformer)
-		close(informerObj.stopCh)
+		// stopCh can be nil if a prior RegisterSecretInformer stored the
+		// placeholder but never completed initialization (e.g. cache sync
+		// failed); closing a nil channel panics.
+		if informerObj.stopCh != nil {
+			close(informerObj.stopCh)
+		}
 		c.secretWatchObjs.Delete(namespace)
 	}
 }
@@ -191,6 +201,11 @@ func (c *Controller) RegisterConfigMapInformer(namespace string) error {
 		informerObj.stopCh = make(chan struct{})
 		informerObj.informerFactory.Start(informerObj.stopCh)
 		if !cache.WaitForCacheSync(informerObj.stopCh, informerObj.informer.HasSynced) {
+			// Clean up the informer we started and remove the placeholder that
+			// LoadOrStore inserted, otherwise the map is left with an entry whose
+			// stopCh is nil, which panics ("close of nil channel") when pruned.
+			close(informerObj.stopCh)
+			c.configMapWatchObjs.Delete(namespace)
 			return fmt.Errorf("failed to wait for ConfigMaps informer cache for namespace %s to sync", namespace)
 		}
 		c.configMapWatchObjs.Store(namespace, informerObj)
@@ -202,7 +217,12 @@ func (c *Controller) UnregisterConfigMapInformer(namespace string) {
 	val, ok := c.configMapWatchObjs.Load(namespace)
 	if ok {
 		informerObj := val.(sharedObjectInformer)
-		close(informerObj.stopCh)
+		// stopCh can be nil if a prior RegisterConfigMapInformer stored the
+		// placeholder but never completed initialization (e.g. cache sync
+		// failed); closing a nil channel panics.
+		if informerObj.stopCh != nil {
+			close(informerObj.stopCh)
+		}
 		c.configMapWatchObjs.Delete(namespace)
 	}
 }
