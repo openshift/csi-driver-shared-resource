@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"os"
@@ -22,16 +23,20 @@ import (
 	"github.com/openshift/csi-driver-shared-resource/pkg/config"
 	"github.com/openshift/csi-driver-shared-resource/pkg/controller"
 	"github.com/openshift/csi-driver-shared-resource/pkg/csidriver"
+	tlsprofile "github.com/openshift/csi-driver-shared-resource/pkg/tls"
 )
 
 var (
 	version string // driver version
 
-	cfgFilePath       string // path to configuration file
-	endPoint          string // CSI driver API endpoint for Kubernetes kubelet
-	driverName        string // name of the CSI driver, registered in the cluster
-	nodeID            string // current Kubernetes node identifier
-	maxVolumesPerNode int64  // maximum amount of volumes per node, i.e. per driver instance
+	cfgFilePath         string // path to configuration file
+	endPoint            string // CSI driver API endpoint for Kubernetes kubelet
+	driverName          string // name of the CSI driver, registered in the cluster
+	nodeID              string // current Kubernetes node identifier
+	maxVolumesPerNode   int64  // maximum amount of volumes per node, i.e. per driver instance
+	tlsMinVersion       string // minimum TLS version for metrics server
+	tlsCipherSuites     string // comma-separated TLS cipher suites for metrics server
+	tlsCurvePreferences string // comma-separated curve preferences for metrics server
 
 )
 
@@ -82,7 +87,17 @@ var rootCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources)
+		// Parse TLS configuration early to fail fast on invalid config
+		var metricsTLSConfig *tls.Config
+		if tlsMinVersion != "" || tlsCipherSuites != "" || tlsCurvePreferences != "" {
+			metricsTLSConfig, err = tlsprofile.BuildTLSConfigFromFlags(tlsMinVersion, tlsCipherSuites, tlsCurvePreferences)
+			if err != nil {
+				fmt.Printf("Invalid TLS configuration: %s", err.Error())
+				os.Exit(1)
+			}
+		}
+
+		c, err := controller.NewController(cfg.GetShareRelistInterval(), cfg.RefreshResources, metricsTLSConfig)
 		if err != nil {
 			fmt.Printf("Failed to set up controller: %s", err.Error())
 			os.Exit(1)
@@ -133,6 +148,9 @@ func init() {
 	rootCmd.Flags().StringVar(&driverName, "drivername", string(operatorv1.SharedResourcesCSIDriver), "name of the driver")
 	rootCmd.Flags().StringVar(&nodeID, "nodeid", "", "node id")
 	rootCmd.Flags().Int64Var(&maxVolumesPerNode, "maxvolumespernode", 0, "limit of volumes per node")
+	rootCmd.Flags().StringVar(&tlsMinVersion, "tls-min-version", "", "Minimum TLS version for metrics server (e.g., VersionTLS12)")
+	rootCmd.Flags().StringVar(&tlsCipherSuites, "tls-cipher-suites", "", "Comma-separated list of cipher suites for metrics server in IANA format (e.g., TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256)")
+	rootCmd.Flags().StringVar(&tlsCurvePreferences, "tls-curve-preferences", "", "Comma-separated list of curve preferences for metrics server (e.g., X25519,X25519MLKEM768,P-256)")
 }
 
 // loadKubernetesClientset instantiate a clientset using local config.
