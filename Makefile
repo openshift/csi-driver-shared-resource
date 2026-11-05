@@ -11,7 +11,7 @@ TAG ?= latest
 DEPLOY_MODE ?=
 
 # amount of pods the daemonset will produce before starting end-to-end tests
-DAEMONSET_PODS ?= 3
+DAEMONSET_PODS ?= 2
 
 # end-to-end test suite name
 TEST_SUITE ?= normal
