@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"sync"
@@ -24,6 +25,14 @@ import (
 
 const (
 	DefaultResyncDuration = 10 * time.Minute
+
+	// cacheSyncTimeout bounds how long RegisterSecretInformer/RegisterConfigMapInformer
+	// wait for a per-namespace informer cache to sync. Without a bound the wait blocks
+	// forever when the driver's ServiceAccount is not permitted to list/watch the source
+	// namespace (the informer never syncs and nothing closes its stop channel), which
+	// wedges the event processor goroutine and leaves a nil-stopCh placeholder in the
+	// watch map.
+	cacheSyncTimeout = 2 * time.Minute
 )
 
 type sharedObjectInformer struct {
@@ -54,6 +63,29 @@ type Controller struct {
 	metricsTLSConfig *tls.Config
 
 	refreshResources bool
+
+	// runStopCh is the shutdown channel passed to Run; it is used to cancel
+	// per-namespace cache-sync waits when the controller is shutting down.
+	runStopCh <-chan struct{}
+}
+
+// waitForInformerCacheSync waits for the given informer's cache to sync, bounded
+// by cacheSyncTimeout and canceled if the controller is shutting down. It returns
+// false if the cache did not sync before the deadline or shutdown, so callers can
+// run their cleanup path instead of blocking forever.
+func (c *Controller) waitForInformerCacheSync(informer cache.SharedIndexInformer) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), cacheSyncTimeout)
+	defer cancel()
+	if c.runStopCh != nil {
+		go func() {
+			select {
+			case <-c.runStopCh:
+				cancel()
+			case <-ctx.Done():
+			}
+		}()
+	}
+	return cache.WaitForCacheSync(ctx.Done(), informer.HasSynced)
 }
 
 // NewController instantiate a new controller with relisting interval, and optional refresh-resources
@@ -98,6 +130,7 @@ func NewController(shareRelist time.Duration, refreshResources bool, metricsTLSC
 }
 
 func (c *Controller) Run(stopCh <-chan struct{}) error {
+	c.runStopCh = stopCh
 	defer c.cfgMapWorkqueue.ShutDown()
 	defer c.secretWorkqueue.ShutDown()
 	defer c.sharedConfigMapWorkqueue.ShutDown()
@@ -152,7 +185,15 @@ func (c *Controller) RegisterSecretInformer(namespace string) error {
 		client.SetSecretsLister(namespace, informerObj.informerFactory.Core().V1().Secrets().Lister())
 		informerObj.stopCh = make(chan struct{})
 		informerObj.informerFactory.Start(informerObj.stopCh)
-		if !cache.WaitForCacheSync(informerObj.stopCh, informerObj.informer.HasSynced) {
+		if !c.waitForInformerCacheSync(informerObj.informer) {
+			// The wait is bounded (cacheSyncTimeout) and shutdown-aware, so this
+			// path is reached even when the cache never syncs (e.g. the driver's
+			// ServiceAccount lacks list/watch on secrets in this namespace).
+			// Clean up the informer we started and remove the placeholder that
+			// LoadOrStore inserted, otherwise the map is left with an entry whose
+			// stopCh is nil, which panics ("close of nil channel") when pruned.
+			close(informerObj.stopCh)
+			c.secretWatchObjs.Delete(namespace)
 			return fmt.Errorf("failed to wait for Secrets informer cache for namespace %s to sync", namespace)
 		}
 		c.secretWatchObjs.Store(namespace, informerObj)
@@ -164,7 +205,12 @@ func (c *Controller) UnregisterSecretInformer(namespace string) {
 	val, ok := c.secretWatchObjs.Load(namespace)
 	if ok {
 		informerObj := val.(sharedObjectInformer)
-		close(informerObj.stopCh)
+		// stopCh can be nil if a prior RegisterSecretInformer stored the
+		// placeholder but never completed initialization (e.g. cache sync
+		// failed); closing a nil channel panics.
+		if informerObj.stopCh != nil {
+			close(informerObj.stopCh)
+		}
 		c.secretWatchObjs.Delete(namespace)
 	}
 }
@@ -190,7 +236,15 @@ func (c *Controller) RegisterConfigMapInformer(namespace string) error {
 		client.SetConfigMapsLister(namespace, informerObj.informerFactory.Core().V1().ConfigMaps().Lister())
 		informerObj.stopCh = make(chan struct{})
 		informerObj.informerFactory.Start(informerObj.stopCh)
-		if !cache.WaitForCacheSync(informerObj.stopCh, informerObj.informer.HasSynced) {
+		if !c.waitForInformerCacheSync(informerObj.informer) {
+			// The wait is bounded (cacheSyncTimeout) and shutdown-aware, so this
+			// path is reached even when the cache never syncs (e.g. the driver's
+			// ServiceAccount lacks list/watch on configmaps in this namespace).
+			// Clean up the informer we started and remove the placeholder that
+			// LoadOrStore inserted, otherwise the map is left with an entry whose
+			// stopCh is nil, which panics ("close of nil channel") when pruned.
+			close(informerObj.stopCh)
+			c.configMapWatchObjs.Delete(namespace)
 			return fmt.Errorf("failed to wait for ConfigMaps informer cache for namespace %s to sync", namespace)
 		}
 		c.configMapWatchObjs.Store(namespace, informerObj)
@@ -202,7 +256,12 @@ func (c *Controller) UnregisterConfigMapInformer(namespace string) {
 	val, ok := c.configMapWatchObjs.Load(namespace)
 	if ok {
 		informerObj := val.(sharedObjectInformer)
-		close(informerObj.stopCh)
+		// stopCh can be nil if a prior RegisterConfigMapInformer stored the
+		// placeholder but never completed initialization (e.g. cache sync
+		// failed); closing a nil channel panics.
+		if informerObj.stopCh != nil {
+			close(informerObj.stopCh)
+		}
 		c.configMapWatchObjs.Delete(namespace)
 	}
 }
