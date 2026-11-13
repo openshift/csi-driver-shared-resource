@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"crypto/tls"
 	"fmt"
 	"sync"
 	"time"
@@ -50,13 +51,15 @@ type Controller struct {
 
 	listers *client.Listers
 
+	metricsTLSConfig *tls.Config
+
 	refreshResources bool
 }
 
 // NewController instantiate a new controller with relisting interval, and optional refresh-resources
 // mode. Refresh-resources mode means the controller will keep watching for ConfigMaps and Secrets
 // for future changes, when disabled it only loads the resource contents before mounting the volume.
-func NewController(shareRelist time.Duration, refreshResources bool) (*Controller, error) {
+func NewController(shareRelist time.Duration, refreshResources bool, metricsTLSConfig *tls.Config) (*Controller, error) {
 	kubeClient := client.GetClient()
 	shareClient := client.GetShareClient()
 
@@ -78,6 +81,7 @@ func NewController(shareRelist time.Duration, refreshResources bool) (*Controlle
 		sharedSecretInformer:           shareInformerFactory.Sharedresource().V1alpha1().SharedSecrets().Informer(),
 		listers:                        client.GetListers(),
 		refreshResources:               refreshResources,
+		metricsTLSConfig:               metricsTLSConfig,
 	}
 
 	c.cfgMapWorkqueue = workqueue.NewNamedRateLimitingQueue(
@@ -114,9 +118,9 @@ func (c *Controller) Run(stopCh <-chan struct{}) error {
 	go wait.Until(c.sharedConfigMapEventProcessor, time.Second, stopCh)
 	go wait.Until(c.sharedSecretEventProcessor, time.Second, stopCh)
 
-	// start the Prometheus metrics serner
+	// start the Prometheus metrics server
 	klog.Info("Starting the metrics server")
-	server, err := metrics.BuildServer(metrics.MetricsPort)
+	server, err := metrics.BuildServer(metrics.MetricsPort, c.metricsTLSConfig)
 	if err != nil {
 		return err
 	}
