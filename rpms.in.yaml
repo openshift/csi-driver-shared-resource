@@ -1,3 +1,7 @@
+context:
+  containerfile:
+    file: .konflux/shared-resource/Dockerfile
+    stageNum: 2
 contentOrigin:
   repofiles:
     - ./ubi.repo
